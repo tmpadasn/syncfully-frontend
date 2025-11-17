@@ -12,26 +12,24 @@ export default function Header() {
   return (
     <header style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'12px 20px',background:'#9a4207c8',color:'#392c2cff'}}>
       <div style={{display:'flex',alignItems:'center',gap:12}}>
-        <Link to="/" title="Home" aria-label="Go to home" style={{display:'flex',alignItems:'center',textDecoration:'none'}}>
-          <Link
-            to="/"
-            title="Home"
-            aria-label="Go to home"
-            onClick={(e) => {
-              // If already on home, reload the page; otherwise let the Link navigate
-              if (location && location.pathname === '/') {
-                e.preventDefault();
-                window.location.reload();
-              }
-            }}
-            style={{display:'flex',alignItems:'center',color:'#392c2cff',textDecoration:'none',fontWeight:600, marginLeft:10}}
-          >
+        <Link
+          to="/"
+          title="Home"
+          aria-label="Go to home"
+          onClick={(e) => {
+            // If already on home, reload the page; otherwise let the Link navigate
+            if (location && location.pathname === '/') {
+              e.preventDefault();
+              window.location.reload();
+            }
+          }}
+          style={{display:'flex',alignItems:'center',color:'#392c2cff',textDecoration:'none',fontWeight:600, marginLeft:10}}
+        >
           <img src="/syncFully_logo.png" alt="SyncFully" style={{width:40,height:40}} />
           <span style={{marginLeft:10, fontSize: 28}}>
             <span style={{fontWeight:'bold'}}>Sync</span>
             <span style={{fontStyle:'italic'}}>Fully</span>
           </span>
-          </Link>
         </Link>
       </div>
 
@@ -78,7 +76,17 @@ export default function Header() {
             </div>
 
             <FiFolder size={34} style={{ cursor: "pointer" }} />
-            <Link to="/recommendations" title="Recommendations" style={{ color: '#392c2cff', display: 'inline-flex' }}>
+            <Link
+              to="/recommendations"
+              title="Recommendations"
+              style={{ color: '#392c2cff', display: 'inline-flex' }}
+              onClick={(e) => {
+                if (location && location.pathname === '/recommendations') {
+                  e.preventDefault();
+                  window.location.reload();
+                }
+              }}
+            >
               <FiStar size={34} style={{ cursor: 'pointer' }} />
             </Link>
             <FiSettings size={34} style={{ cursor: "pointer", marginRight: 10 }} />
