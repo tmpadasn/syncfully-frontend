@@ -1,47 +1,6 @@
-import React, { useState } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { FiSearch, FiUser, FiSettings, FiStar, FiFolder } from "react-icons/fi";
 import useAuth from '../hooks/useAuth';
-
-function SearchBar() {
-  const [term, setTerm] = useState('');
-  const navigate = useNavigate();
-
-  function doSearch() {
-    const q = (term || '').trim();
-    navigate(q ? `/search?q=${encodeURIComponent(q)}` : '/search');
-  }
-
-  return (
-    <div
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        background: '#fff',
-        padding: '6px 20px',
-        borderRadius: 15,
-        gap: 8,
-        width: 260
-      }}
-    >
-      <input
-        type="text"
-        value={term}
-        onChange={(e) => setTerm(e.target.value)}
-        onKeyDown={(e) => { if (e.key === 'Enter') doSearch(); }}
-        placeholder="Search works or creators"
-        style={{
-          border: 'none',
-          outline: 'none',
-          flex: 1,
-          fontSize: 14
-        }}
-      />
-
-      <FiSearch size={18} color='#392c2cff' style={{cursor:'pointer'}} onClick={doSearch} />
-    </div>
-  );
-}
 
 export default function Header() {
   const auth = useAuth();
@@ -75,7 +34,29 @@ export default function Header() {
       </div>
 
       {/* Search bar */}
-      <SearchBar />
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          background: "#fff",
+          padding: "6px 20px",
+          borderRadius: 15,
+          gap: 8,
+          width: 400
+        }}
+      >
+        <input
+          type="text"
+          style={{
+            border: "none",
+            outline: "none",
+            flex: 1,
+            fontSize: 14
+          }}
+        />
+
+        <FiSearch size={22} color='#392c2cff' />
+      </div>
 
        {/* Right - Icons */}
          <div style={{ display: "flex", alignItems: "center", gap: 16 }}>

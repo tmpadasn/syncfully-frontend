@@ -1,16 +1,80 @@
 import api from './client';
 
+// Get popular works
 export const getPopularWorks = async () => {
   try {
     const res = await api.get('/works/popular');
-    // normalize: backend may return { works: [...] } or an array
-    if (!res || !res.data) return [];
-    if (Array.isArray(res.data)) return res.data;
-    if (Array.isArray(res.data.works)) return res.data.works;
-    return res.data || [];
+    // Backend returns: {success: true, data: {...}, message: "..."}
+    if (!res || !res.data) return { works: [] };
+    
+    // Extract data property from backend response
+    const responseData = res.data.data || res.data;
+    
+    if (Array.isArray(responseData)) return { works: responseData };
+    if (responseData.works && Array.isArray(responseData.works)) return { works: responseData.works };
+    return { works: [] };
   } catch (e) {
     console.warn('getPopularWorks failed', e);
-    return [];
+    return { works: [] };
+  }
+};
+
+// Get all works with optional filters
+export const getAllWorks = async (filters = {}) => {
+  try {
+    const params = new URLSearchParams();
+    Object.keys(filters).forEach(key => {
+      if (filters[key]) params.append(key, filters[key]);
+    });
+    const queryString = params.toString();
+    const url = queryString ? `/works?${queryString}` : '/works';
+    const res = await api.get(url);
+    
+    // Backend returns: {success: true, data: {...}, message: "..."}
+    if (!res || !res.data) return { works: [] };
+    
+    // Extract data property from backend response
+    const responseData = res.data.data || res.data;
+    
+    if (Array.isArray(responseData)) return { works: responseData };
+    if (responseData.works && Array.isArray(responseData.works)) return { works: responseData.works };
+    return { works: [] };
+  } catch (e) {
+    console.warn('getAllWorks failed', e);
+    return { works: [] };
+  }
+};
+
+// Create a new work
+export const createWork = async (workData) => {
+  try {
+    const res = await api.post('/works', workData);
+    return res.data;
+  } catch (e) {
+    console.error('createWork failed', e);
+    throw e;
+  }
+};
+
+// Update work
+export const updateWork = async (workId, workData) => {
+  try {
+    const res = await api.put(`/works/${encodeURIComponent(workId)}`, workData);
+    return res.data;
+  } catch (e) {
+    console.error('updateWork failed', e);
+    throw e;
+  }
+};
+
+// Delete work
+export const deleteWork = async (workId) => {
+  try {
+    const res = await api.delete(`/works/${encodeURIComponent(workId)}`);
+    return res.data;
+  } catch (e) {
+    console.error('deleteWork failed', e);
+    throw e;
   }
 };
 
@@ -18,10 +82,14 @@ export const getWork = async (workId) => {
   if (!workId) return null;
   try {
     const res = await api.get(`/works/${encodeURIComponent(workId)}`);
-    // normalize: some backends return { works: [...] }
+    // Backend returns: {success: true, data: {...}, message: "..."}
     if (!res || !res.data) return null;
-    if (res.data.works && Array.isArray(res.data.works) && res.data.works[0]) return res.data.works[0];
-    return res.data;
+    
+    // Extract data property from backend response
+    const responseData = res.data.data || res.data;
+    
+    if (responseData.works && Array.isArray(responseData.works) && responseData.works[0]) return responseData.works[0];
+    return responseData;
   } catch (e) {
     console.warn('getWork failed', e);
     return null;
@@ -59,9 +127,14 @@ export const getSimilarWorks = async (workId) => {
   try {
     const res = await api.get(`/works/${encodeURIComponent(workId)}/similar`);
     if (!res || !res.data) return [];
-    if (Array.isArray(res.data)) return res.data;
-    if (Array.isArray(res.data.works)) return res.data.works;
-    if (Array.isArray(res.data.items)) return res.data.items;
+    
+    // Backend returns: {success: true, data: {works: [...]}, message: "..."}
+    // Extract data property first, then works property
+    const responseData = res.data.data || res.data;
+    
+    if (Array.isArray(responseData)) return responseData;
+    if (responseData.works && Array.isArray(responseData.works)) return responseData.works;
+    if (responseData.items && Array.isArray(responseData.items)) return responseData.items;
     return [];
   } catch (e) {
     console.warn('getSimilarWorks failed', e);

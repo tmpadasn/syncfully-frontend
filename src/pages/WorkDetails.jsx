@@ -1,43 +1,66 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { getWork, getWorkRatings, postWorkRating, getSimilarWorks, getPopularWorks } from '../api/works';
+import { getWork, getWorkRatings, postWorkRating, getSimilarWorks } from '../api/works';
 import WorkCard from '../components/WorkCard';
+import useNavigationWithClearFilters from '../hooks/useNavigationWithClearFilters';
 
-// small popular list reused from Home for "also like" row
-const mockPopular = [
-  {
-    workId: 3000,
-    title: 'I am Music',
-    rating: 4.8,
-    coverUrl: '/album_covers/i_am_music.jpg',
-  },
-  {
-    workId: 3001,
-    title: 'Kendrick Lamar',
-    rating: 4.3,
-    coverUrl: '/album_covers/kendrick_lamar.png',
-  },
-  {
-    workId: 3002,
-    title: 'Snowwhite',
-    rating: 4.5,
-    coverUrl: '/album_covers/snow_white.jpg',
-  },
-  {
-    workId: 3003,
-    title: 'Anora',
-    rating: 3.5,
-    coverUrl: '/album_covers/anora.jpg',
-  },
-  {
-    workId: 3004,
-    title: 'Crime and Punishment',
-    rating: 4.0,
-    coverUrl: '/album_covers/crime_and_punishment.jpg',
+// Helper functions for data processing
+const processWorkData = (workResponse) => {
+  if (!workResponse) return null;
+  
+  // Extract data from backend response format
+  let workData = workResponse.data || workResponse;
+  
+  // Normalize work structure
+  let work;
+  if (workData.works && workData.works[0]) {
+    work = workData.works[0];
+  } else if (workData.work) {
+    work = workData.work;
+  } else {
+    work = workData;
   }
-];
+  
+  if (!work) return null;
+  
+  // Map to frontend format
+  return {
+    ...work,
+    workId: work.id || work.workId,
+    genres: work.genres || [],
+    genre: Array.isArray(work.genres) ? work.genres.join(', ') : work.genre,
+    coverUrl: work.coverUrl || '/album_covers/default.jpg',
+    findAt: work.foundAt ? [{ 
+      label: 'External Link', 
+      url: work.foundAt 
+    }] : []
+  };
+};
+
+const processRatingsData = (ratingsResponse) => {
+  if (!ratingsResponse) return [];
+  
+  const ratingsData = ratingsResponse.data || ratingsResponse;
+  return ratingsData?.ratings || ratingsData || [];
+};
+
+const processSimilarWorksData = (similarWorksResponse) => {
+  if (!similarWorksResponse || !Array.isArray(similarWorksResponse)) return [];
+  
+  return similarWorksResponse
+    .map(work => ({
+      workId: work.id || work.workId,
+      title: work.title,
+      coverUrl: work.coverUrl || '/album_covers/default.jpg',
+      type: work.type,
+      creator: work.creator
+    }))
+    .filter(work => work.workId && work.title);
+};
 
 export default function WorkDetails(){
+  // Auto-clear search parameters if they exist on non-search pages
+  useNavigationWithClearFilters();
   const { workId } = useParams();
   const [work, setWork] = useState(null);
   const [ratings, setRatings] = useState([]);
@@ -51,86 +74,41 @@ export default function WorkDetails(){
 
   useEffect(()=>{
     setLoading(true);
-    // helper to fill recommended list to exactly 5 items (similar first, then popular fallback)
-    const fillRecommended = async (simList, currentId) => {
-      const normalized = (simList || []).map(s => ({
-        workId: s.workId || s.id || s.title,
-        title: s.title,
-        coverUrl: s.coverUrl || s.image || s.cover || ''
-      }));
 
-      // keep order and unique by workId
-      const seen = new Set();
-      const out = [];
-      for (const it of normalized) {
-        if (!it || !it.workId) continue;
-        const id = String(it.workId);
-        if (id === String(currentId)) continue;
-        if (seen.has(id)) continue;
-        seen.add(id);
-        out.push(it);
-        if (out.length >= 5) break;
-      }
-
-      // if we still need items, fetch popular works as fallback
-      if (out.length < 5) {
-        try {
-          const popular = await getPopularWorks();
-          const list = popular || [];
-          for (const p of list) {
-            const id = String(p.workId || p.id || p.title || '');
-            if (!id || seen.has(id) || id === String(currentId)) continue;
-            seen.add(id);
-            out.push({ workId: id, title: p.title, coverUrl: p.coverUrl || p.image || p.cover || '' });
-            if (out.length >= 5) break;
-          }
-        } catch (e) {
-          // ignore fallback failure
-        }
-      }
-
-      setRecommended(out.slice(0,5));
-    };
-
-    // special-case for The Dark Side of the Moon (local demo data)
-    if (workId && workId.toLowerCase().includes('dark')) {
-      const special = {
-        workId: workId,
-        title: 'The Dark Side of the Moon',
-        creator: 'Pink Floyd',
-        year: 1973,
-        type: 'album',
-        description: 'The Dark Side of the Moon is the eighth studio album by English rock band Pink Floyd, released on March 1st, 1973.',
-        genre: 'Progressive rock',
-        rating: 4.8,
-        coverUrl: '/album_covers/pink_floyd_1.jpg',
-        findAt: [
-          { label: 'Spotify', url: 'https://open.spotify.com/album/4LH4d3cOWNNsVw41Gqt2kv' },
-          { label: 'YouTube', url: 'https://www.youtube.com/results?search_query=the+dark+side+of+the+moon+pink+floyd' }
-        ]
-      };
-      setWork(special);
-      setRatings([{ userId: 2, score: 5, ratedAt: new Date().toISOString() }, { userId: 3, score: 4.5, ratedAt: new Date().toISOString() }]);
-      setComments([{ id: 'c-s1', userId: 2, body: 'A masterpiece.', at: new Date().toISOString() }]);
-      setSimilar([]);
-      // fill recommended for demo too
-      fillRecommended([], workId);
-      setLoading(false);
-      return;
-    }
-
-    Promise.all([getWork(workId), getWorkRatings(workId), getSimilarWorks(workId)])
-      .then(([w, r, s])=>{
-        const theWork = (w && w.works && w.works[0]) ? w.works[0] : w;
-        setWork(theWork);
-        const rlist = r.ratings || [];
-        setRatings(rlist);
-        // seed comments from any rating.comment fields, otherwise empty
-        setComments(rlist.filter(x=>x.comment).map((c,i)=>({ id: `r-${i}`, userId: c.userId, body: c.comment, at: c.ratedAt })));
-        const sims = (s && s.works) ? s.works : (s && s.length ? s : (s && s.items ? s.items : []));
-        setSimilar(sims);
-        // compute recommended (similar first, then popular fallback)
-        fillRecommended(sims, workId);
+    // Fetch all data from backend
+    Promise.all([
+      getWork(workId), 
+      getWorkRatings(workId), 
+      getSimilarWorks(workId)
+    ])
+      .then(([workResponse, ratingsResponse, similarWorksResponse])=>{
+        // Process work data
+        const processedWork = processWorkData(workResponse);
+        setWork(processedWork);
+        
+        // Process ratings data
+        const processedRatings = processRatingsData(ratingsResponse);
+        setRatings(processedRatings);
+        
+        // Extract comments from ratings
+        const comments = processedRatings
+          .filter(rating => rating.comment)
+          .map((rating, index) => ({ 
+            id: `r-${index}`, 
+            userId: rating.userId, 
+            body: rating.comment, 
+            at: rating.ratedAt || rating.createdAt 
+          }));
+        setComments(comments);
+        
+        // Process similar works data
+        const processedSimilarWorks = processSimilarWorksData(similarWorksResponse);
+        setSimilar(processedSimilarWorks);
+        
+        // Set recommended works (limit to 5 items for display)
+        const recommendedWorks = processedSimilarWorks.slice(0, 5);
+        setRecommended(recommendedWorks);
+        
       })
       .catch(()=>{})
       .finally(()=>setLoading(false));
@@ -139,19 +117,19 @@ export default function WorkDetails(){
   const submitRating = async (overrideScore) => {
     const sendScore = typeof overrideScore === 'number' ? overrideScore : score;
     try{
-      // local fallback for demo items (no backend)
-      if (workId && workId.toLowerCase().includes('dark')) {
-        const r = { userId: Number(process.env.REACT_APP_DEFAULT_USER_ID || 1), score: sendScore, ratedAt: new Date().toISOString() };
-        setRatings(prev => [r, ...prev]);
-        alert('Rating submitted (local)');
-        return;
-      }
-
-      await postWorkRating(workId, { score: sendScore, workId, userId: Number(process.env.REACT_APP_DEFAULT_USER_ID || 1), ratedAt: new Date().toISOString() });
+      await postWorkRating(workId, { 
+        score: sendScore, 
+        workId, 
+        userId: Number(process.env.REACT_APP_DEFAULT_USER_ID || 1), 
+        ratedAt: new Date().toISOString() 
+      });
+      
+      // Refresh ratings after submission
       const r = await getWorkRatings(workId);
       setRatings(r.ratings || []);
       alert('Rating submitted');
     }catch(e){
+      console.error('Failed to submit rating:', e);
       alert('Failed to submit rating');
     }
   };
@@ -178,16 +156,15 @@ export default function WorkDetails(){
   if(!work) return <p>Work not found.</p>;
 
   return (
-    <div style={{ maxWidth: 1000, margin: '0 auto', padding: 16 }}>
-      <div style={{ display: 'grid', gridTemplateColumns: '220px 1fr 260px', gap: 20 }}>
+    <div style={{ maxWidth: 1200, margin: '0 auto', padding: '20px 16px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '220px 1fr 260px', gap: 24, alignItems: 'start' }}>
           <aside style={{ padding: 0, display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
             <div style={{ marginLeft: -10 }}>
               <WorkCard work={work} coverStyle={{ width: 180, height: 260 }} flat hideInfo />
             </div>
             <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
               <div style={{ display: 'inline-block' }}>
-                <h4 style={{ margin: 0, display: 'inline-block' }}>WHERE TO FIND</h4>
-                <div style={{ height: 2, background: '#bfaea0', marginTop: 6, borderRadius: 2 }} />
+                <h3 className="section-title">WHERE TO FIND</h3>
               </div>
               {work && work.findAt && work.findAt.length ? (
                 <ul style={{ listStyle: 'none', padding: 0, margin: '8px 0' }}>
@@ -226,7 +203,6 @@ export default function WorkDetails(){
           <main>
             <h1 style={{ marginTop: 0 }}>{work.title}</h1>
             <p style={{ color: '#666' }}>{work.creator} • {work.year}</p>
-            <p>{work.description}</p>
 
             <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
               {work.type && (
@@ -236,16 +212,6 @@ export default function WorkDetails(){
                 <span style={{ padding: '6px 10px', borderRadius: 16, fontSize: 12, fontWeight: 700, background: '#0b6623', color: '#fff' }}>{String(work.genre).toUpperCase()}</span>
               )}
             </div>
-
-            {/* <section>
-              <h3>Characteristics</h3>
-              <ul>
-                <li><strong>Genre:</strong> {work.genre || '—'}</li>
-                <li><strong>Type:</strong> {work.type || '—'}</li>
-                <li><strong>Year:</strong> {work.year || '—'}</li>
-                <li><strong>Rating:</strong> {work.rating ?? '—'}</li>
-              </ul>
-            </section> */}
 
             <section style={{ marginTop: 20 }}>
               <h3>COMMENTS</h3>
@@ -270,116 +236,133 @@ export default function WorkDetails(){
 
             <section style={{ marginTop: 24 }}>
               <div style={{ display: 'inline-block', width: '100%', overflow: 'visible' }}>
-                <h3 style={{ fontWeight: 400, margin: 0 }}>YOU MAY ALSO LIKE</h3>
-                <div style={{ height: 2, background: '#bfaea0', marginTop: 6, borderRadius: 2, width: '140%', marginLeft: '-20%' }} />
+                <h3 className="section-title">YOU MAY ALSO LIKE</h3>               
               </div>
-              {recommended && recommended.length > 0 && (
-                <div style={{ display: 'flex', gap: 12, overflowX: 'auto', paddingBottom: 8 }}>
-                  {recommended.slice(0,5).map(s => (
-                    <div key={s.workId || s.id || s.title} style={{ minWidth: 140 }}>
-                      <Link to={`/works/${s.workId}`} style={{ textDecoration: 'none' }}>
-                        <WorkCard work={s} flat hideInfo coverStyle={{ width: 140, height: 200 }} />
+              
+              {recommended.length > 0 ? (
+                <div style={{ display: 'flex', gap: 12, overflowX: 'auto', paddingBottom: 8, marginTop: 12 }}>
+                  {recommended.map(work => (
+                    <div key={work.workId} style={{ minWidth: 140 }}>
+                      <Link to={`/works/${work.workId}`} style={{ textDecoration: 'none' }}>
+                        <WorkCard work={work} flat hideInfo coverStyle={{ width: 140, height: 200 }} />
                       </Link>
                     </div>
                   ))}
                 </div>
-              )}
-              {/* Also show a compact popular-albums row (like Home) */}
-              <div style={{ marginTop: 12 }}>
-                <div className="works-grid" style={{ display: 'flex', gap: 12, overflowX: 'auto', paddingBottom: 8 }}>
-                  {mockPopular.map(w => (
-                    <Link key={`pop-${w.workId}`} to={`/works/${w.workId}`} style={{ textDecoration: 'none', color: 'inherit' }}>
-                      <div style={{ minWidth: 120 }}>
-                        <div style={{ width: 120, height: 170, overflow: 'hidden', borderRadius: 6 }}>
-                          <img src={w.coverUrl} alt={w.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                        </div>
-                      </div>
-                    </Link>
-                  ))}
+              ) : (
+                <div style={{ marginTop: 12, padding: 16, background: '#f5f5f5', borderRadius: 8 }}>
+                  <p>No similar works found for this item.</p>
                 </div>
-              </div>
+              )}
             </section>
           </main>
 
-          <aside style={{ borderLeft: '1px solid #eee', paddingLeft: 12 }}>
-            <div style={{ display: 'inline-block' }}>
-              <h3 style={{ margin: 0, display: 'inline-block' }}>RATE</h3>
-              <div style={{ height: 2, background: '#bfaea0', marginTop: 6, borderRadius: 2 }} />
+          <aside style={{ borderLeft: '1px solid #eee', paddingLeft: 16, minWidth: 240, maxWidth: 280 }}>
+            <div style={{ display: 'inline-block', marginBottom: 16 }}>
+              <h3 className="section-title">RATINGS</h3>
             </div>
 
-            <div style={{ marginTop: 8 }}>
-              <h4 style={{ margin: '6px 0' }}>Your rating</h4>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <div>
-                  {[1,2,3,4,5].map((i)=>{
-                    const filled = i <= (hoverScore || Math.round(score));
-                    return (
-                      <button
-                        key={i}
-                        type="button"
-                        onClick={()=>{ setScore(i); submitRating(i); }}
-                        onMouseEnter={()=>setHoverScore(i)}
-                        onMouseLeave={()=>setHoverScore(0)}
-                        aria-label={`Rate ${i} star${i>1?'s':''}`}
-                        style={{
-                          background: 'transparent',
-                          border: 'none',
-                          padding: 0,
-                          margin: 0,
-                          cursor: 'pointer',
-                          fontSize: 28,
-                          lineHeight: 1,
-                          color: filled ? '#f5b301' : '#ccc'
-                        }}
-                      >
-                        {filled ? '★' : '☆'}
-                      </button>
-                    );
-                  })}
-                </div>
-
-                {/* Add to Shelf moved below the ratings diagram */}
+            <div style={{ marginBottom: 20 }}>
+              <h4 style={{ margin: '0 0 8px 0', fontSize: 14, fontWeight: 600 }}>Your rating</h4>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 16 }}>
+                {[1,2,3,4,5].map((i)=>{
+                  const filled = i <= (hoverScore || Math.round(score));
+                  return (
+                    <button
+                      key={i}
+                      type="button"
+                      onClick={()=>{ setScore(i); submitRating(i); }}
+                      onMouseEnter={()=>setHoverScore(i)}
+                      onMouseLeave={()=>setHoverScore(0)}
+                      aria-label={`Rate ${i} star${i>1?'s':''}`}
+                      style={{
+                        background: 'transparent',
+                        border: 'none',
+                        padding: '4px',
+                        margin: 0,
+                        cursor: 'pointer',
+                        fontSize: 24,
+                        lineHeight: 1,
+                        color: filled ? '#f5b301' : '#ccc',
+                        transition: 'color 0.2s ease'
+                      }}
+                    >
+                      {filled ? '★' : '☆'}
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
-            <div style={{ marginTop: 14 }}>
+            <div style={{ marginBottom: 20 }}>
+              <h4 style={{ margin: '0 0 12px 0', fontSize: 14, fontWeight: 600 }}>Rating Distribution</h4>
               {totalRatings === 0 ? (
-                <p>No ratings yet.</p>
+                <p style={{ fontSize: 13, color: '#666', margin: 0 }}>No ratings yet.</p>
               ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxWidth: 200 }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                   {bucketCounts.map(b => {
                     const pct = totalRatings ? Math.round((b.count / totalRatings) * 100) : 0;
                     return (
                       <div key={b.star} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <div style={{ width: 36, textAlign: 'right', fontSize: 13 }}>{b.star}★</div>
-                        <div style={{ flex: 1, background: '#eee', height: 10, borderRadius: 6, overflow: 'hidden' }} aria-hidden>
-                          <div style={{ width: `${pct}%`, height: '100%', background: '#bfaea0' }} />
+                        <div style={{ width: 28, textAlign: 'right', fontSize: 12, fontWeight: 500 }}>
+                          {b.star}★
+                        </div>
+                        <div style={{ 
+                          flex: 1, 
+                          background: '#eee', 
+                          height: 8, 
+                          borderRadius: 4, 
+                          overflow: 'hidden',
+                          minWidth: 100
+                        }}>
+                          <div style={{ 
+                            width: `${pct}%`, 
+                            height: '100%', 
+                            background: '#bfaea0',
+                            transition: 'width 0.3s ease'
+                          }} />
                         </div>
                       </div>
                     );
                   })}
+                  <div style={{ 
+                    fontSize: 11, 
+                    color: '#666', 
+                    marginTop: 4,
+                    textAlign: 'center'
+                  }}>
+                    {totalRatings} total rating{totalRatings !== 1 ? 's' : ''}
+                  </div>
                 </div>
               )}
-
-              <div style={{ marginTop: 24 }}>
-                <div style={{ marginTop: 8 }}>
-                  <button
-                    onClick={addToShelf}
-                    style={{
-                      background: '#0b6623',
-                      color: '#fff',
-                      padding: '10px 16px',
-                      border: 'none',
-                      borderRadius: 8,
-                      fontWeight: 700,
-                      fontSize: 14,
-                      cursor: 'pointer'
-                    }}
-                  >
-                    Add to Shelf
-                  </button>
-                </div>
-              </div>
+            </div>
+            
+            <div>
+              <button
+                onClick={addToShelf}
+                style={{
+                  background: '#0b6623',
+                  color: '#fff',
+                  padding: '12px 20px',
+                  border: 'none',
+                  borderRadius: 6,
+                  fontWeight: 600,
+                  fontSize: 13,
+                  cursor: 'pointer',
+                  width: '100%',
+                  transition: 'background-color 0.2s ease',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.5px'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = '#0d7225';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = '#0b6623';
+                }}
+              >
+                Add to Shelf
+              </button>
             </div>
           </aside>
         </div>
