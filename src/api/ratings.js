@@ -1,0 +1,71 @@
+import api from './client';
+
+// Get all ratings (admin function)
+export const getAllRatings = async () => {
+  try {
+    const res = await api.get('/ratings');
+    return res.data;
+  } catch (error) {
+    console.error('getAllRatings failed:', error);
+    return { ratings: [] };
+  }
+};
+
+// Get rating by ID
+export const getRatingById = async (ratingId) => {
+  try {
+    const res = await api.get(`/ratings/${ratingId}`);
+    return res.data;
+  } catch (error) {
+    console.error('getRatingById failed:', error);
+    throw error;
+  }
+};
+
+// Update a rating
+export const updateRating = async (ratingId, ratingData) => {
+  try {
+    const res = await api.put(`/ratings/${ratingId}`, ratingData);
+    return res.data;
+  } catch (error) {
+    console.error('updateRating failed:', error);
+    throw error;
+  }
+};
+
+// Delete a rating
+export const deleteRating = async (ratingId) => {
+  try {
+    const res = await api.delete(`/ratings/${ratingId}`);
+    return res.data;
+  } catch (error) {
+    console.error('deleteRating failed:', error);
+    throw error;
+  }
+};
+
+// Create a work rating (alternative endpoint)
+export const createRating = async (workId, userId, score, comment = null) => {
+  try {
+    const res = await api.post(`/works/${workId}/ratings`, {
+      userId,
+      score,
+      comment
+    });
+    return res.data;
+  } catch (error) {
+    console.error('createRating failed:', error);
+    throw error;
+  }
+};
+
+// Get work average rating
+export const getWorkAverageRating = async (workId) => {
+  try {
+    const res = await api.get(`/works/${workId}/ratings/average`);
+    return res.data;
+  } catch (error) {
+    console.error('getWorkAverageRating failed:', error);
+    return { average: 0, count: 0 };
+  }
+};
