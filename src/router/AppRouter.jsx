@@ -4,6 +4,7 @@ import Recommendations from '../pages/Recommendations';
 import Header from '../components/Header';
 import SearchResults from '../pages/SearchResults';
 import WorkDetails from '../pages/WorkDetails';
+import Account from "../pages/Account";
 
 export default function AppRouter() {
   return (
@@ -15,6 +16,7 @@ export default function AppRouter() {
           <Route path="/recommendations" element={<Recommendations/>} />
           <Route path="/search" element={<SearchResults/>} />
           <Route path="/works/:workId" element={<WorkDetails/>} />
+          <Route path="/account" element={<Account />} />
         </Routes>
       </main>
     </div>

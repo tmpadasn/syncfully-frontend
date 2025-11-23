@@ -7,7 +7,7 @@ export default function Header() {
   const auth = useAuth();
   const user = auth && auth.user ? auth.user : null;
   const userId = user ? user.userId : null;
-  const profilePath = userId ? `/profile/${userId}` : '/profile';
+  const profilePath = "/account";
   const location = useLocation();
   const navigate = useNavigate();
 
