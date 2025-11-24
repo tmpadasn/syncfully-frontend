@@ -14,7 +14,6 @@ export const getPopularWorks = async () => {
     if (responseData.works && Array.isArray(responseData.works)) return { works: responseData.works };
     return { works: [] };
   } catch (e) {
-    console.warn('getPopularWorks failed', e);
     return { works: [] };
   }
 };
@@ -40,7 +39,6 @@ export const getAllWorks = async (filters = {}) => {
     if (responseData.works && Array.isArray(responseData.works)) return { works: responseData.works };
     return { works: [] };
   } catch (e) {
-    console.warn('getAllWorks failed', e);
     return { works: [] };
   }
 };
@@ -51,7 +49,6 @@ export const createWork = async (workData) => {
     const res = await api.post('/works', workData);
     return res.data;
   } catch (e) {
-    console.error('createWork failed', e);
     throw e;
   }
 };
@@ -62,7 +59,6 @@ export const updateWork = async (workId, workData) => {
     const res = await api.put(`/works/${encodeURIComponent(workId)}`, workData);
     return res.data;
   } catch (e) {
-    console.error('updateWork failed', e);
     throw e;
   }
 };
@@ -73,7 +69,6 @@ export const deleteWork = async (workId) => {
     const res = await api.delete(`/works/${encodeURIComponent(workId)}`);
     return res.data;
   } catch (e) {
-    console.error('deleteWork failed', e);
     throw e;
   }
 };
@@ -91,7 +86,6 @@ export const getWork = async (workId) => {
     if (responseData.works && Array.isArray(responseData.works) && responseData.works[0]) return responseData.works[0];
     return responseData;
   } catch (e) {
-    console.warn('getWork failed', e);
     return null;
   }
 };

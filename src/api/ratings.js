@@ -6,7 +6,6 @@ export const getAllRatings = async () => {
     const res = await api.get('/ratings');
     return res.data;
   } catch (error) {
-    console.error('getAllRatings failed:', error);
     return { ratings: [] };
   }
 };
@@ -17,7 +16,6 @@ export const getRatingById = async (ratingId) => {
     const res = await api.get(`/ratings/${ratingId}`);
     return res.data;
   } catch (error) {
-    console.error('getRatingById failed:', error);
     throw error;
   }
 };
@@ -28,7 +26,6 @@ export const updateRating = async (ratingId, ratingData) => {
     const res = await api.put(`/ratings/${ratingId}`, ratingData);
     return res.data;
   } catch (error) {
-    console.error('updateRating failed:', error);
     throw error;
   }
 };
@@ -39,7 +36,6 @@ export const deleteRating = async (ratingId) => {
     const res = await api.delete(`/ratings/${ratingId}`);
     return res.data;
   } catch (error) {
-    console.error('deleteRating failed:', error);
     throw error;
   }
 };
@@ -54,7 +50,6 @@ export const createRating = async (workId, userId, score, comment = null) => {
     });
     return res.data;
   } catch (error) {
-    console.error('createRating failed:', error);
     throw error;
   }
 };
@@ -65,7 +60,6 @@ export const getWorkAverageRating = async (workId) => {
     const res = await api.get(`/works/${workId}/ratings/average`);
     return res.data;
   } catch (error) {
-    console.error('getWorkAverageRating failed:', error);
     return { average: 0, count: 0 };
   }
 };

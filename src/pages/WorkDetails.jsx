@@ -74,9 +74,12 @@ export default function WorkDetails() {
   const [score, setScore] = useState(4);
   const [hoverScore, setHoverScore] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [message, setMessage] = useState(null);
+  const [messageType, setMessageType] = useState(null); // 'success' or 'error'
 
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState('');
+  const [ratingSubmittedMessage, setRatingSubmittedMessage] = useState(false);
 
   useEffect(() => {
     setLoading(true);
@@ -123,6 +126,7 @@ export default function WorkDetails() {
     const sendScore = typeof overrideScore === 'number' ? overrideScore : score;
 
     try {
+      setMessage(null);
       await postWorkRating(workId, {
         score: sendScore,
         workId,
@@ -132,10 +136,14 @@ export default function WorkDetails() {
 
       const r = await getWorkRatings(workId);
       setRatings(r.ratings || []);
-      alert('Rating submitted');
+      
+      // Show success message briefly
+      setRatingSubmittedMessage(true);
+      setTimeout(() => setRatingSubmittedMessage(false), 2000);
     } catch (e) {
-      console.error('Failed to submit rating:', e);
-      alert('Failed to submit rating');
+      const errorMsg = e.response?.data?.message || e.message || 'Failed to submit rating';
+      setMessage(errorMsg);
+      setMessageType('error');
     }
   };
 
@@ -165,7 +173,7 @@ export default function WorkDetails() {
     const shelf = JSON.parse(localStorage.getItem('shelves') || '[]');
     shelf.push({ workId: work.workId, title: work.title });
     localStorage.setItem('shelves', JSON.stringify(shelf));
-    alert('Added to shelf');
+    // Silent success - no banner
   };
 
   // Rating buckets
@@ -177,14 +185,40 @@ export default function WorkDetails() {
     ).length,
   }));
 
+  // Check if current user has already rated this work
+  const userRating = !isGuest && ratings.find((r) => r.userId === loggedUserId);
+  const userRatingScore = userRating ? Math.round(Number(userRating.score) || 0) : null;
+
   if (loading) return <p>Loading work...</p>;
   if (!work) return <p>Work not found.</p>;
+
+  const messageBox = (type) => ({
+    padding: '12px 16px',
+    marginBottom: 16,
+    borderRadius: 8,
+    fontSize: 14,
+    fontWeight: 500,
+    ...(type === 'success' ? {
+      border: '1px solid #c3e6cb',
+      background: '#d4edda',
+      color: '#155724'
+    } : {
+      border: '1px solid #f5c6cb',
+      background: '#f8d7da',
+      color: '#721c24'
+    })
+  });
 
   // -------------------------------------------------------------------------
   // RETURN: Your exact layout, untouched, with only login logic integrated
   // -------------------------------------------------------------------------
   return (
     <div style={{ maxWidth: 1200, margin: '0 auto', padding: '20px 16px' }}>
+      {message && (
+        <div style={{ ...messageBox(messageType), marginBottom: 20 }}>
+          {message}
+        </div>
+      )}
       <div
         style={{
           display: 'grid',
@@ -413,15 +447,54 @@ export default function WorkDetails() {
 
           {/* USER RATING */}
           <div style={{ marginBottom: 20 }}>
-            <h4 style={{ margin: '0 0 8px 0', fontSize: 14, fontWeight: 600 }}>
-              Your rating
-            </h4>
+            {/* Success message after rating */}
+            {ratingSubmittedMessage && (
+              <div
+                style={{
+                  background: '#e8f5e9',
+                  border: '1px solid #81c784',
+                  color: '#2e7d32',
+                  padding: '8px 12px',
+                  borderRadius: 8,
+                  fontSize: 13,
+                  fontWeight: 600,
+                  marginBottom: 12,
+                  textAlign: 'center',
+                }}
+              >
+                ✓ Rating saved!
+              </div>
+            )}
+            
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+              <h4 style={{ margin: 0, fontSize: 14, fontWeight: 600 }}>
+                Your rating
+              </h4>
+              {userRatingScore && (
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 4,
+                    background: '#e8f5e9',
+                    padding: '4px 8px',
+                    borderRadius: 12,
+                    fontSize: 12,
+                    fontWeight: 600,
+                    color: '#2e7d32',
+                  }}
+                >
+                  <span>✓ Rated</span>
+                </div>
+              )}
+            </div>
             <div
               style={{
                 display: 'flex',
                 alignItems: 'center',
                 gap: 4,
                 marginBottom: 16,
+                opacity: userRatingScore ? 1 : 0.5,
               }}
             >
               {[1, 2, 3, 4, 5].map((i) => {

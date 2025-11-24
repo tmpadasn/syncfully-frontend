@@ -7,7 +7,6 @@ export const getAllUsers = async () => {
     // Backend returns: {success: true, data: [...], message: "..."}
     return res.data.data || res.data;
   } catch (error) {
-    console.error('getAllUsers failed:', error);
     throw error;
   }
 };
@@ -18,7 +17,6 @@ export const createUser = async (userData) => {
     const res = await api.post('/users', userData);
     return res.data;
   } catch (error) {
-    console.error('createUser failed:', error);
     throw error;
   }
 };
@@ -30,7 +28,6 @@ export const getUserById = async (userId) => {
     // Backend returns: {success: true, data: {...}, message: "..."}
     return res.data.data || res.data;
   } catch (error) {
-    console.error('getUserById failed:', error);
     throw error;
   }
 };
@@ -39,9 +36,9 @@ export const getUserById = async (userId) => {
 export const updateUser = async (userId, userData) => {
   try {
     const res = await api.put(`/users/${userId}`, userData);
-    return res.data;
+    // Backend returns: {success: true, data: {...}, message: "..."}
+    return res.data.data || res.data;
   } catch (error) {
-    console.error('updateUser failed:', error);
     throw error;
   }
 };
@@ -52,7 +49,6 @@ export const deleteUser = async (userId) => {
     const res = await api.delete(`/users/${userId}`);
     return res.data;
   } catch (error) {
-    console.error('deleteUser failed:', error);
     throw error;
   }
 };
@@ -64,7 +60,6 @@ export const getUserRatings = async (userId) => {
     // Backend returns: {success: true, data: {...}, message: "..."}
     return res.data.data || res.data;
   } catch (error) {
-    console.error('getUserRatings failed:', error);
     return { ratings: [] };
   }
 };
@@ -75,7 +70,6 @@ export const addUserRating = async (userId, ratingData) => {
     const res = await api.post(`/users/${userId}/ratings`, ratingData);
     return res.data;
   } catch (error) {
-    console.error('addUserRating failed:', error);
     throw error;
   }
 };
@@ -87,7 +81,6 @@ export const getUserRecommendations = async (userId) => {
     // Backend returns: {success: true, data: {...}, message: "..."}
     return res.data.data || res.data;
   } catch (error) {
-    console.error('getUserRecommendations failed:', error);
     return { recommendations: [] };
   }
 };
