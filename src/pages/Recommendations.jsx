@@ -162,7 +162,16 @@ export default function Recommendations() {
     <div className="page-container">
       <div className="page-inner">
         <main className="page-main">
-          <p className="welcome-text">We found some new picks for you!</p>
+          <p style={{
+            fontSize: '24px',
+            fontWeight: '700',
+            color: '#392c2c',
+            marginTop: '40px',
+            marginBottom: '24px',
+            textAlign: 'center'
+          }}>
+            We found some <span style={{ color: '#9a4207', fontWeight: '900' }}>amazing picks</span> for you!
+          </p>
 
           {error && (
             <div

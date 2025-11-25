@@ -171,21 +171,29 @@ export default function SearchResults() {
                   {results.map((work, idx) => (
                     <div key={work.workId}>
                       <div style={{ width: '100%', display: 'flex', gap: 12, alignItems: 'flex-start' }}>
-                        <div
+                        <div 
                           onClick={() => navigateAndClearFilters(`/works/${work.workId}`)}
-                          style={{ flexShrink: 0, cursor: 'pointer' }}
+                          style={{ 
+                            flexShrink: 0, 
+                            cursor: 'pointer',
+                            transition: 'transform 0.2s ease, box-shadow 0.2s ease'
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.transform = 'translateY(-4px)';
+                            e.currentTarget.style.boxShadow = '0 6px 16px rgba(0,0,0,0.15)';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.transform = 'translateY(0)';
+                            e.currentTarget.style.boxShadow = 'none';
+                          }}
                         >
                           <div style={{ 
                             width: 96, 
                             height: 140, 
                             overflow: 'hidden', 
                             borderRadius: 4, 
-                            cursor: 'pointer', 
-                            transition: 'transform 0.2s' 
-                          }}
-                               onMouseEnter={(e) => e.target.style.transform = 'scale(1.05)'}
-                               onMouseLeave={(e) => e.target.style.transform = 'scale(1)'}
-                          >
+                            cursor: 'pointer'
+                          }}>
                             <img src={work.coverUrl} alt={work.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                           </div>
                         </div>

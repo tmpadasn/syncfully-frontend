@@ -3,44 +3,51 @@ import { useNavigate, useLocation } from "react-router-dom";
 import useAuth from "../hooks/useAuth";
 
 const styles = {
-  card: {
-    maxWidth: "100%",
+  pageContainer: {
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    minHeight: "100vh",
+    padding: "40px 20px",
+    background: "linear-gradient(135deg, #faf8f5 0%, #f5f0ea 100%)",
+  },
+  cardWrapper: {
     width: "100%",
-    margin: "0",
-    padding: "48px 40px",
+    maxWidth: "500px",
+  },
+  card: {
+    width: "100%",
+    padding: "50px 80px",
     borderRadius: 16,
     background: "#ffffff",
     boxShadow: "0 20px 50px rgba(0, 0, 0, 0.1)",
     border: "1px solid rgba(0,0,0,0.03)",
+    boxSizing: "border-box",
   },
   title: {
     fontSize: 32,
     fontWeight: 800,
     marginBottom: 12,
+    marginTop: 0,
     color: "#241818",
     textAlign: "center",
   },
   subtitle: {
     fontSize: 15,
     color: "#5d4c4c",
-    marginBottom: 28,
+    marginBottom: 32,
+    marginTop: 0,
     lineHeight: 1.6,
     textAlign: "center",
   },
   form: {
-    display: "flex",
-    flexDirection: "column",
-    gap: 0,
+    width: "100%",
   },
-
-  // ⭐ ADDED FIELD WRAPPER
   field: {
-    display: "flex",
-    flexDirection: "column",
-    marginBottom: 22,
+    marginBottom: 20,
   },
-
   label: {
+    display: "block",
     fontSize: 12,
     color: "#4a3f3f",
     fontWeight: 800,
@@ -58,6 +65,7 @@ const styles = {
     outline: "none",
     background: "#fdfbf8",
     transition: "border-color 0.2s ease, box-shadow 0.2s ease",
+    boxSizing: "border-box",
   },
   inputError: {
     borderColor: "#e5534b",
@@ -98,12 +106,9 @@ const styles = {
     fontWeight: 700,
     fontSize: 15,
     cursor: "pointer",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
     boxShadow: "0 8px 20px rgba(154,66,7,0.25)",
     transition: "transform 0.1s ease, box-shadow 0.1s ease, opacity 0.15s",
+    boxSizing: "border-box",
   },
   buttonDisabled: {
     cursor: "default",
@@ -124,6 +129,11 @@ const styles = {
     cursor: "pointer",
     textDecoration: "underline",
     textDecorationThickness: 1,
+  },
+  errorMessage: {
+    fontSize: 12,
+    color: "#a43939",
+    marginTop: 6,
   },
 };
 
@@ -200,6 +210,8 @@ export default function Login() {
         await signup({ username, email, password });
       }
 
+      // Set flag for fresh login
+      sessionStorage.setItem('justLoggedIn', 'true');
       navigate("/");
     } catch (err) {
       // Handle specific error messages from AuthContext
@@ -217,164 +229,142 @@ export default function Login() {
   const passwordTooShort = password && password.length < 4;
 
   return (
-    <div
-      style={{
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-        minHeight: "100vh",
-        padding: "60px 24px",
-        background: "linear-gradient(135deg, #faf8f5 0%, #f5f0ea 100%)",
-      }}
-    >
-      <div style={{ width: "100%", maxWidth: 480 }}>
-        <main style={{ width: "100%" }}>
-          <div style={{
-            ...styles.card,
-            width: "100%",
-          }}>
-            <h1 style={styles.title}>
-              {isLogin ? "Welcome back" : "Create your account"}
-            </h1>
+    <div style={styles.pageContainer}>
+      <div style={styles.cardWrapper}>
+        <div style={styles.card}>
+          <h1 style={styles.title}>
+            {isLogin ? "Welcome back" : "Create your account"}
+          </h1>
 
-            <p style={styles.subtitle}>
-              {isLogin
-                ? "Log in to rate works, save favorites and get recommendations."
-                : "Sign up and start rating, saving and discovering."}
-            </p>
+          <p style={styles.subtitle}>
+            {isLogin
+              ? "Log in to rate works, save favorites and get recommendations."
+              : "Sign up and start rating, saving and discovering."}
+          </p>
 
-            <div style={{ maxWidth: 360, margin: "0 auto" }}>
-              {redirectMessage && (
-                <div style={styles.infoBox}>{redirectMessage}</div>
-              )}
+          {redirectMessage && (
+            <div style={styles.infoBox}>{redirectMessage}</div>
+          )}
 
-              {error && <div style={styles.errorBox}>{error}</div>}
+          {error && <div style={styles.errorBox}>{error}</div>}
 
-              <form onSubmit={handleSubmit} style={styles.form} noValidate>
-              {!isLogin && (
-                <>
-                  <div style={styles.field}>
-                    <label style={styles.label}>Username</label>
-                    <input
-                      type="text"
-                      value={username}
-                      onChange={(e) => setUsername(e.target.value)}
-                      onBlur={(e) => {
-                        handleBlur("username");
-                        e.target.style.boxShadow = "none";
-                      }}
-                      style={{
-                        ...styles.input,
-                        ...(touched.username && !username
-                          ? styles.inputError
-                          : {}),
-                      }}
-                      onFocus={(e) => (e.target.style.boxShadow = "0 0 0 3px rgba(154, 66, 7, 0.1)")}
-                      required
-                    />
-                  </div>
-
-                  <div style={styles.field}>
-                    <label style={styles.label}>Email Address</label>
-                    <input
-                      type="email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      onBlur={(e) => {
-                        handleBlur("email");
-                        e.target.style.boxShadow = "none";
-                      }}
-                      style={{
-                        ...styles.input,
-                        ...(touched.email && !email ? styles.inputError : {}),
-                      }}
-                      onFocus={(e) => (e.target.style.boxShadow = "0 0 0 3px rgba(154, 66, 7, 0.1)")}
-                      required
-                    />
-                  </div>
-                </>
-              )}
-
-              {isLogin && (
+          <form onSubmit={handleSubmit} style={styles.form} noValidate>
+            {!isLogin && (
+              <>
                 <div style={styles.field}>
-                  <label style={styles.label}>Email or Username</label>
+                  <label style={styles.label}>Username</label>
                   <input
                     type="text"
-                    value={identifier}
-                    onChange={(e) => setIdentifier(e.target.value)}
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
                     onBlur={(e) => {
-                      handleBlur("identifier");
+                      handleBlur("username");
                       e.target.style.boxShadow = "none";
                     }}
                     style={{
                       ...styles.input,
-                      ...(touched.identifier && !identifier
-                        ? styles.inputError
-                        : {}),
+                      ...(touched.username && !username ? styles.inputError : {}),
                     }}
                     onFocus={(e) => (e.target.style.boxShadow = "0 0 0 3px rgba(154, 66, 7, 0.1)")}
                     required
                   />
                 </div>
-              )}
 
+                <div style={styles.field}>
+                  <label style={styles.label}>Email Address</label>
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    onBlur={(e) => {
+                      handleBlur("email");
+                      e.target.style.boxShadow = "none";
+                    }}
+                    style={{
+                      ...styles.input,
+                      ...(touched.email && !email ? styles.inputError : {}),
+                    }}
+                    onFocus={(e) => (e.target.style.boxShadow = "0 0 0 3px rgba(154, 66, 7, 0.1)")}
+                    required
+                  />
+                </div>
+              </>
+            )}
+
+            {isLogin && (
               <div style={styles.field}>
-                <label style={styles.label}>Password</label>
+                <label style={styles.label}>Email or Username</label>
                 <input
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  type="text"
+                  value={identifier}
+                  onChange={(e) => setIdentifier(e.target.value)}
                   onBlur={(e) => {
-                    handleBlur("password");
+                    handleBlur("identifier");
                     e.target.style.boxShadow = "none";
                   }}
                   style={{
                     ...styles.input,
-                    ...(touched.password &&
-                    (passwordTooShort || !password)
-                      ? styles.inputError
-                      : {}),
+                    ...(touched.identifier && !identifier ? styles.inputError : {}),
                   }}
                   onFocus={(e) => (e.target.style.boxShadow = "0 0 0 3px rgba(154, 66, 7, 0.1)")}
                   required
                 />
               </div>
+            )}
 
+            <div style={styles.field}>
+              <label style={styles.label}>Password</label>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                onBlur={(e) => {
+                  handleBlur("password");
+                  e.target.style.boxShadow = "none";
+                }}
+                style={{
+                  ...styles.input,
+                  ...(touched.password && (passwordTooShort || !password)
+                    ? styles.inputError
+                    : {}),
+                }}
+                onFocus={(e) => (e.target.style.boxShadow = "0 0 0 3px rgba(154, 66, 7, 0.1)")}
+                required
+              />
               {touched.password && passwordTooShort && (
-                <div style={{ fontSize: 12, color: "#a43939", marginTop: -8 }}>
+                <div style={styles.errorMessage}>
                   Password too short (min 4 chars)
                 </div>
               )}
-
-              <button
-                type="submit"
-                disabled={loading}
-                style={{
-                  ...styles.button,
-                  ...(loading ? styles.buttonDisabled : {}),
-                }}
-                onMouseEnter={(e) => !loading && (e.currentTarget.style.transform = "translateY(-2px)")}
-                onMouseLeave={(e) => (e.currentTarget.style.transform = "none")}
-              >
-                {loading
-                  ? isLogin
-                    ? "Logging you in…"
-                    : "Creating account…"
-                  : isLogin
-                  ? "Log in"
-                  : "Sign up"}
-              </button>
-              </form>
-
-              <div style={styles.toggleWrapper}>
-                {isLogin ? "New here?" : "Already have an account?"}
-                <span onClick={switchMode} style={styles.toggleLink}>
-                  {isLogin ? "Create an account" : "Log in instead"}
-                </span>
-              </div>
             </div>
+
+            <button
+              type="submit"
+              disabled={loading}
+              style={{
+                ...styles.button,
+                ...(loading ? styles.buttonDisabled : {}),
+              }}
+              onMouseEnter={(e) => !loading && (e.currentTarget.style.transform = "translateY(-2px)")}
+              onMouseLeave={(e) => (e.currentTarget.style.transform = "none")}
+            >
+              {loading
+                ? isLogin
+                  ? "Logging you in…"
+                  : "Creating account…"
+                : isLogin
+                ? "Log in"
+                : "Sign up"}
+            </button>
+          </form>
+
+          <div style={styles.toggleWrapper}>
+            {isLogin ? "New here?" : "Already have an account?"}
+            <span onClick={switchMode} style={styles.toggleLink}>
+              {isLogin ? "Create an account" : "Log in instead"}
+            </span>
           </div>
-        </main>
+        </div>
       </div>
     </div>
   );

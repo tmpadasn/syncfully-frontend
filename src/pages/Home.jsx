@@ -82,8 +82,17 @@ const FriendCard = ({ friend }) => (
       height: '280px',
       display: 'flex',
       flexDirection: 'column',
-      transition: '0.2s',
-      boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+      transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+      boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+      cursor: 'pointer'
+    }}
+    onMouseEnter={(e) => {
+      e.currentTarget.style.transform = 'translateY(-6px)';
+      e.currentTarget.style.boxShadow = '0 8px 20px rgba(0,0,0,0.15)';
+    }}
+    onMouseLeave={(e) => {
+      e.currentTarget.style.transform = 'translateY(0)';
+      e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)';
     }}
   >
     <Link to={`/works/${friend.likedAlbum.workId}`} style={{ flex: 1 }}>
@@ -116,9 +125,17 @@ const PopularWorkCard = ({ work }) => (
   <Link to={`/works/${work.workId}`} style={{ textDecoration: 'none' }}>
     <div
       style={{
-        transition: 'transform 0.2s',
+        transition: 'transform 0.2s ease, box-shadow 0.2s ease',
         height: '280px',
         cursor: 'pointer'
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.transform = 'translateY(-6px)';
+        e.currentTarget.querySelector('div').style.boxShadow = '0 8px 20px rgba(0,0,0,0.15)';
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.transform = 'translateY(0)';
+        e.currentTarget.querySelector('div').style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)';
       }}
     >
       <div
@@ -151,6 +168,15 @@ export default function Home() {
   const [friends, setFriends] = useState([]);
   const [loading, setLoading] = useState(true);
   const [friendsLoading, setFriendsLoading] = useState(true);
+  const [showWelcome, setShowWelcome] = useState(false);
+
+  // Check if user just logged in
+  useEffect(() => {
+    if (sessionStorage.getItem('justLoggedIn') === 'true') {
+      setShowWelcome(true);
+      sessionStorage.removeItem('justLoggedIn');
+    }
+  }, []);
 
   useEffect(() => {
     const loadPage = async () => {
@@ -194,11 +220,11 @@ export default function Home() {
             <p className="welcome-text">
               Welcome to <strong>Syncfully</strong>. Discover the most popular works this week.
             </p>
-          ) : (
+          ) : showWelcome ? (
             <p className="welcome-text">
-              Welcome back <em>{user.username}</em>. Here's what others have been discovering...
+              Welcome back <strong style={{ color: '#9a4207', fontSize: '20px' }}>{user.username}</strong>. Here's what others have been discovering...
             </p>
-          )}
+          ) : null}
 
           {/* ------------------ FRIENDS ACTIVITY ------------------ */}
           {user && (

@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { FiSearch, FiUser, FiSettings, FiStar, FiFolder } from "react-icons/fi";
+import { FiSearch, FiLogIn, FiZap, FiGrid, FiLogOut } from "react-icons/fi";
 import { useState, useEffect } from 'react';
 import useAuth from '../hooks/useAuth';
 
@@ -86,36 +86,95 @@ export default function Header() {
       </div>
 
       {/* Right icons */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
 
         <Link
           to={profilePath}
-          style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#392c2cff' }}
+          style={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            gap: 10, 
+            color: '#392c2cff',
+            textDecoration: 'none',
+            padding: '8px 16px',
+            borderRadius: '20px',
+            background: isGuest ? 'transparent' : 'rgba(255, 255, 255, 0.2)',
+            transition: 'all 0.3s ease',
+            border: isGuest ? 'none' : '1px solid rgba(255, 255, 255, 0.3)',
+          }}
+          onMouseEnter={(e) => {
+            if (!isGuest) {
+              e.currentTarget.style.background = 'rgba(255, 255, 255, 0.35)';
+              e.currentTarget.style.transform = 'translateY(-2px)';
+            } else {
+              e.currentTarget.style.transform = 'scale(1.1)';
+            }
+          }}
+          onMouseLeave={(e) => {
+            if (!isGuest) {
+              e.currentTarget.style.background = 'rgba(255, 255, 255, 0.2)';
+              e.currentTarget.style.transform = 'translateY(0)';
+            } else {
+              e.currentTarget.style.transform = 'scale(1)';
+            }
+          }}
         >
           {isGuest ? (
-            <FiUser size={34}/>
+            <FiLogIn size={34}/>
           ) : (
             <>
               <img
                 src={user?.profilePictureUrl || defaultAvatar}
                 alt="avatar"
                 style={{
-                  width: 36,
-                  height: 36,
+                  width: 40,
+                  height: 40,
                   borderRadius: '50%',
-                  objectFit: 'cover'
+                  objectFit: 'cover',
+                  border: '2px solid rgba(255, 255, 255, 0.5)',
+                  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)'
                 }}
               />
-              <span style={{ fontWeight: 600 }}>{user.username}</span>
+              <span style={{ 
+                fontWeight: 600,
+                fontSize: '15px',
+                textShadow: '0 1px 2px rgba(0, 0, 0, 0.1)'
+              }}>
+                {user.username}
+              </span>
             </>
           )}
         </Link>
 
-        <FiFolder size={34} />
-        <Link to="/recommendations" style={{ color: '#392c2cff' }}>
-          <FiStar size={34} />
+        {!isGuest && (
+          <Link 
+            to="/shelves" 
+            style={{ 
+              color: '#392c2cff', 
+              display: 'flex', 
+              alignItems: 'center',
+              transition: 'transform 0.2s ease'
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.1)'}
+            onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+          >
+            <FiGrid size={34} title="My Shelves" />
+          </Link>
+        )}
+
+        <Link 
+          to="/recommendations" 
+          style={{ 
+            color: '#392c2cff', 
+            display: 'flex', 
+            alignItems: 'center',
+            transition: 'transform 0.2s ease'
+          }}
+          onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.1)'}
+          onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+        >
+          <FiZap size={34} title="Recommendations" />
         </Link>
-        <FiSettings size={34} />
 
         {!isGuest && (
           <button
@@ -124,15 +183,33 @@ export default function Header() {
               navigate('/');
             }}
             style={{
-              background: 'transparent',
-              border: 'none',
-              color: '#392c2cff',
-              fontSize: 12,
-              textDecoration: 'underline',
-              cursor: 'pointer'
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '10px 20px',
+              background: 'rgba(57, 44, 44, 0.8)',
+              border: '1px solid rgba(255, 255, 255, 0.3)',
+              color: '#fff',
+              fontSize: '14px',
+              fontWeight: 600,
+              borderRadius: '20px',
+              cursor: 'pointer',
+              transition: 'all 0.3s ease',
+              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = 'rgba(57, 44, 44, 1)';
+              e.currentTarget.style.transform = 'translateY(-2px)';
+              e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.25)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = 'rgba(57, 44, 44, 0.8)';
+              e.currentTarget.style.transform = 'translateY(0)';
+              e.currentTarget.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.15)';
             }}
           >
-            Logout
+            <FiLogOut size={18} />
+            <span>Logout</span>
           </button>
         )}
       </div>

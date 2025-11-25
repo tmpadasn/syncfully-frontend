@@ -1,3 +1,5 @@
+import { Link } from 'react-router-dom';
+
 export default function UserRatings({ ratings = {}, works = [] }) {
   const entries = Object.entries(ratings);
 
@@ -14,16 +16,57 @@ export default function UserRatings({ ratings = {}, works = [] }) {
         if (!work) return null;
 
         return (
-          <div key={workId} style={{ background:"#9a4207c8", padding:12, borderRadius:8 }}>
-            <img src={work.coverUrl} style={{ width:"100%", borderRadius:6 }} />
-            <div style={{ marginTop:8, color:"#392c2c" }}>
-              <strong>{work.title}</strong>
-              <div>Score: {rating.score}★</div>
-              <div style={{ fontSize:12 }}>
-                {new Date(rating.ratedAt).toLocaleDateString()}
+          <Link 
+            key={workId} 
+            to={`/works/${work.id || work.workId}`}
+            style={{ textDecoration: 'none' }}
+          >
+            <div 
+              style={{ 
+                background:"#9a4207c8", 
+                padding:12, 
+                borderRadius:8,
+                cursor: 'pointer',
+                transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                height: '320px',
+                display: 'flex',
+                flexDirection: 'column'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'translateY(-6px)';
+                e.currentTarget.style.boxShadow = '0 8px 20px rgba(0,0,0,0.15)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)';
+              }}
+            >
+              <img 
+                src={work.coverUrl} 
+                alt={work.title}
+                style={{ 
+                  width:"100%", 
+                  height: "220px",
+                  objectFit: "cover",
+                  borderRadius:6
+                }} 
+              />
+              <div style={{ marginTop:8, color:"#392c2c", flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
+                <strong style={{ 
+                  display: 'block',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                  marginBottom: 4
+                }}>{work.title}</strong>
+                <div>Score: {rating.score}★</div>
+                <div style={{ fontSize:12 }}>
+                  {new Date(rating.ratedAt).toLocaleDateString()}
+                </div>
               </div>
             </div>
-          </div>
+          </Link>
         );
       })}
     </div>

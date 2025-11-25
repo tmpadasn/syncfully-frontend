@@ -77,13 +77,22 @@ export const getWork = async (workId) => {
   if (!workId) return null;
   try {
     const res = await api.get(`/works/${encodeURIComponent(workId)}`);
-    // Backend returns: {success: true, data: {...}, message: "..."}
+    // Backend now returns: {success: true, data: {...work...}, message: "..."}
     if (!res || !res.data) return null;
     
     // Extract data property from backend response
     const responseData = res.data.data || res.data;
     
-    if (responseData.works && Array.isArray(responseData.works) && responseData.works[0]) return responseData.works[0];
+    // Backend returns the work object directly now, not wrapped in array
+    if (responseData && typeof responseData === 'object' && responseData.workId) {
+      return responseData;
+    }
+    
+    // Fallback for old format (wrapped in works array)
+    if (responseData.works && Array.isArray(responseData.works) && responseData.works[0]) {
+      return responseData.works[0];
+    }
+    
     return responseData;
   } catch (e) {
     return null;
