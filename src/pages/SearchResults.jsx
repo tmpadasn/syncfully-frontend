@@ -7,6 +7,7 @@ import useNavigationWithClearFilters from '../hooks/useNavigationWithClearFilter
 
 export default function SearchResults() {
   const { search } = useLocation();
+  const navigate = useNavigate();
   const { navigateAndClearFilters } = useNavigationWithClearFilters();
   const params = new URLSearchParams(search);
   const query = params.get('q') || '';
@@ -90,36 +91,31 @@ export default function SearchResults() {
         
         // Map and filter valid works and users
         const mappedResults = works
-          .filter(item => item && (item.title || item.name) && (item.id || item.workId || item.userId))
+          .filter(item => item && (item.title || item.username || item.name) && (item.id || item.workId || item.userId))
           .map(item => {
-            // Handle both works and users
-            if (item.name && item.userId) {
-              // This is a user
+            const isUser = (item.userId || item.username) && !item.title; // users don't have title, works do
+            if (isUser) {
               return {
-                workId: item.userId,
-                title: item.name,
-                coverUrl: item.avatarUrl || '/album_covers/default.jpg',
-                creator: 'User',
-                year: item.joinYear || 'Unknown Year',
-                type: 'user',
+                entityId: item.userId || item.id,
+                kind: 'user',
+                title: item.username || item.name,
+                coverUrl: item.profilePictureUrl || item.avatarUrl || '/profile_picture.jpg',
+                subtitle: item.email || 'User',
+                meta: `Ratings: ${item.ratedWorksCount !== undefined ? item.ratedWorksCount : (item.ratedWorks ? Object.keys(item.ratedWorks).length : 0)}`,
                 description: item.bio || 'User profile',
-                genre: 'User',
                 rating: 0
               };
-            } else {
-              // This is a work
-              return {
-                workId: item.id || item.workId,
-                title: item.title,
-                coverUrl: item.coverUrl || '/album_covers/default.jpg',
-                creator: item.creator || 'Unknown Creator',
-                year: item.year || 'Unknown Year',
-                type: item.type || 'Unknown Type',
-                description: item.description || '',
-                genre: Array.isArray(item.genres) ? item.genres.join(', ') : (item.genre || 'Unknown Genre'),
-                rating: item.averageRating || item.rating || 0
-              };
             }
+            return {
+              entityId: item.id || item.workId,
+              kind: 'work',
+              title: item.title,
+              coverUrl: item.coverUrl || '/album_covers/default.jpg',
+              subtitle: item.creator || 'Unknown Creator',
+              meta: `${item.year || 'Unknown Year'} • ${item.type || 'Unknown Type'} • ${Array.isArray(item.genres) ? item.genres.join(', ') : (item.genre || 'Unknown Genre')}`,
+              description: item.description || '',
+              rating: item.averageRating || item.rating || 0
+            };
           });
         
         console.log('✅ SearchResults: Filtered results:', {
@@ -168,36 +164,51 @@ export default function SearchResults() {
 
               {!loading && results.length > 0 && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                  {results.map((work, idx) => (
-                    <div key={work.workId}>
+                  {results.map((entity, idx) => (
+                    <div key={entity.entityId}>
                       <div style={{ width: '100%', display: 'flex', gap: 12, alignItems: 'flex-start' }}>
                         <div
-                          onClick={() => navigateAndClearFilters(`/works/${work.workId}`)}
+                          onClick={() => {
+                            if (entity.kind === 'work') {
+                              navigateAndClearFilters(`/works/${entity.entityId}`);
+                            } else {
+                              navigate(`/profile/${entity.entityId}`, { state: { prevSearch: search } });
+                            }
+                          }}
                           style={{ flexShrink: 0, cursor: 'pointer' }}
                         >
                           <div style={{ 
-                            width: 96, 
-                            height: 140, 
+                            width: entity.kind === 'user' ? 96 : 96, 
+                            height: entity.kind === 'user' ? 96 : 140, 
                             overflow: 'hidden', 
-                            borderRadius: 4, 
+                            borderRadius: entity.kind === 'user' ? '50%' : 4, 
                             cursor: 'pointer', 
-                            transition: 'transform 0.2s' 
+                            transition: 'transform 0.2s',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            background: '#f2f2f2'
                           }}
                                onMouseEnter={(e) => e.target.style.transform = 'scale(1.05)'}
                                onMouseLeave={(e) => e.target.style.transform = 'scale(1)'}
                           >
-                            <img src={work.coverUrl} alt={work.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                            <img src={entity.coverUrl} alt={entity.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                           </div>
                         </div>
                         <div style={{ flex: 1, padding: '8px 0', display: 'flex', flexDirection: 'column', gap: 4 }}>
-                          <h3 style={{ margin: 0, fontSize: 16, fontWeight: 600 }}>{work.title}</h3>
+                          <h3 style={{ margin: 0, fontSize: 16, fontWeight: 600 }}>{entity.title}</h3>
                           <div style={{ display: 'flex', gap: 16, alignItems: 'baseline' }}>
-                            <p style={{ margin: 0, color: '#666', fontSize: 14 }}>{work.creator}</p>
-                            <span style={{ margin: 0, color: '#888', fontSize: 12 }}>★ {work.rating.toFixed(1)}</span>
+                            <p style={{ margin: 0, color: '#666', fontSize: 14 }}>{entity.subtitle}</p>
+                            {entity.kind === 'work' && (
+                              <span style={{ margin: 0, color: '#888', fontSize: 12 }}>★ {entity.rating.toFixed(1)}</span>
+                            )}
+                            {entity.kind === 'user' && (
+                              <span style={{ margin: 0, color: '#888', fontSize: 12 }}>{entity.meta}</span>
+                            )}
                           </div>
-                          <p style={{ margin: 0, color: '#888', fontSize: 13 }}>{work.year} • {work.type} • {work.genre}</p>
-                          {work.description && (
-                            <p style={{ margin: 0, color: '#555', fontSize: 13, lineHeight: 1.4, marginTop: 4 }}>{work.description}</p>
+                          <p style={{ margin: 0, color: '#888', fontSize: 13 }}>{entity.kind === 'work' ? entity.meta : 'User Account'}</p>
+                          {entity.description && entity.kind === 'work' && (
+                            <p style={{ margin: 0, color: '#555', fontSize: 13, lineHeight: 1.4, marginTop: 4 }}>{entity.description}</p>
                           )}
                         </div>
                       </div>

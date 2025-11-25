@@ -26,10 +26,7 @@ export const searchItems = async (query, filters = {}) => {
       }
     });
     
-    // Don't automatically set item-type to 'work' if itemType filter is specified
-    if (!filters.itemType) {
-      params.append('item-type', 'work'); // Default to works only if no itemType specified
-    }
+    // If itemType not supplied we allow backend to return both works & users.
     
     const queryString = params.toString();
     const url = queryString ? `/search?${queryString}` : '/search';
@@ -77,7 +74,7 @@ export const searchItems = async (query, filters = {}) => {
 // Search specifically for works
 export const searchWorks = async (query, filters = {}) => {
   try {
-    const searchFilters = { ...filters, type: 'work' };
+    const searchFilters = { ...filters, itemType: 'work' };
     return await searchItems(query, searchFilters);
   } catch (error) {
     console.error('searchWorks failed:', error);
@@ -88,7 +85,7 @@ export const searchWorks = async (query, filters = {}) => {
 // Search specifically for users
 export const searchUsers = async (query, filters = {}) => {
   try {
-    const searchFilters = { ...filters, type: 'user' };
+    const searchFilters = { ...filters, itemType: 'user' };
     return await searchItems(query, searchFilters);
   } catch (error) {
     console.error('searchUsers failed:', error);
