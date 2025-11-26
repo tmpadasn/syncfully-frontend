@@ -1,6 +1,7 @@
 import React from 'react';
 import { Routes, Route } from 'react-router-dom';
 import Header from '../components/Header';
+import PageErrorBoundary from '../components/PageErrorBoundary';
 import Home from '../pages/Home';
 import Recommendations from '../pages/Recommendations';
 import SearchResults from '../pages/SearchResults';
@@ -19,15 +20,15 @@ export default function AppRouter() {
       <Header />
       <main style={{ padding: 20 }}>
         <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/recommendations" element={<Recommendations />} />
-          <Route path="/search" element={<SearchResults />} />
-          <Route path="/works/:workId" element={<WorkDetails />} />
-          <Route path="/profile/:userId" element={<Profile />} />
-          <Route path="/login" element={<GuestRoute><Login /></GuestRoute>} />
-          <Route path="/account" element={<ProtectedRoute><Account /></ProtectedRoute>} />
-          <Route path="/account/edit" element={<ProtectedRoute><EditAccount /></ProtectedRoute>} />
-          <Route path="/shelves" element={<ProtectedRoute><Shelves /></ProtectedRoute>} />
+          <Route path="/" element={<PageErrorBoundary><Home /></PageErrorBoundary>} />
+          <Route path="/recommendations" element={<PageErrorBoundary><Recommendations /></PageErrorBoundary>} />
+          <Route path="/search" element={<PageErrorBoundary><SearchResults /></PageErrorBoundary>} />
+          <Route path="/works/:workId" element={<PageErrorBoundary><WorkDetails /></PageErrorBoundary>} />
+          <Route path="/profile/:userId" element={<PageErrorBoundary><Profile /></PageErrorBoundary>} />
+          <Route path="/login" element={<PageErrorBoundary><GuestRoute><Login /></GuestRoute></PageErrorBoundary>} />
+          <Route path="/account" element={<PageErrorBoundary><ProtectedRoute><Account /></ProtectedRoute></PageErrorBoundary>} />
+          <Route path="/account/edit" element={<PageErrorBoundary><ProtectedRoute><EditAccount /></ProtectedRoute></PageErrorBoundary>} />
+          <Route path="/shelves" element={<PageErrorBoundary><ProtectedRoute><Shelves /></ProtectedRoute></PageErrorBoundary>} />
         </Routes>
       </main>
     </div>

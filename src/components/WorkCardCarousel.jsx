@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
+import ErrorBoundary from './ErrorBoundary';
 
 /**
  * Generic, reusable horizontal scroller that renders the rich work-card UI
  * used in both Account (rating history) and Shelves pages.
  */
-export default function WorkCardCarousel({
+function WorkCardCarouselInner({
   cards = [],
   emptyMessage = 'No items yet.',
   renderCardExtras,
@@ -296,5 +297,42 @@ export default function WorkCardCarousel({
         ›
       </button>
     </div>
+  );
+}
+
+// Wrap with ErrorBoundary to prevent carousel crashes from breaking the entire page
+export default function WorkCardCarousel(props) {
+  return (
+    <ErrorBoundary
+      fallback={
+        <div style={{
+          padding: '40px 20px',
+          textAlign: 'center',
+          background: '#fff3cd',
+          borderRadius: '8px',
+          border: '1px solid #ffc107'
+        }}>
+          <p style={{ color: '#856404', marginBottom: '12px' }}>
+            Unable to load carousel content
+          </p>
+          <button
+            onClick={() => window.location.reload()}
+            style={{
+              padding: '8px 16px',
+              background: '#9a4207',
+              color: 'white',
+              border: 'none',
+              borderRadius: '6px',
+              cursor: 'pointer',
+              fontSize: '14px'
+            }}
+          >
+            Reload Page
+          </button>
+        </div>
+      }
+    >
+      <WorkCardCarouselInner {...props} />
+    </ErrorBoundary>
   );
 }

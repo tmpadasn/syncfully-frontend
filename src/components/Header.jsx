@@ -61,7 +61,10 @@ export default function Header() {
           color: '#392c2cff',
           textDecoration: 'none',
           fontWeight: 600,
-          marginLeft: 10
+          marginLeft: 10,
+          cursor: 'pointer',
+          zIndex: 10,
+          position: 'relative'
         }}
       >
         <img src="/syncFully_logo.png" alt="SyncFully" style={{ width: 40, height: 40 }} />

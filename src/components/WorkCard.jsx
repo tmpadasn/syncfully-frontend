@@ -1,7 +1,8 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import ErrorBoundary from './ErrorBoundary';
 
-export default function WorkCard({ work, flat = false, coverStyle, hideInfo = false }) {
+function WorkCardInner({ work, flat = false, coverStyle, hideInfo = false }) {
   if (!work) return null;
   const outerStyle = flat ? { background: 'transparent', boxShadow: 'none' } : undefined;
   return (
@@ -16,5 +17,27 @@ export default function WorkCard({ work, flat = false, coverStyle, hideInfo = fa
         </div>
       )}
     </div>
+  );
+}
+
+export default function WorkCard(props) {
+  return (
+    <ErrorBoundary
+      fallback={
+        <div style={{
+          padding: '20px',
+          background: '#f8d7da',
+          borderRadius: '8px',
+          border: '1px solid #f5c6cb',
+          textAlign: 'center',
+          fontSize: '12px',
+          color: '#721c24'
+        }}>
+          Card error
+        </div>
+      }
+    >
+      <WorkCardInner {...props} />
+    </ErrorBoundary>
   );
 }

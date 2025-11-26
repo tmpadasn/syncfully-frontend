@@ -1,6 +1,7 @@
 import WorkCardCarousel from '../WorkCardCarousel';
+import ErrorBoundary from '../ErrorBoundary';
 
-export default function UserRatings({ ratings = {}, works = [] }) {
+function UserRatingsInner({ ratings = {}, works = [] }) {
   const entries = Object.entries(ratings);
 
   // Sort by ratedAt descending (most recent first)
@@ -32,5 +33,25 @@ export default function UserRatings({ ratings = {}, works = [] }) {
       cards={cards}
       emptyMessage="No ratings yet. Start rating some works!"
     />
+  );
+}
+
+export default function UserRatings(props) {
+  return (
+    <ErrorBoundary
+      fallback={
+        <div style={{
+          padding: '30px',
+          textAlign: 'center',
+          background: '#fff3cd',
+          borderRadius: '8px',
+          border: '1px solid #ffc107'
+        }}>
+          <p style={{ color: '#856404' }}>Unable to load user ratings</p>
+        </div>
+      }
+    >
+      <UserRatingsInner {...props} />
+    </ErrorBoundary>
   );
 }
