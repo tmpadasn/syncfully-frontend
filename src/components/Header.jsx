@@ -12,19 +12,22 @@ export default function Header() {
 
   const location = useLocation();
   const navigate = useNavigate();
+
+  // Search term state
   const [term, setTerm] = useState('');
 
   useEffect(() => {
     if (location.pathname.startsWith('/search')) {
       const params = new URLSearchParams(location.search);
-      setTerm(params.get('q') || '');
+      const urlQuery = params.get('q') || '';
+      setTerm(urlQuery);
     } else {
       setTerm('');
     }
   }, [location.pathname, location.search]);
 
   const doSearch = () => {
-    const q = term.trim();
+    const q = (term || '').trim();
     navigate(q ? `/search?q=${encodeURIComponent(q)}` : '/search');
   };
 
@@ -63,10 +66,11 @@ export default function Header() {
           display: 'flex',
           alignItems: 'center',
           background: '#fff',
-          padding: '6px 20px',
+          padding: '6px 16px',
           borderRadius: 15,
           gap: 8,
           width: 400,
+          boxShadow: '0 2px 6px rgba(0,0,0,0.08)'
         }}
       >
         <input
