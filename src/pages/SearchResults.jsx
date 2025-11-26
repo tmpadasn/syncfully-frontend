@@ -11,14 +11,33 @@ export default function SearchResults() {
   const { navigateAndClearFilters } = useNavigationWithClearFilters();
   const params = new URLSearchParams(search);
   const query = params.get('q') || '';
-  const typeFilter = params.get('type') || '';        // Work type filter (movie, book, etc.)
-  const itemTypeFilter = params.get('itemType') || ''; // Item type filter (work, user, etc.)
+  const typeFilter = params.get('type') || '';        // TYPE filter (movie, book, music, user, etc.)
   const yearFilter = params.get('year') || '';
   const genreFilter = params.get('genre') || '';
   const ratingFilter = params.get('rating') || '';
   
-  const [results, setResults] = useState([]);
+  const [results, setResults] = useState({ works: [], users: [] });
   const [loading, setLoading] = useState(true);
+
+  // Generate dynamic page title based on filters
+  const getPageTitle = () => {
+    if (loading) return 'Searching...';
+    if (query) return `RESULTS FOR "${query}"`;
+    
+    // Build title based on active filters
+    const parts = [];
+    if (typeFilter && typeFilter !== 'user') parts.push(typeFilter.toUpperCase());
+    if (typeFilter === 'user') parts.push('USERS');
+    if (genreFilter) parts.push(genreFilter.toUpperCase());
+    if (yearFilter) parts.push(yearFilter + '+');
+    if (ratingFilter) parts.push(`${ratingFilter}★+`);
+    
+    if (parts.length > 0) {
+      return 'FILTERS:                ' + parts.join('                |                ');
+    }
+    
+    return 'BROWSE ALL';
+  };
 
   useEffect(() => {
     const fetchResults = async () => {
@@ -28,16 +47,26 @@ export default function SearchResults() {
       try {
         // Prepare filters for backend - ensure consistent parameter names
         const filters = {};
-        if (typeFilter && typeFilter !== 'Any' && typeFilter !== '') filters.type = typeFilter;
-        if (itemTypeFilter && itemTypeFilter !== 'Any' && itemTypeFilter !== '') filters.itemType = itemTypeFilter;
+        
+        // Handle TYPE filter - "user" is a special case for itemType, others are work types
+        if (typeFilter && typeFilter !== 'Any' && typeFilter !== '') {
+          if (typeFilter === 'user') {
+            // When TYPE is "user", use itemType filter instead of work-type
+            filters.itemType = 'user';
+          } else {
+            // For movie, book, music, etc., use as work-type filter
+            filters.type = typeFilter;
+          }
+        }
+        
+        // itemTypeFilter is no longer used since we merged it into TYPE
         if (yearFilter && yearFilter !== 'Any' && yearFilter !== '') filters.year = yearFilter;
-        if (genreFilter && genreFilter !== 'Any' && genreFilter !== '') filters.genre = genreFilter; // Backend will convert to genres array
+        if (genreFilter && genreFilter !== 'Any' && genreFilter !== '') filters.genre = genreFilter;
         if (ratingFilter && ratingFilter !== 'Any' && ratingFilter !== '') filters.rating = ratingFilter;
         
         console.log('🔍 SearchResults: Applied filters:', {
           searchTerm,
           typeFilter,
-          itemTypeFilter,
           yearFilter, 
           genreFilter,
           ratingFilter,
@@ -51,284 +80,300 @@ export default function SearchResults() {
           rating: params.get('rating')
         });
 
-        // Use search API if we have a search term, otherwise get all works with filters
+        // Always use search API to support both works and users
         console.log('📡 SearchResults: Making API call with:', { searchTerm, filters });
         
         let data;
-        if (searchTerm) {
-          // Use search API for text search with filters
-          data = await searchItems(searchTerm, filters);
-          console.log('📦 SearchResults: Search API response:', data);
-        } else {
-          // Use works API for filter-only queries
-          data = await getAllWorks(filters);
-          console.log('📦 SearchResults: Works API response:', data);
-        }
+        // Always use searchItems API (works with or without search term)
+        data = await searchItems(searchTerm, filters);
+        console.log('📦 SearchResults: Search API response:', data);
         
         // Extract results based on API response format
         let works = [];
-        if (searchTerm) {
-          // Search API returns { results: [...] } or { works: [...], users: [...] }
-          if (data.results) {
-            works = data.results;
-          } else if (data.works || data.users) {
-            // Combine works and users based on itemType filter
-            if (itemTypeFilter === 'work') {
+        // Search API returns { results: [...] } or { works: [...], users: [...] }
+        if (data.results) {
+          works = data.results;
+        } else if (data.works || data.users) {
+          // Combine works and users based on itemType filter (which comes from typeFilter="user")
+          if (filters.itemType === 'user') {
+            works = data.users || []; // Users will be handled differently in mapping
+          } else {
+            // Show both works and users when no itemType filter, or just works if work-type specified
+            if (filters.type) {
+              // If a specific work type is selected (movie, book, etc.), show only works
               works = data.works || [];
-            } else if (itemTypeFilter === 'user') {
-              works = data.users || []; // Users will be handled differently in mapping
             } else {
-              // Show both works and users when no itemType filter
+              // No filters or only non-type filters, show both
               works = [...(data.works || []), ...(data.users || [])];
             }
           }
-        } else {
-          // Works API returns { works: [...] } - only works, no users
-          works = data.works || data.data || [];
         }
         
         console.log('📦 SearchResults: Extracted works:', works.length);
         
-        // Map and filter valid works and users
-        const mappedResults = works
-          .filter(item => item && (item.title || item.username || item.name) && (item.id || item.workId || item.userId))
-          .map(item => {
-            const isUser = (item.userId || item.username) && !item.title; // users don't have title, works do
-            if (isUser) {
-              return {
-                entityId: item.userId || item.id,
-                kind: 'user',
-                title: item.username || item.name,
-                coverUrl: item.profilePictureUrl || item.avatarUrl || '/profile_picture.jpg',
-                subtitle: item.email || 'User',
-                meta: `Ratings: ${item.ratedWorksCount !== undefined ? item.ratedWorksCount : (item.ratedWorks ? Object.keys(item.ratedWorks).length : 0)}`,
-                description: item.bio || 'User profile',
-                rating: 0
-              };
-            }
-            return {
-              entityId: item.id || item.workId,
-              kind: 'work',
-              title: item.title,
-              coverUrl: item.coverUrl || '/album_covers/default.jpg',
-              subtitle: item.creator || 'Unknown Creator',
-              meta: `${item.year || 'Unknown Year'} • ${item.type || 'Unknown Type'} • ${Array.isArray(item.genres) ? item.genres.join(', ') : (item.genre || 'Unknown Genre')}`,
-              description: item.description || '',
-              rating: item.averageRating || item.rating || 0
-            };
-          });
+        // Separate works and users, then map each
+        const validItems = works.filter(item => item && (item.title || item.username || item.name) && (item.id || item.workId || item.userId));
+        
+        // Only process works if we're showing works
+        const mappedWorks = (filters.itemType === 'user') ? [] : validItems
+          .filter(item => !(item.userId || item.username) || item.title) // Items with title are works
+          .map(item => ({
+            entityId: item.id || item.workId,
+            kind: 'work',
+            title: item.title,
+            coverUrl: item.coverUrl || '/album_covers/default.jpg',
+            subtitle: item.creator || 'Unknown Creator',
+            meta: `${item.year || 'Unknown Year'} • ${item.type || 'Unknown Type'} • ${Array.isArray(item.genres) ? item.genres.join(', ') : (item.genre || 'Unknown Genre')}`,
+            description: item.description || '',
+            rating: item.averageRating || item.rating || 0
+          }));
+        
+        // Only process users if we're not filtering by a specific work type
+        // Also hide users when year, genre, or rating filters are active (these only apply to works)
+        const shouldShowUsers = !filters.type && 
+                                !filters.year && 
+                                !filters.genre && 
+                                !filters.rating && 
+                                filters.itemType !== 'user';
+        
+        const mappedUsers = shouldShowUsers ? 
+          validItems
+            .filter(item => (item.userId || item.username) && !item.title) // Users don't have title
+            .map(item => ({
+              entityId: item.userId || item.id,
+              kind: 'user',
+              title: item.username || item.name,
+              coverUrl: item.profilePictureUrl || item.avatarUrl || '/profile_picture.jpg',
+              subtitle: item.email || 'User',
+              meta: `Ratings: ${item.ratedWorksCount !== undefined ? item.ratedWorksCount : (item.ratedWorks ? Object.keys(item.ratedWorks).length : 0)}`,
+              description: item.bio || 'User profile',
+              rating: 0
+            }))
+          : (filters.itemType === 'user' ? validItems
+            .filter(item => (item.userId || item.username) && !item.title) // Users don't have title
+            .map(item => ({
+              entityId: item.userId || item.id,
+              kind: 'user',
+              title: item.username || item.name,
+              coverUrl: item.profilePictureUrl || item.avatarUrl || '/profile_picture.jpg',
+              subtitle: item.email || 'User',
+              meta: `Ratings: ${item.ratedWorksCount !== undefined ? item.ratedWorksCount : (item.ratedWorks ? Object.keys(item.ratedWorks).length : 0)}`,
+              description: item.bio || 'User profile',
+              rating: 0
+            })) : []);
         
         console.log('✅ SearchResults: Filtered results:', {
-          totalFound: mappedResults.length,
+          totalWorks: mappedWorks.length,
+          totalUsers: mappedUsers.length,
           appliedFilters: filters,
           searchTerm
         });
         
-        setResults(mappedResults);
+        setResults({ works: mappedWorks, users: mappedUsers });
       } catch (error) {
         console.error('Failed to fetch results:', error);
-        setResults([]);
+        setResults({ works: [], users: [] });
       } finally {
         setLoading(false);
       }
     };
     
     fetchResults();
-  }, [query, typeFilter, itemTypeFilter, yearFilter, genreFilter, ratingFilter]);
+  }, [query, typeFilter, yearFilter, genreFilter, ratingFilter]);
 
   return (
     <>
       <FilterBar />
-      <RightFilterColumn currentType={itemTypeFilter} search={search} />
       <div className="page-container">
         <div className="page-inner">
           <main className="page-main">
             <div style={{ maxWidth: 900, margin: '0 auto', padding: '20px 16px', boxSizing: 'border-box' }}>
               <div style={{ display: 'flex', justifyContent: 'flex-start', marginTop: 0 }}>
                 <div style={{ width: '100%', padding: '0 16px', boxSizing: 'border-box' }}>
-                  {loading ? (
-                    <h2 style={{ marginTop: -8, marginBottom: 6, fontSize: 16, fontWeight: 400 }}>Searching backend…</h2>
-                  ) : (
-                    <h3 className="section-title">{query ? `SHOWING RESULTS FOR "${query}"` : 'ALL BACKEND RESULTS'}</h3>
-                  )}
+                  <div style={{
+                    marginTop: 16,
+                    marginBottom: 24,
+                    padding: '12px 16px',
+                    backgroundColor: '#f8f5f0',
+                    borderLeft: '4px solid #d4b895',
+                    borderRadius: '4px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 8
+                  }}>
+                    <span style={{
+                      fontSize: 13,
+                      fontWeight: 600,
+                      color: '#666',
+                      letterSpacing: 0.5,
+                      textTransform: 'uppercase'
+                    }}>
+                      {getPageTitle()}
+                    </span>
+                  </div>
                 </div>
               </div>
 
               {loading && <p style={{ textAlign: 'center' }}>Loading results…</p>}
 
-              {!loading && results.length === 0 && (
+              {!loading && results.works.length === 0 && results.users.length === 0 && (
                 <div>
-                  <p style={{ textAlign: 'center' }}>No works found in backend{query ? ` for "${query}"` : ' with current filters'}.</p>
+                  <p style={{ textAlign: 'center' }}>No results found{query ? ` for "${query}"` : ' with current filters'}.</p>
                 </div>
               )}
 
-              {!loading && results.length > 0 && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                  {results.map((entity, idx) => (
-                    <div key={entity.entityId}>
-                      <div style={{ width: '100%', display: 'flex', gap: 12, alignItems: 'flex-start' }}>
-                        <div
-                          onClick={() => {
-                            if (entity.kind === 'work') {
-                              navigateAndClearFilters(`/works/${entity.entityId}`);
-                            } else {
-                              navigate(`/profile/${entity.entityId}`, { state: { prevSearch: search } });
-                            }
-                          }}
-                          style={{ 
-                            flexShrink: 0, 
-                            cursor: 'pointer',
-                            transition: 'transform 0.2s ease, box-shadow 0.2s ease'
-                          }}
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.transform = 'translateY(-4px)';
-                            e.currentTarget.style.boxShadow = '0 6px 16px rgba(0,0,0,0.15)';
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.transform = 'translateY(0)';
-                            e.currentTarget.style.boxShadow = 'none';
-                          }}
-                        >
-                          <div style={{ 
-                            width: entity.kind === 'user' ? 96 : 96, 
-                            height: entity.kind === 'user' ? 96 : 140, 
-                            overflow: 'hidden', 
-                            borderRadius: entity.kind === 'user' ? '50%' : 4, 
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            background: '#f2f2f2'
-                          }}>
-                            <img src={entity.coverUrl} alt={entity.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                          </div>
-                        </div>
-                        <div style={{ flex: 1, padding: '8px 0', display: 'flex', flexDirection: 'column', gap: 4 }}>
-                          <h3 style={{ margin: 0, fontSize: 16, fontWeight: 600 }}>{entity.title}</h3>
-                          <div style={{ display: 'flex', gap: 16, alignItems: 'baseline' }}>
-                            <p style={{ margin: 0, color: '#666', fontSize: 14 }}>{entity.subtitle}</p>
-                            {entity.kind === 'work' && (
-                              <span style={{ margin: 0, color: '#888', fontSize: 12 }}>★ {entity.rating.toFixed(1)}</span>
+              {!loading && (results.works.length > 0 || results.users.length > 0) && (
+                <>
+                  {/* Works Section */}
+                  {results.works.length > 0 && (
+                    <div style={{ marginBottom: 40 }}>
+                      <h2 style={{ 
+                        fontSize: 18, 
+                        fontWeight: 600, 
+                        color: '#392c2cff',
+                        marginBottom: 16,
+                        paddingBottom: 8,
+                        borderBottom: '2px solid #bfaea0',
+                        letterSpacing: 0.5
+                      }}>
+                        WORKS ({results.works.length})
+                      </h2>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                        {results.works.map((entity, idx) => (
+                          <div key={entity.entityId}>
+                            <div style={{ width: '100%', display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+                              <div
+                                onClick={() => navigateAndClearFilters(`/works/${entity.entityId}`)}
+                                style={{ 
+                                  flexShrink: 0, 
+                                  cursor: 'pointer',
+                                  transition: 'transform 0.2s ease, box-shadow 0.2s ease'
+                                }}
+                                onMouseEnter={(e) => {
+                                  e.currentTarget.style.transform = 'translateY(-4px)';
+                                  e.currentTarget.style.boxShadow = '0 6px 16px rgba(0,0,0,0.15)';
+                                }}
+                                onMouseLeave={(e) => {
+                                  e.currentTarget.style.transform = 'translateY(0)';
+                                  e.currentTarget.style.boxShadow = 'none';
+                                }}
+                              >
+                                <div style={{ 
+                                  width: 96, 
+                                  height: 140, 
+                                  overflow: 'hidden', 
+                                  borderRadius: 4, 
+                                  cursor: 'pointer',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  background: '#f2f2f2'
+                                }}>
+                                  <img src={entity.coverUrl} alt={entity.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                </div>
+                              </div>
+                              <div style={{ flex: 1, padding: '8px 0', display: 'flex', flexDirection: 'column', gap: 4 }}>
+                                <h3 style={{ margin: 0, fontSize: 16, fontWeight: 600 }}>{entity.title}</h3>
+                                <div style={{ display: 'flex', gap: 16, alignItems: 'baseline' }}>
+                                  <p style={{ margin: 0, color: '#666', fontSize: 14 }}>{entity.subtitle}</p>
+                                  <span style={{ margin: 0, color: '#888', fontSize: 12 }}>★ {entity.rating.toFixed(1)}</span>
+                                </div>
+                                <p style={{ margin: 0, color: '#888', fontSize: 13 }}>{entity.meta}</p>
+                                {entity.description && (
+                                  <p style={{ margin: 0, color: '#555', fontSize: 13, lineHeight: 1.4, marginTop: 4 }}>{entity.description}</p>
+                                )}
+                              </div>
+                            </div>
+                            {idx < results.works.length - 1 && (
+                              <div style={{ 
+                                marginTop: 22, 
+                                borderBottom: '2px solid #9a420776', 
+                                paddingBottom: 6, 
+                                marginBottom: 12 
+                              }} />
                             )}
-                            {entity.kind === 'user' && (
-                              <span style={{ margin: 0, color: '#888', fontSize: 12 }}>{entity.meta}</span>
-                            )}
                           </div>
-                          <p style={{ margin: 0, color: '#888', fontSize: 13 }}>{entity.kind === 'work' ? entity.meta : 'User Account'}</p>
-                          {entity.description && entity.kind === 'work' && (
-                            <p style={{ margin: 0, color: '#555', fontSize: 13, lineHeight: 1.4, marginTop: 4 }}>{entity.description}</p>
-                          )}
-                        </div>
+                        ))}
                       </div>
-                      {idx < results.length - 1 && (
-                        <div style={{ 
-                          marginTop: 22, 
-                          borderBottom: '2px solid #9a420776', 
-                          paddingBottom: 6, 
-                          marginBottom: 12 
-                        }} />
-                      )}
                     </div>
-                  ))}
-                </div>
+                  )}
+
+                  {/* Users Section */}
+                  {results.users.length > 0 && (
+                    <div>
+                      <h2 style={{ 
+                        fontSize: 18, 
+                        fontWeight: 600, 
+                        color: '#392c2cff',
+                        marginBottom: 16,
+                        paddingBottom: 8,
+                        borderBottom: '2px solid #bfaea0',
+                        letterSpacing: 0.5
+                      }}>
+                        USERS ({results.users.length})
+                      </h2>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                        {results.users.map((entity, idx) => (
+                          <div key={entity.entityId}>
+                            <div style={{ width: '100%', display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+                              <div
+                                onClick={() => navigate(`/profile/${entity.entityId}`, { state: { prevSearch: search } })}
+                                style={{ 
+                                  flexShrink: 0, 
+                                  cursor: 'pointer',
+                                  transition: 'transform 0.2s ease, box-shadow 0.2s ease'
+                                }}
+                                onMouseEnter={(e) => {
+                                  e.currentTarget.style.transform = 'translateY(-4px)';
+                                  e.currentTarget.style.boxShadow = '0 6px 16px rgba(0,0,0,0.15)';
+                                }}
+                                onMouseLeave={(e) => {
+                                  e.currentTarget.style.transform = 'translateY(0)';
+                                  e.currentTarget.style.boxShadow = 'none';
+                                }}
+                              >
+                                <div style={{ 
+                                  width: 96, 
+                                  height: 96, 
+                                  overflow: 'hidden', 
+                                  borderRadius: '50%', 
+                                  cursor: 'pointer',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  background: '#f2f2f2'
+                                }}>
+                                  <img src={entity.coverUrl} alt={entity.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                </div>
+                              </div>
+                              <div style={{ flex: 1, padding: '8px 0', display: 'flex', flexDirection: 'column', gap: 4 }}>
+                                <h3 style={{ margin: 0, fontSize: 16, fontWeight: 600 }}>{entity.title}</h3>
+                                <div style={{ display: 'flex', gap: 16, alignItems: 'baseline' }}>
+                                  <p style={{ margin: 0, color: '#666', fontSize: 14 }}>{entity.subtitle}</p>
+                                  <span style={{ margin: 0, color: '#888', fontSize: 12 }}>{entity.meta}</span>
+                                </div>
+                                <p style={{ margin: 0, color: '#888', fontSize: 13 }}>User Account</p>
+                              </div>
+                            </div>
+                            {idx < results.users.length - 1 && (
+                              <div style={{ 
+                                marginTop: 22, 
+                                borderBottom: '2px solid #9a420776', 
+                                paddingBottom: 6, 
+                                marginBottom: 12 
+                              }} />
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </>
               )}
             </div>
           </main>
         </div>
       </div>
     </>
-  );
-}
-
-function RightFilterColumn({ currentType, search }) {
-  const { navigateAndClearFilters } = useNavigationWithClearFilters();
-  const navigate = useNavigate();
-
-  const choices = [
-    { key: '', label: 'All' },
-    { key: 'work', label: 'Works' },    // Use 'work' to match backend item-type
-    { key: 'user', label: 'Users' },    // Use 'user' to match backend item-type
-    // Note: 'shelves' not supported by backend yet
-  ];
-
-  const handleSelect = (key) => {
-    const params = new URLSearchParams(search || '');
-    if (!key) {
-      params.delete('itemType');  // Use itemType parameter for right filter
-    } else {
-      params.set('itemType', key);  // Use itemType parameter for right filter
-    }
-    
-    console.log('🔍 RightFilterColumn: Selected itemType:', key);
-    console.log('🔍 RightFilterColumn: New URL params:', params.toString());
-    
-    // Navigate to same path with updated search - this stays on search page so filters are preserved
-    navigate({ search: params.toString() });
-  };
-
-  return (
-    <aside
-      style={{
-        position: 'fixed',
-        right: 20,
-        top: 140,
-        width: 160,
-        padding: '12px 20px',
-        borderTop: '2px solid #bfaea0',
-        borderBottom: '2px solid #bfaea0',
-        backgroundColor: '#fff',
-        borderRadius: '8px',
-        boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-        zIndex: 50,
-        boxSizing: 'border-box'
-      }}
-      aria-label="result-type-filter"
-    >
-      <div style={{ textAlign: 'center', marginBottom: 8, fontSize: 14, fontWeight: 600, color: '#392c2cff', letterSpacing: 0.5 }}>
-        {currentType ? currentType.toUpperCase() : 'ITEM TYPE'}
-      </div>
-      <div style={{ height: 2, width: '60%', background: '#bfaea0', margin: '6px auto 12px', borderRadius: 2 }} />
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-        {choices.map((c) => {
-          const selected = (currentType || '') === (c.key || '');
-          return (
-            <button
-              key={c.key || 'all'}
-              onClick={() => handleSelect(c.key)}
-              style={{
-                width: '100%',
-                padding: '8px 12px',
-                textAlign: 'center',
-                background: 'transparent',
-                border: 'none',
-                color: selected ? '#d4b895' : '#392c2cff',
-                fontWeight: selected ? 600 : 400,
-                fontSize: '13px',
-                textTransform: 'uppercase',
-                cursor: 'pointer',
-                borderRadius: 6,
-                backgroundColor: selected ? '#f8f5f0' : 'transparent',
-                border: selected ? '1px solid #d4b895' : '1px solid transparent',
-                transition: 'all 0.2s ease',
-                letterSpacing: 0.5
-              }}
-              onMouseEnter={(e) => {
-                if (!selected) {
-                  e.target.style.backgroundColor = '#f5f5f5';
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (!selected) {
-                  e.target.style.backgroundColor = 'transparent';
-                }
-              }}
-              aria-pressed={selected}
-            >
-              {c.label}
-            </button>
-          );
-        })}
-      </div>
-    </aside>
   );
 }

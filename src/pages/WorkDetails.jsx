@@ -540,9 +540,11 @@ export default function WorkDetails() {
                       cursor: isGuest ? 'not-allowed' : 'pointer',
                       fontSize: 24,
                       lineHeight: 1,
-                      color: filled ? '#f5b301' : '#ccc',
+                      color: filled ? '#9a4207' : '#888',
                       opacity: isGuest ? 0.4 : 1,
                       transition: 'color 0.2s ease',
+                      fontWeight: filled ? 'normal' : 'bold',
+                      textShadow: filled ? 'none' : '0 0 1px #666',
                     }}
                   >
                     {filled ? '★' : '☆'}

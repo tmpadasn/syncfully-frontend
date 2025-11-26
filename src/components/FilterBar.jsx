@@ -1,6 +1,6 @@
 import { useRef, useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { FiChevronDown } from 'react-icons/fi';
+import { FiChevronDown, FiBook, FiMusic, FiFilm } from 'react-icons/fi';
 import { getAllWorks } from '../api/works';
 
 export default function FilterBar() {
@@ -13,6 +13,7 @@ export default function FilterBar() {
     types: [],
     years: [],
     genres: [],
+    genresByType: {}, // Map of genre -> type (book, music, movie)
     ratings: ['5','4','3','2','1'] // Standard rating scale
   });
   const [optionsLoaded, setOptionsLoaded] = useState(false);
@@ -37,26 +38,39 @@ export default function FilterBar() {
           console.log('🔍 FilterBar: Raw backend types:', types);
           console.log('🔍 FilterBar: Sample work:', works[0]);
           
-          // Extract unique years from backend data
-          const years = [...new Set(
-            works.map(work => work.year)
-              .filter(year => year && !isNaN(year))
-              .map(year => String(year))
-          )].sort((a, b) => Number(b) - Number(a)); // Most recent first
+          // Generate year range from 1850 to current year
+          const currentYear = new Date().getFullYear();
+          const years = [];
+          for (let year = currentYear; year >= 1850; year--) {
+            years.push(String(year));
+          }
           
           // Extract unique genres from backend data
-          const genres = [...new Set(
-            works.flatMap(work => {
-              if (Array.isArray(work.genres)) {
-                return work.genres;
-              } else if (work.genre) {
-                // Split on common separators and clean up
-                return work.genre.split(/[,;]/).map(g => g.trim());
+          const genresByType = {}; // Map genre -> type
+          const genresSet = new Set();
+          
+          works.forEach(work => {
+            const workType = work.type; // book, music, movie
+            let workGenres = [];
+            
+            if (Array.isArray(work.genres)) {
+              workGenres = work.genres;
+            } else if (work.genre) {
+              workGenres = work.genre.split(/[,;]/).map(g => g.trim());
+            }
+            
+            workGenres.forEach(genre => {
+              if (genre) {
+                genresSet.add(genre);
+                // Map this genre to its type
+                if (!genresByType[genre]) {
+                  genresByType[genre] = workType;
+                }
               }
-              return [];
-            })
-            .filter(Boolean)
-          )].sort();
+            });
+          });
+          
+          const genres = Array.from(genresSet).sort();
           
           console.log('🔍 FilterBar: Raw backend genres:', genres);
           
@@ -70,6 +84,7 @@ export default function FilterBar() {
             types: types,
             years: years,
             genres: genres,
+            genresByType: genresByType,
             ratings: ['5','4','3','2','1'] // Standard rating scale
           });
           
@@ -81,6 +96,7 @@ export default function FilterBar() {
             types: [],
             years: [],
             genres: [],
+            genresByType: {},
             ratings: ['5','4','3','2','1']
           });
         }
@@ -92,6 +108,7 @@ export default function FilterBar() {
           types: [],
           years: [],
           genres: [],
+          genresByType: {},
           ratings: ['5','4','3','2','1']
         });
       } finally {
@@ -155,10 +172,18 @@ export default function FilterBar() {
               currentValue={params.get('type') || ''}
               options={[
                 { label: 'ALL', value: '' },
-                ...filterOptions.types.map(t => ({ 
-                  label: t.toUpperCase(), 
-                  value: t // Keep original backend value (movie, book, etc.)
-                })),
+                { label: 'USERS', value: 'user' }, // Add Users as a special type
+                ...filterOptions.types.map(t => {
+                  let displayLabel = t.toUpperCase();
+                  // Pluralize labels for better readability
+                  if (t === 'book') displayLabel = 'BOOKS';
+                  else if (t === 'movie') displayLabel = 'MOVIES';
+                  // music stays as MUSIC
+                  return { 
+                    label: displayLabel, 
+                    value: t // Keep original backend value (movie, book, etc.)
+                  };
+                }),
               ]}
               onSelect={v => updateParam('type', v)}
               disabled={!optionsLoaded}
@@ -172,7 +197,7 @@ export default function FilterBar() {
               options={[
                 { label: 'ALL', value: '' },
                 ...filterOptions.years.map(y => ({ 
-                  label: y.toUpperCase(), 
+                  label: `${y}+`, 
                   value: y 
                 })),
               ]}
@@ -189,11 +214,13 @@ export default function FilterBar() {
                 { label: 'ALL', value: '' },
                 ...filterOptions.genres.map(g => ({ 
                   label: g.toUpperCase(), 
-                  value: g // Keep original backend value
+                  value: g, // Keep original backend value
+                  type: filterOptions.genresByType[g] // Add type for icon
                 })),
               ]}
               onSelect={v => updateParam('genre', v)}
               disabled={!optionsLoaded}
+              showIcons={true} // Enable icons for genre
             />
           </div>
 
@@ -218,7 +245,7 @@ export default function FilterBar() {
   );
 }
 
-function MenuControl({ label, options, onSelect, currentValue = '', disabled = false }) {
+function MenuControl({ label, options, onSelect, currentValue = '', disabled = false, showIcons = false }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
 
@@ -237,6 +264,40 @@ function MenuControl({ label, options, onSelect, currentValue = '', disabled = f
   // Show category name when no filter is selected (empty currentValue) or when "ALL" is selected
   const displayLabel = (selectedOption && currentValue !== '') ? selectedOption.label : label;
   const isSelected = currentValue && currentValue !== '';
+  
+  // Helper to get icon for a type
+  const getIcon = (type) => {
+    switch(type) {
+      case 'book':
+        return <FiBook size={14} style={{ opacity: 0.6, flexShrink: 0, width: '14px', height: '14px' }} />;
+      case 'music':
+        return <FiMusic size={14} style={{ opacity: 0.6, flexShrink: 0, width: '14px', height: '14px' }} />;
+      case 'movie':
+        return <FiFilm size={14} style={{ opacity: 0.6, flexShrink: 0, width: '14px', height: '14px' }} />;
+      default:
+        return null;
+    }
+  };
+  
+  // Group options by type if showIcons is true
+  const groupedOptions = showIcons ? (() => {
+    const groups = { book: [], music: [], movie: [], other: [] };
+    
+    options.forEach(opt => {
+      if (opt.value === '') {
+        // ALL option stays at top
+        return;
+      }
+      const type = opt.type || 'other';
+      if (groups[type]) {
+        groups[type].push(opt);
+      } else {
+        groups.other.push(opt);
+      }
+    });
+    
+    return groups;
+  })() : null;
 
   const labelStyle = {
     fontSize: 14,
@@ -271,6 +332,8 @@ function MenuControl({ label, options, onSelect, currentValue = '', disabled = f
     zIndex: 40,
     minWidth: 160,
     border: '1px solid #bfaea0', // Match accent color
+    maxHeight: '400px', // Limit height for scrolling
+    overflowY: 'auto', // Enable vertical scrolling
   };
 
   const optStyle = {
@@ -319,25 +382,199 @@ function MenuControl({ label, options, onSelect, currentValue = '', disabled = f
       </div>
       {open && !disabled && (
         <div style={menuStyle} role="menu">
-          {options.map(opt => (
-            <div
-              key={opt.label + opt.value}
-              style={optStyle}
-              onClick={() => {
-                onSelect(opt.value);
-                setOpen(false);
-              }}
-              onMouseEnter={(e) => {
-                e.target.style.backgroundColor = '#f5f5f5';
-              }}
-              onMouseLeave={(e) => {
-                e.target.style.backgroundColor = 'transparent';
-              }}
-              role="menuitem"
-            >
-              {opt.label}
-            </div>
-          ))}
+          {!showIcons ? (
+            // Regular options without grouping
+            options.map(opt => (
+              <div
+                key={opt.label + opt.value}
+                style={optStyle}
+                onClick={() => {
+                  onSelect(opt.value);
+                  setOpen(false);
+                }}
+                onMouseEnter={(e) => {
+                  e.target.style.backgroundColor = '#f5f5f5';
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.backgroundColor = 'transparent';
+                }}
+                role="menuitem"
+              >
+                {opt.label}
+              </div>
+            ))
+          ) : (
+            // Grouped options with icons
+            <>
+              {/* ALL option */}
+              {options.filter(opt => opt.value === '').map(opt => (
+                <div
+                  key={opt.label + opt.value}
+                  style={{...optStyle, marginBottom: 8, borderBottom: '1px solid #e0e0e0', paddingBottom: 8}}
+                  onClick={() => {
+                    onSelect(opt.value);
+                    setOpen(false);
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = '#f5f5f5';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = 'transparent';
+                  }}
+                  role="menuitem"
+                >
+                  {opt.label}
+                </div>
+              ))}
+              
+              {/* Book genres */}
+              {groupedOptions.book.length > 0 && (
+                <>
+                  <div style={{ 
+                    padding: '4px 12px', 
+                    fontSize: 11, 
+                    fontWeight: 600, 
+                    color: '#999',
+                    textTransform: 'uppercase',
+                    letterSpacing: 0.5,
+                    marginTop: 4
+                  }}>
+                    Books
+                  </div>
+                  {groupedOptions.book.map(opt => (
+                    <div
+                      key={opt.label + opt.value}
+                      style={{...optStyle, display: 'flex', alignItems: 'center', gap: 8}}
+                      onClick={() => {
+                        onSelect(opt.value);
+                        setOpen(false);
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.backgroundColor = '#f5f5f5';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.backgroundColor = 'transparent';
+                      }}
+                      role="menuitem"
+                    >
+                      {getIcon('book')}
+                      {opt.label}
+                    </div>
+                  ))}
+                </>
+              )}
+              
+              {/* Music genres */}
+              {groupedOptions.music.length > 0 && (
+                <>
+                  <div style={{ 
+                    padding: '4px 12px', 
+                    fontSize: 11, 
+                    fontWeight: 600, 
+                    color: '#999',
+                    textTransform: 'uppercase',
+                    letterSpacing: 0.5,
+                    marginTop: 8
+                  }}>
+                    Music
+                  </div>
+                  {groupedOptions.music.map(opt => (
+                    <div
+                      key={opt.label + opt.value}
+                      style={{...optStyle, display: 'flex', alignItems: 'center', gap: 8}}
+                      onClick={() => {
+                        onSelect(opt.value);
+                        setOpen(false);
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.backgroundColor = '#f5f5f5';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.backgroundColor = 'transparent';
+                      }}
+                      role="menuitem"
+                    >
+                      {getIcon('music')}
+                      {opt.label}
+                    </div>
+                  ))}
+                </>
+              )}
+              
+              {/* Movie genres */}
+              {groupedOptions.movie.length > 0 && (
+                <>
+                  <div style={{ 
+                    padding: '4px 12px', 
+                    fontSize: 11, 
+                    fontWeight: 600, 
+                    color: '#999',
+                    textTransform: 'uppercase',
+                    letterSpacing: 0.5,
+                    marginTop: 8
+                  }}>
+                    Movies
+                  </div>
+                  {groupedOptions.movie.map(opt => (
+                    <div
+                      key={opt.label + opt.value}
+                      style={{...optStyle, display: 'flex', alignItems: 'center', gap: 8}}
+                      onClick={() => {
+                        onSelect(opt.value);
+                        setOpen(false);
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.backgroundColor = '#f5f5f5';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.backgroundColor = 'transparent';
+                      }}
+                      role="menuitem"
+                    >
+                      {getIcon('movie')}
+                      {opt.label}
+                    </div>
+                  ))}
+                </>
+              )}
+              
+              {/* Other genres (if any) */}
+              {groupedOptions.other.length > 0 && (
+                <>
+                  <div style={{ 
+                    padding: '4px 12px', 
+                    fontSize: 11, 
+                    fontWeight: 600, 
+                    color: '#999',
+                    textTransform: 'uppercase',
+                    letterSpacing: 0.5,
+                    marginTop: 8
+                  }}>
+                    Other
+                  </div>
+                  {groupedOptions.other.map(opt => (
+                    <div
+                      key={opt.label + opt.value}
+                      style={optStyle}
+                      onClick={() => {
+                        onSelect(opt.value);
+                        setOpen(false);
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.backgroundColor = '#f5f5f5';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.backgroundColor = 'transparent';
+                      }}
+                      role="menuitem"
+                    >
+                      {opt.label}
+                    </div>
+                  ))}
+                </>
+              )}
+            </>
+          )}
         </div>
       )}
     </div>
