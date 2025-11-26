@@ -7,6 +7,7 @@ import { getUserRatings } from '../api/users';
 import { removeWorkFromShelf } from '../api/shelves';
 import { FiPlus, FiTrash2, FiEdit2, FiX, FiChevronDown, FiHeart } from 'react-icons/fi';
 import WorkCardCarousel from '../components/WorkCardCarousel';
+import { Skeleton } from '../components/Skeleton';
 
 const styles = {
   container: {
@@ -647,7 +648,37 @@ export default function Shelves() {
       )}
 
       {/* Loading state */}
-      {loading && <div style={styles.loadingMessage}>Loading your shelves...</div>}
+      {loading && (
+        <div style={{ padding: '40px 0' }}>
+          <div style={{ marginBottom: 30 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
+              <Skeleton width="200px" height="24px" />
+              <Skeleton width="150px" height="40px" borderRadius="8px" />
+            </div>
+          </div>
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} style={{ 
+              marginBottom: 30, 
+              background: '#f9f9f9', 
+              borderRadius: 12, 
+              border: '1px solid #e0e0e0',
+              overflow: 'hidden'
+            }}>
+              <div style={{ padding: 20, background: '#fff', borderBottom: '1px solid #e0e0e0' }}>
+                <Skeleton width="180px" height="20px" style={{ marginBottom: 8 }} />
+                <Skeleton width="120px" height="14px" />
+              </div>
+              <div style={{ padding: 20, background: '#fff' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 16 }}>
+                  {Array.from({ length: 4 }).map((_, j) => (
+                    <Skeleton key={j} width="100%" height="240px" borderRadius="8px" />
+                  ))}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Error state */}
       {error && !loading && (
@@ -750,7 +781,11 @@ export default function Shelves() {
               {expandedShelves[shelf.shelfId] && (
                 <div style={styles.shelfContent}>
                   {loadingWorks[shelf.shelfId] ? (
-                    <div style={styles.emptyShelf}>Loading works...</div>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 16 }}>
+                      {Array.from({ length: 4 }).map((_, i) => (
+                        <Skeleton key={i} width="100%" height="240px" borderRadius="8px" />
+                      ))}
+                    </div>
                   ) : !shelfWorks[shelf.shelfId] || shelfWorks[shelf.shelfId].length === 0 ? (
                     <div style={styles.emptyShelf}>This shelf is empty</div>
                   ) : (

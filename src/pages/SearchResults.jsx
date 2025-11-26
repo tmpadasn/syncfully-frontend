@@ -7,6 +7,7 @@ import FilterBar from '../components/FilterBar';
 import useNavigationWithClearFilters from '../hooks/useNavigationWithClearFilters';
 import useAuth from '../hooks/useAuth';
 import { FiPlus, FiCheck, FiX, FiArrowLeft, FiHeart } from 'react-icons/fi';
+import { WorkGridSkeleton } from '../components/Skeleton';
 
 export default function SearchResults() {
   const { search } = useLocation();
@@ -682,7 +683,11 @@ export default function SearchResults() {
                 </div>
               </div>
 
-              {loading && <p style={{ textAlign: 'center' }}>Loading results…</p>}
+              {loading && (
+                <div style={{ marginTop: 24 }}>
+                  <WorkGridSkeleton count={12} columns="repeat(auto-fill, minmax(180px, 1fr))" />
+                </div>
+              )}
 
               {!loading && results.works.length === 0 && results.users.length === 0 && (
                 <div>

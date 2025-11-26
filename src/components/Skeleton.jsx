@@ -1,0 +1,221 @@
+import React from 'react';
+
+/**
+ * Base Skeleton component for loading states
+ */
+export function Skeleton({ width = '100%', height = '20px', borderRadius = '4px', style = {} }) {
+  return (
+    <div
+      style={{
+        width,
+        height,
+        borderRadius,
+        background: 'linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%)',
+        backgroundSize: '200% 100%',
+        animation: 'skeleton-loading 1.5s ease-in-out infinite',
+        ...style
+      }}
+    >
+      <style>{`
+        @keyframes skeleton-loading {
+          0% {
+            background-position: 200% 0;
+          }
+          100% {
+            background-position: -200% 0;
+          }
+        }
+      `}</style>
+    </div>
+  );
+}
+
+/**
+ * Skeleton for WorkCard component
+ */
+export function WorkCardSkeleton({ coverStyle = {} }) {
+  return (
+    <div className="work-card" style={{ opacity: 0.7 }}>
+      <Skeleton 
+        width={coverStyle.width || 72} 
+        height={coverStyle.height || 100} 
+        borderRadius="4px"
+        style={coverStyle}
+      />
+      <div className="work-info" style={{ flex: 1 }}>
+        <Skeleton width="80%" height="18px" style={{ marginBottom: 8 }} />
+        <Skeleton width="60%" height="14px" style={{ marginBottom: 6 }} />
+        <Skeleton width="40%" height="14px" />
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Skeleton for grid of work cards (popular works, search results)
+ */
+export function WorkGridSkeleton({ count = 6, columns = 'repeat(auto-fit, minmax(160px, 1fr))' }) {
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: columns, gap: 20 }}>
+      {Array.from({ length: count }).map((_, i) => (
+        <div key={i}>
+          <Skeleton 
+            width="100%" 
+            height="280px" 
+            borderRadius="12px"
+            style={{ boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}
+          />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/**
+ * Skeleton for friend cards
+ */
+export function FriendCardSkeleton() {
+  return (
+    <div
+      style={{
+        background: '#9a4207c8',
+        borderRadius: '12px',
+        overflow: 'hidden',
+        height: '280px',
+        display: 'flex',
+        flexDirection: 'column',
+        boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+        opacity: 0.7
+      }}
+    >
+      <Skeleton width="100%" height="200px" borderRadius="0" />
+      <div style={{ padding: '12px' }}>
+        <div style={{ display: 'flex', gap: 8, marginBottom: 6, alignItems: 'center' }}>
+          <Skeleton width="20px" height="20px" borderRadius="50%" />
+          <Skeleton width="80px" height="13px" />
+        </div>
+        <Skeleton width="90%" height="12px" />
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Skeleton for friend grid
+ */
+export function FriendGridSkeleton({ count = 4 }) {
+  return (
+    <div
+      style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))',
+        gap: 20,
+        marginTop: 8
+      }}
+    >
+      {Array.from({ length: count }).map((_, i) => (
+        <FriendCardSkeleton key={i} />
+      ))}
+    </div>
+  );
+}
+
+/**
+ * Skeleton for WorkDetails page
+ */
+export function WorkDetailsSkeleton() {
+  return (
+    <div style={{ maxWidth: 1200, margin: '0 auto', padding: '20px 16px' }}>
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: '220px 1fr 260px',
+          gap: 24,
+          alignItems: 'start',
+        }}
+      >
+        {/* LEFT column */}
+        <aside>
+          <Skeleton width="180px" height="260px" borderRadius="8px" style={{ marginBottom: 12 }} />
+          <Skeleton width="180px" height="48px" borderRadius="10px" />
+        </aside>
+
+        {/* MIDDLE column */}
+        <main>
+          <Skeleton width="60%" height="32px" style={{ marginBottom: 12 }} />
+          <Skeleton width="40%" height="16px" style={{ marginBottom: 20 }} />
+          
+          <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
+            <Skeleton width="80px" height="24px" borderRadius="16px" />
+            <Skeleton width="100px" height="24px" borderRadius="16px" />
+          </div>
+
+          {/* Comments section */}
+          <Skeleton width="30%" height="24px" style={{ marginBottom: 12 }} />
+          <Skeleton width="100%" height="64px" borderRadius="4px" style={{ marginBottom: 8 }} />
+          <Skeleton width="120px" height="32px" borderRadius="4px" style={{ marginLeft: 'auto', display: 'block', marginBottom: 24 }} />
+
+          {/* Similar works */}
+          <Skeleton width="40%" height="24px" style={{ marginBottom: 12 }} />
+          <div style={{ display: 'flex', gap: 12, marginTop: 12 }}>
+            {Array.from({ length: 5 }).map((_, i) => (
+              <Skeleton key={i} width="140px" height="200px" borderRadius="4px" />
+            ))}
+          </div>
+        </main>
+
+        {/* RIGHT column */}
+        <aside style={{ borderLeft: '1px solid #eee', paddingLeft: 16 }}>
+          <Skeleton width="100%" height="40px" borderRadius="8px" style={{ marginBottom: 24 }} />
+          
+          <Skeleton width="60%" height="20px" style={{ marginBottom: 16 }} />
+          
+          {/* Rating stars */}
+          <div style={{ display: 'flex', gap: 4, marginBottom: 20 }}>
+            {Array.from({ length: 5 }).map((_, i) => (
+              <Skeleton key={i} width="24px" height="24px" borderRadius="4px" />
+            ))}
+          </div>
+
+          {/* Distribution */}
+          <Skeleton width="70%" height="16px" style={{ marginBottom: 12 }} />
+          {Array.from({ length: 5 }).map((_, i) => (
+            <div key={i} style={{ display: 'flex', gap: 8, marginBottom: 6, alignItems: 'center' }}>
+              <Skeleton width="28px" height="20px" />
+              <Skeleton width="100%" height="20px" borderRadius="4px" />
+              <Skeleton width="32px" height="20px" />
+            </div>
+          ))}
+        </aside>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Skeleton for search results page
+ */
+export function SearchResultsSkeleton({ count = 12 }) {
+  return (
+    <div>
+      {/* Filter bar skeleton */}
+      <div style={{ 
+        display: 'flex', 
+        gap: 12, 
+        marginBottom: 24, 
+        padding: '12px 16px',
+        background: '#f9f9f9',
+        borderRadius: 8
+      }}>
+        {Array.from({ length: 4 }).map((_, i) => (
+          <Skeleton key={i} width="120px" height="36px" borderRadius="6px" />
+        ))}
+      </div>
+
+      {/* Results grid */}
+      <WorkGridSkeleton count={count} columns="repeat(auto-fill, minmax(180px, 1fr))" />
+    </div>
+  );
+}
+
+export default Skeleton;

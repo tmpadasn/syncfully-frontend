@@ -5,6 +5,7 @@ import { testConnection } from '../api/client';
 import { Link } from 'react-router-dom';
 import useNavigationWithClearFilters from '../hooks/useNavigationWithClearFilters';
 import useAuth from '../hooks/useAuth';
+import { WorkGridSkeleton, FriendGridSkeleton } from '../components/Skeleton';
 
 // Default avatar for users without profile picture
 const defaultAvatarUrl = 'https://upload.wikimedia.org/wikipedia/commons/a/ac/Default_pfp.jpg';
@@ -231,7 +232,7 @@ export default function Home() {
             <>
               <h3 className="section-title">NEW FROM FRIENDS</h3>
               {friendsLoading ? (
-                <p>Loading friends...</p>
+                <FriendGridSkeleton count={4} />
               ) : friends.length === 0 ? (
                 <p>No recent activity from friends.</p>
               ) : (
@@ -257,7 +258,7 @@ export default function Home() {
           </h3>
 
           {loading ? (
-            <p>Loading popular works...</p>
+            <WorkGridSkeleton count={6} columns="repeat(auto-fill, minmax(180px, 1fr))" />
           ) : (
             <div
               style={{

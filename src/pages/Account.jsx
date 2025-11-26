@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import useAuth from "../hooks/useAuth";
+import { Skeleton } from "../components/Skeleton";
 
 import { 
   getUserById, 
@@ -73,7 +74,20 @@ export default function Account() {
   }, [authLoading, user]);
 
   if (authLoading) {
-    return <p>Loading your account…</p>;
+    return (
+      <div style={{ textAlign: 'center', padding: '40px 20px', minHeight: '100vh' }}>
+        <div style={{ maxWidth: '820px', margin: '0 auto' }}>
+          <Skeleton width="160px" height="160px" borderRadius="50%" style={{ margin: '0 auto 24px' }} />
+          <Skeleton width="200px" height="32px" style={{ margin: '0 auto 12px' }} />
+          <Skeleton width="150px" height="20px" style={{ margin: '0 auto 24px' }} />
+          <div style={{ display: 'flex', gap: 16, justifyContent: 'center', marginBottom: 40 }}>
+            <Skeleton width="120px" height="80px" borderRadius="12px" />
+            <Skeleton width="120px" height="80px" borderRadius="12px" />
+            <Skeleton width="120px" height="80px" borderRadius="12px" />
+          </div>
+        </div>
+      </div>
+    );
   }
 
   if (!user) {
@@ -83,7 +97,17 @@ export default function Account() {
   if (loading || !backendUser) {
     return (
       <div style={{ textAlign: 'center', padding: '40px 20px', minHeight: '100vh' }}>
-        <p style={{ fontSize: '16px', color: '#666' }}>Loading your account…</p>
+        <div style={{ maxWidth: '820px', margin: '0 auto' }}>
+          <Skeleton width="160px" height="160px" borderRadius="50%" style={{ margin: '0 auto 24px' }} />
+          <Skeleton width="200px" height="32px" style={{ margin: '0 auto 12px' }} />
+          <Skeleton width="150px" height="20px" style={{ margin: '0 auto 24px' }} />
+          <div style={{ display: 'flex', gap: 16, justifyContent: 'center', marginBottom: 40 }}>
+            <Skeleton width="120px" height="80px" borderRadius="12px" />
+            <Skeleton width="120px" height="80px" borderRadius="12px" />
+            <Skeleton width="120px" height="80px" borderRadius="12px" />
+          </div>
+          <Skeleton width="100%" height="200px" borderRadius="16px" />
+        </div>
       </div>
     );
   }

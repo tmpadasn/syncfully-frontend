@@ -4,6 +4,7 @@ import useAuth from '../hooks/useAuth';
 import { getUserRecommendations } from '../api/users';
 import { getAllWorks } from '../api/works';
 import useNavigationWithClearFilters from '../hooks/useNavigationWithClearFilters';
+import { WorkGridSkeleton } from '../components/Skeleton';
 
 export default function Recommendations() {
   useNavigationWithClearFilters();
@@ -191,7 +192,7 @@ export default function Recommendations() {
           {/* CURRENT */}
           <h3 className="section-title">BASED ON YOUR LATEST INTEREST</h3>
           {loading ? (
-            <p style={{ color: '#392c2cff' }}>Loading recommendations...</p>
+            <WorkGridSkeleton count={5} columns="repeat(auto-fill, minmax(180px, 1fr))" />
           ) : lists.current.length > 0 ? (
             renderGrid(lists.current)
           ) : (
@@ -205,7 +206,7 @@ export default function Recommendations() {
             BASED ON YOUR PROFILE
           </h3>
           {loading ? (
-            <p style={{ color: '#392c2cff' }}>Loading recommendations...</p>
+            <WorkGridSkeleton count={5} columns="repeat(auto-fill, minmax(180px, 1fr))" />
           ) : lists.profile.length > 0 ? (
             renderGrid(lists.profile)
           ) : (
