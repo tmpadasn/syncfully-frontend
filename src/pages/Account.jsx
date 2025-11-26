@@ -36,19 +36,34 @@ export default function Account() {
         const [u, ratingsResponse, allWorks] = await Promise.all([
           getUserById(userId),
           getUserRatings(userId),
-          getAllWorks()
+          getAllWorks().catch(err => {
+            console.error("Failed to fetch works:", err);
+            return { works: [] };
+          })
         ]);
 
         setBackendUser(u);
 
         // Backend returns an object map of ratings keyed by workId
         const ratingsObject = ratingsResponse?.ratings || ratingsResponse || {};
-        setRatings(ratingsObject);
-        setWorks(allWorks?.works || []);
+        
+        // Filter out work IDs that don't exist in the works list
+        const validWorks = allWorks?.works || [];
+        const validWorkIds = new Set(validWorks.map(w => w.id || w.workId));
+        const filteredRatings = Object.keys(ratingsObject).reduce((acc, workId) => {
+          if (validWorkIds.has(Number(workId))) {
+            acc[workId] = ratingsObject[workId];
+          }
+          return acc;
+        }, {});
+
+        setRatings(filteredRatings);
+        setWorks(validWorks);
 
       } catch (err) {
-        // Silently handle errors; show loading state if needed
-        console.log("Account load failed - using empty state");
+        // Handle errors - set backendUser to the auth user if API fails
+        console.error("Account load failed:", err);
+        setBackendUser(user);
       } finally {
         setLoading(false);
       }
@@ -57,8 +72,20 @@ export default function Account() {
     load();
   }, [authLoading, user]);
 
-  if (authLoading || loading || !backendUser) {
+  if (authLoading) {
     return <p>Loading your account…</p>;
+  }
+
+  if (!user) {
+    return <p>Please log in to view your account</p>;
+  }
+
+  if (loading || !backendUser) {
+    return (
+      <div style={{ textAlign: 'center', padding: '40px 20px', minHeight: '100vh' }}>
+        <p style={{ fontSize: '16px', color: '#666' }}>Loading your account…</p>
+      </div>
+    );
   }
 
   /* ---------------------------------------------------------

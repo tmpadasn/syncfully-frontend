@@ -4,6 +4,8 @@ import { getWork, getWorkRatings, postWorkRating, getSimilarWorks } from '../api
 import WorkCard from '../components/WorkCard';
 import useNavigationWithClearFilters from '../hooks/useNavigationWithClearFilters';
 import useAuth from '../hooks/useAuth';
+import useShelves from '../hooks/useShelves';
+import AddToShelfBtn from '../components/AddToShelfBtn';
 
 // Helper functions for data processing
 const processWorkData = (workResponse) => {
@@ -63,6 +65,7 @@ export default function WorkDetails() {
   useNavigationWithClearFilters();
   const navigate = useNavigate();
   const { user, isGuest } = useAuth();
+  const { shelves } = useShelves(user?.userId);
   const { workId } = useParams();
 
   const loggedUserId = user?.userId || null;
@@ -71,7 +74,7 @@ export default function WorkDetails() {
   const [ratings, setRatings] = useState([]);
   const [similar, setSimilar] = useState([]);
   const [recommended, setRecommended] = useState([]);
-  const [score, setScore] = useState(4);
+  const [score, setScore] = useState(0);
   const [hoverScore, setHoverScore] = useState(0);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState(null);
@@ -83,6 +86,7 @@ export default function WorkDetails() {
 
   useEffect(() => {
     setLoading(true);
+    setScore(0); // Reset score when navigating to a new work
 
     Promise.all([
       getWork(workId),
@@ -113,6 +117,16 @@ export default function WorkDetails() {
       })
       .finally(() => setLoading(false));
   }, [workId]);
+
+  // Set the score to user's existing rating when ratings load
+  useEffect(() => {
+    if (!isGuest && ratings.length > 0 && loggedUserId) {
+      const userRating = ratings.find((r) => r.userId === loggedUserId);
+      if (userRating) {
+        setScore(Math.round(Number(userRating.score) || 0));
+      }
+    }
+  }, [ratings, loggedUserId, isGuest]);
 
   // ---------- RATING ----------
   const submitRating = async (overrideScore) => {
@@ -167,13 +181,6 @@ export default function WorkDetails() {
 
     setComments((prev) => [c, ...prev]);
     setNewComment('');
-  };
-
-  const addToShelf = () => {
-    const shelf = JSON.parse(localStorage.getItem('shelves') || '[]');
-    shelf.push({ workId: work.workId, title: work.title });
-    localStorage.setItem('shelves', JSON.stringify(shelf));
-    // Silent success - no banner
   };
 
   // Rating buckets
@@ -441,6 +448,20 @@ export default function WorkDetails() {
             maxWidth: 280,
           }}
         >
+          {/* Add to Shelf Button */}
+          {!isGuest && shelves.length > 0 && (
+            <div style={{ marginBottom: 24 }}>
+              <AddToShelfBtn 
+                workId={parseInt(workId)} 
+                userId={user?.userId}
+                shelves={shelves}
+                onSuccess={() => {
+                  // Optional: Refresh or show confirmation
+                }}
+              />
+            </div>
+          )}
+
           <div style={{ display: 'inline-block', marginBottom: 16 }}>
             <h3 className="section-title">RATINGS</h3>
           </div>
@@ -602,45 +623,7 @@ export default function WorkDetails() {
             )}
           </div>
 
-          {/* ADD TO SHELF */}
-          <div>
-            <button
-              disabled={isGuest}
-              onClick={() => {
-                if (isGuest) {
-                  navigate('/login', {
-                    state: { message: 'You must log in to save works to your shelf.' },
-                  });
-                  return;
-                }
-                addToShelf();
-              }}
-              style={{
-                background: isGuest ? '#0b662380' : '#0b6623', // faded when guest
-                color: '#fff',
-                padding: '12px 20px',
-                border: 'none',
-                borderRadius: 6,
-                fontWeight: 600,
-                fontSize: 13,
-                cursor: isGuest ? 'not-allowed' : 'pointer',
-                width: '100%',
-                opacity: isGuest ? 0.5 : 1,
-                transition: 'background-color 0.2s ease',
-                textTransform: 'uppercase',
-                letterSpacing: '0.5px',
-              }}
-              onMouseEnter={(e) => {
-                if (!isGuest) e.currentTarget.style.backgroundColor = '#0d7225';
-              }}
-              onMouseLeave={(e) => {
-                if (!isGuest) e.currentTarget.style.backgroundColor = '#0b6623';
-              }}
-            >
-              {isGuest ? 'Login to Add to Shelf' : 'Add to Shelf'}
-            </button>
-
-          </div>
+          {/* Add to shelf actions moved to top-right AddToShelfBtn - old/localStorage button removed */}
         </aside>
       </div>
     </div>

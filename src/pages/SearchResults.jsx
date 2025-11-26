@@ -175,23 +175,31 @@ export default function SearchResults() {
                               navigate(`/profile/${entity.entityId}`, { state: { prevSearch: search } });
                             }
                           }}
-                          style={{ flexShrink: 0, cursor: 'pointer' }}
+                          style={{ 
+                            flexShrink: 0, 
+                            cursor: 'pointer',
+                            transition: 'transform 0.2s ease, box-shadow 0.2s ease'
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.transform = 'translateY(-4px)';
+                            e.currentTarget.style.boxShadow = '0 6px 16px rgba(0,0,0,0.15)';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.transform = 'translateY(0)';
+                            e.currentTarget.style.boxShadow = 'none';
+                          }}
                         >
                           <div style={{ 
                             width: entity.kind === 'user' ? 96 : 96, 
                             height: entity.kind === 'user' ? 96 : 140, 
                             overflow: 'hidden', 
                             borderRadius: entity.kind === 'user' ? '50%' : 4, 
-                            cursor: 'pointer', 
-                            transition: 'transform 0.2s',
+                            cursor: 'pointer',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
                             background: '#f2f2f2'
-                          }}
-                               onMouseEnter={(e) => e.target.style.transform = 'scale(1.05)'}
-                               onMouseLeave={(e) => e.target.style.transform = 'scale(1)'}
-                          >
+                          }}>
                             <img src={entity.coverUrl} alt={entity.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                           </div>
                         </div>

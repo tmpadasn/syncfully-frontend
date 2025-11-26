@@ -4,3 +4,4 @@ export * from './users';
 export * from './works';
 export * from './search';
 export * from './ratings';
+export * from './shelves';
