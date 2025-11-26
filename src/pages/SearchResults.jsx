@@ -2,15 +2,17 @@ import { useEffect, useState } from 'react';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
 import { getAllWorks } from '../api/works';
 import { searchItems } from '../api/search';
-import { addWorkToShelf } from '../api/shelves';
+import { addWorkToShelf, removeWorkFromShelf, getOrCreateFavouritesShelf, getUserShelves, getShelfWorks } from '../api/shelves';
 import FilterBar from '../components/FilterBar';
 import useNavigationWithClearFilters from '../hooks/useNavigationWithClearFilters';
-import { FiPlus, FiCheck, FiX, FiArrowLeft } from 'react-icons/fi';
+import useAuth from '../hooks/useAuth';
+import { FiPlus, FiCheck, FiX, FiArrowLeft, FiHeart } from 'react-icons/fi';
 
 export default function SearchResults() {
   const { search } = useLocation();
   const navigate = useNavigate();
   const { navigateAndClearFilters } = useNavigationWithClearFilters();
+  const { user } = useAuth();
   const params = new URLSearchParams(search);
   const query = params.get('q') || '';
   const typeFilter = params.get('type') || '';        // TYPE filter (movie, book, music, user, etc.)
@@ -26,6 +28,82 @@ export default function SearchResults() {
   const [loading, setLoading] = useState(true);
   const [addedWorks, setAddedWorks] = useState(new Set());
   const [addingWork, setAddingWork] = useState(null);
+  const [favouritedWorks, setFavouritedWorks] = useState(new Set());
+  const [favouritingWork, setFavouritingWork] = useState(null);
+  const [favouritesShelfId, setFavouritesShelfId] = useState(null);
+
+  // Load user's Favourites shelf and check which works are already in it
+  useEffect(() => {
+    const loadFavourites = async () => {
+      if (!user) return;
+      
+      try {
+        console.log('🔄 Loading favourites for user:', user.userId);
+        
+        // Get user's shelves
+        const shelvesData = await getUserShelves(user.userId);
+        console.log('📚 User shelves data:', shelvesData);
+        
+        // Extract the shelves array from the response: {success: true, data: {shelves: [...]}}
+        const shelves = Array.isArray(shelvesData) 
+          ? shelvesData 
+          : (shelvesData.data?.shelves || shelvesData.shelves || []);
+        console.log('📚 Shelves array:', shelves);
+        console.log('📚 Shelves count:', shelves.length);
+        if (shelves.length > 0) {
+          console.log('📚 Shelf names:', shelves.map(s => s.name));
+        }
+        
+        // Find or create Favourites shelf
+        const favourites = await getOrCreateFavouritesShelf(user.userId, shelves);
+        console.log('⭐ Favourites shelf after getOrCreate:', favourites);
+        console.log('⭐ Favourites shelf:', favourites);
+        setFavouritesShelfId(favourites.shelfId);
+        
+        // Get works in Favourites shelf
+        const favouritesWorksData = await getShelfWorks(favourites.shelfId);
+        console.log('📦 Raw favourites works data:', favouritesWorksData);
+        
+        // Extract works array from API response: {success: true, data: {works: [...]}}
+        let favouritesWorks = [];
+        if (favouritesWorksData.data && favouritesWorksData.data.works) {
+          favouritesWorks = favouritesWorksData.data.works;
+        } else if (favouritesWorksData.works) {
+          favouritesWorks = favouritesWorksData.works;
+        } else if (Array.isArray(favouritesWorksData)) {
+          favouritesWorks = favouritesWorksData;
+        }
+        console.log('✨ Favourites works array:', favouritesWorks);
+        
+        // Create a set of work IDs that are in Favourites
+        // Handles both populated work objects and primitive IDs from mock data
+        const extractedIds = favouritesWorks.map(w => {
+          if (w === null || w === undefined) {
+            return null;
+          }
+
+          if (typeof w === 'string' || typeof w === 'number') {
+            console.log('Work in Favourites (primitive ID):', w);
+            return String(w);
+          }
+
+          const nestedWork = typeof w.work === 'object' ? w.work : null;
+          const nestedWorkId = nestedWork ? (nestedWork.id || nestedWork._id) : null;
+          const id = w.id || w.workId || w._id || w.entityId || nestedWorkId;
+          console.log('Work in Favourites (object):', w.title || w.name || 'Unknown title', 'Extracted ID:', id);
+          return id ? String(id) : null;
+        }).filter(Boolean);
+
+        const workIds = new Set(extractedIds);
+        console.log('💾 Favourited work IDs (as strings):', Array.from(workIds));
+        setFavouritedWorks(workIds);
+      } catch (error) {
+        console.error('❌ Failed to load favourites:', error);
+      }
+    };
+    
+    loadFavourites();
+  }, [user]);
 
   // Generate dynamic page title based on filters
   const getPageTitle = () => {
@@ -126,7 +204,7 @@ export default function SearchResults() {
         const mappedWorks = (filters.itemType === 'user') ? [] : validItems
           .filter(item => !(item.userId || item.username) || item.title) // Items with title are works
           .map(item => ({
-            entityId: item.id || item.workId,
+            entityId: String(item.id || item.workId),
             kind: 'work',
             title: item.title,
             coverUrl: item.coverUrl || '/album_covers/default.jpg',
@@ -177,6 +255,15 @@ export default function SearchResults() {
           searchTerm
         });
         
+        // Debug: Log the first few work IDs from search results
+        if (mappedWorks.length > 0) {
+          console.log('🔍 Sample work IDs from search results:', mappedWorks.slice(0, 3).map(w => ({
+            title: w.title,
+            entityId: w.entityId,
+            type: typeof w.entityId
+          })));
+        }
+        
         setResults({ works: mappedWorks, users: mappedUsers });
       } catch (error) {
         console.error('Failed to fetch results:', error);
@@ -200,6 +287,74 @@ export default function SearchResults() {
     } catch (error) {
       console.error('Failed to add work to shelf:', error);
       setAddingWork(null);
+    }
+  };
+
+  const handleAddToFavourites = async (workId) => {
+    if (!user) {
+      console.log('⏭️ Skipping - no user');
+      return;
+    }
+    
+    const workIdStr = String(workId);
+    const isCurrentlyFavourited = favouritedWorks.has(workIdStr);
+    
+    console.log('💗 Toggling favourite for work:', workId, 'Currently favourited:', isCurrentlyFavourited);
+    setFavouritingWork(workId);
+    
+    try {
+      let shelfId = favouritesShelfId;
+      
+      // If we don't have the shelf ID yet, get or create it
+      if (!shelfId) {
+        console.log('🔍 No shelf ID, creating/fetching Favourites shelf');
+        const shelvesData = await getUserShelves(user.userId);
+        console.log('📚 Fetched shelves data:', shelvesData);
+        
+        // Extract the shelves array from the response: {success: true, data: {shelves: [...]}}
+        const shelves = Array.isArray(shelvesData) 
+          ? shelvesData 
+          : (shelvesData.data?.shelves || shelvesData.shelves || []);
+        console.log('📚 Shelves array:', shelves);
+        
+        const favourites = await getOrCreateFavouritesShelf(user.userId, shelves);
+        shelfId = favourites.shelfId;
+        setFavouritesShelfId(shelfId);
+        console.log('✅ Got shelf ID:', shelfId);
+      }
+      
+      if (isCurrentlyFavourited) {
+        // Remove from favourites
+        console.log('➖ Removing work', workId, 'from shelf', shelfId);
+        await removeWorkFromShelf(shelfId, workId);
+        console.log('✅ Work removed successfully!');
+        
+        setFavouritedWorks(prev => {
+          const newSet = new Set([...prev]);
+          newSet.delete(workIdStr);
+          console.log('💾 Updated favourited works (removed):', Array.from(newSet));
+          return newSet;
+        });
+      } else {
+        // Add to favourites
+        console.log('➕ Adding work', workId, 'to shelf', shelfId);
+        await addWorkToShelf(shelfId, workId);
+        console.log('✅ Work added successfully!');
+        
+        setFavouritedWorks(prev => {
+          const newSet = new Set([...prev, workIdStr]);
+          console.log('💾 Updated favourited works (added):', Array.from(newSet));
+          return newSet;
+        });
+      }
+      
+      setTimeout(() => {
+        setFavouritingWork(null);
+        console.log('✨ Animation complete');
+      }, 500);
+    } catch (error) {
+      console.error('❌ Failed to toggle favourite:', error);
+      setFavouritingWork(null);
     }
   };
 
@@ -359,11 +514,71 @@ export default function SearchResults() {
                         WORKS ({results.works.length})
                       </h2>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                        {results.works.map((entity, idx) => (
+                        {results.works.map((entity, idx) => {
+                          // Debug: Check if this work is favourited
+                          const isFavourited = favouritedWorks.has(String(entity.entityId));
+                          if (idx === 0) {
+                            console.log('🔍 First work check:', {
+                              entityId: entity.entityId,
+                              entityIdType: typeof entity.entityId,
+                              favouritedWorks: Array.from(favouritedWorks),
+                              isFavourited: isFavourited
+                            });
+                          }
+                          
+                          return (
                           <div key={entity.entityId}>
                             <div style={{ width: '100%', display: 'flex', gap: 12, alignItems: 'flex-start', position: 'relative' }}>
                               
-                              {/* Plus button for adding to shelf */}
+                              {/* Heart button for Favourites - always shown */}
+                              {user && (
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    console.log('❤️ Heart clicked for work:', entity.entityId);
+                                    console.log('Current favourited works:', Array.from(favouritedWorks));
+                                    console.log('Is favourited?', favouritedWorks.has(String(entity.entityId)));
+                                    handleAddToFavourites(entity.entityId);
+                                  }}
+                                  disabled={favouritingWork === entity.entityId}
+                                  style={{
+                                    position: 'absolute',
+                                    top: 8,
+                                    right: addToShelfId ? 52 : 8,
+                                    width: 32,
+                                    height: 32,
+                                    borderRadius: '50%',
+                                    border: 'none',
+                                    background: '#9a4207c8',
+                                    color: 'white',
+                                    cursor: favouritingWork === entity.entityId ? 'default' : 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
+                                    transition: 'all 0.2s ease',
+                                    zIndex: 10,
+                                    opacity: favouritingWork === entity.entityId ? 0.6 : 1
+                                  }}
+                                  onMouseEnter={(e) => {
+                                    if (favouritingWork !== entity.entityId) {
+                                      e.currentTarget.style.transform = 'scale(1.1)';
+                                      e.currentTarget.style.background = '#7d3506';
+                                    }
+                                  }}
+                                  onMouseLeave={(e) => {
+                                    e.currentTarget.style.transform = 'scale(1)';
+                                    e.currentTarget.style.background = '#9a4207c8';
+                                  }}
+                                >
+                                  <FiHeart 
+                                    size={16} 
+                                    fill={favouritedWorks.has(String(entity.entityId)) ? 'white' : 'none'}
+                                  />
+                                </button>
+                              )}
+                              
+                              {/* Plus button for adding to shelf - only shown when in add mode */}
                               {addToShelfId && (
                                 <button
                                   onClick={(e) => {
@@ -458,7 +673,8 @@ export default function SearchResults() {
                               }} />
                             )}
                           </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     </div>
                   )}

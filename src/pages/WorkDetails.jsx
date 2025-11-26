@@ -290,44 +290,50 @@ export default function WorkDetails() {
           <div
             style={{
               marginTop: 12,
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
+              width: 180,
             }}
           >
-            <div style={{ display: 'inline-block' }}>
-              <h3 className="section-title">WHERE TO FIND</h3>
-            </div>
-
             {work && work.findAt && work.findAt.length > 0 ? (
-              <ul style={{ listStyle: 'none', padding: 0, margin: '8px 0' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 16 }}>
                 {work.findAt.map((f, i) => (
-                  <li
+                  <a
                     key={i}
+                    href={f.url}
+                    target="_blank"
+                    rel="noreferrer"
                     style={{
                       display: 'flex',
                       alignItems: 'center',
-                      gap: 8,
                       justifyContent: 'center',
+                      gap: 10,
+                      padding: '14px 20px',
+                      background: 'linear-gradient(135deg, #9a4207, #b95716)',
+                      color: 'white',
+                      textDecoration: 'none',
+                      borderRadius: 10,
+                      fontWeight: '700',
+                      fontSize: 14,
+                      boxShadow: '0 4px 12px rgba(154, 66, 7, 0.3)',
+                      transition: 'all 0.2s ease',
+                      border: 'none',
+                      cursor: 'pointer',
+                      width: '100%',
+                      boxSizing: 'border-box'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.transform = 'translateY(-2px)';
+                      e.currentTarget.style.boxShadow = '0 6px 16px rgba(154, 66, 7, 0.4)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.transform = 'translateY(0)';
+                      e.currentTarget.style.boxShadow = '0 4px 12px rgba(154, 66, 7, 0.3)';
                     }}
                   >
-                    <a
-                      href={f.url}
-                      target="_blank"
-                      rel="noreferrer"
-                      style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: 8,
-                      }}
-                    >
-                      <span style={{ color: '#111' }}>
-                        {f.label || f.url}
-                      </span>
-                    </a>
-                  </li>
+                    <span>🔗</span>
+                    <span>Find it Here{f.label && f.label !== 'External Link' ? `: ${f.label}` : ''}</span>
+                  </a>
                 ))}
-              </ul>
+              </div>
             ) : (
               <p>Available from online stores and libraries.</p>
             )}

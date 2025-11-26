@@ -124,16 +124,22 @@ export const getOrCreateFavouritesShelf = async (userId, userShelves) => {
   );
 
   if (favouritesShelf) {
+    console.log('✅ Found existing Favourites shelf:', favouritesShelf);
     return favouritesShelf;
   }
 
   // Create Favourites shelf if it doesn't exist
   try {
+    console.log('🆕 Creating new Favourites shelf for user:', userId);
     const response = await createShelf(userId, {
       name: 'Favourites',
       description: 'My favorite works'
     });
-    return response.data;
+    console.log('📦 Create shelf response:', response);
+    // Extract the shelf from response: {success: true, data: <shelf>, message: 'Success'}
+    const newShelf = response.data || response;
+    console.log('✅ Created new Favourites shelf:', newShelf);
+    return newShelf;
   } catch (error) {
     console.error('Error creating Favourites shelf:', error);
     throw error;

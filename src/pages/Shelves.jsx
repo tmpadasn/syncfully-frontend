@@ -6,6 +6,7 @@ import { getWork } from '../api/works';
 import { getUserRatings } from '../api/users';
 import { removeWorkFromShelf } from '../api/shelves';
 import { FiPlus, FiTrash2, FiEdit2, FiX, FiChevronDown, FiHeart } from 'react-icons/fi';
+import WorkCardCarousel from '../components/WorkCardCarousel';
 
 const styles = {
   container: {
@@ -750,114 +751,83 @@ export default function Shelves() {
                   ) : !shelfWorks[shelf.shelfId] || shelfWorks[shelf.shelfId].length === 0 ? (
                     <div style={styles.emptyShelf}>This shelf is empty</div>
                   ) : (
-                    <div style={styles.worksList}>
-                      {shelfWorks[shelf.shelfId].map(work => {
-                        const r = userRatings[work.workId] || userRatings[String(work.workId)];
+                    <WorkCardCarousel
+                      cards={shelfWorks[shelf.shelfId].map(work => {
+                        if (!work) return null;
+                        const rating = userRatings[work.workId] || userRatings[String(work.workId)];
                         const isMarkedForRemoval = removingWork?.shelfId === shelf.shelfId && removingWork?.workId === work.workId;
+                        const badgeText = rating ? `${rating.score}★` : 'Unrated';
+
+                        return {
+                          id: `${shelf.shelfId}-${work.workId}`,
+                          title: work.title || `Work ${work.workId}`,
+                          coverUrl: work.coverUrl,
+                          badge: {
+                            text: badgeText,
+                            background: rating ? 'rgba(0, 0, 0, 0.8)' : 'rgba(0, 0, 0, 0.4)',
+                            color: rating ? '#ff9f5a' : '#fff'
+                          },
+                          metaPrimary: rating
+                            ? `Rated on ${new Date(rating.ratedAt || rating.createdAt).toLocaleDateString()}`
+                            : 'Not Rated yet',
+                          metaSecondary: work.year ? `${work.type || 'Work'} • ${work.year}` : undefined,
+                          link: `/works/${work.workId}`,
+                          data: {
+                            shelfId: shelf.shelfId,
+                            workId: work.workId,
+                            isMarkedForRemoval
+                          }
+                        };
+                      }).filter(Boolean)}
+                      emptyMessage="This shelf is empty"
+                      renderCardExtras={(card, { isHovered }) => {
+                        if (!card?.data) return null;
+                        const { shelfId: cardShelfId, workId: cardWorkId, isMarkedForRemoval } = card.data;
+                        const showButton = isHovered || isMarkedForRemoval;
                         return (
-                          <div
-                            key={work.workId}
-                            style={styles.workCard}
+                          <button
+                            style={{
+                              position: 'absolute',
+                              top: 12,
+                              right: 12,
+                              background: isMarkedForRemoval ? '#d4b895' : '#9a4207',
+                              color: isMarkedForRemoval ? '#392c2c' : '#fff',
+                              border: 'none',
+                              borderRadius: 6,
+                              padding: isMarkedForRemoval ? '6px 10px' : '4px 6px',
+                              fontSize: 12,
+                              fontWeight: 600,
+                              cursor: 'pointer',
+                              transition: 'all 0.2s ease',
+                              boxShadow: '0 2px 6px rgba(0,0,0,0.2)',
+                              opacity: showButton ? 1 : 0,
+                              pointerEvents: showButton ? 'auto' : 'none',
+                              zIndex: 20
+                            }}
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              handleRemoveFromShelf(cardShelfId, cardWorkId);
+                            }}
                             onMouseEnter={(e) => {
-                              if (!isMarkedForRemoval) {
-                                e.currentTarget.style.transform = 'translateY(-4px)';
-                                e.currentTarget.style.boxShadow = '0 6px 18px rgba(0,0,0,0.12)';
-                                const btn = e.currentTarget.querySelector('button');
-                                if (btn) {
-                                  btn.style.opacity = '1';
-                                  btn.style.pointerEvents = 'auto';
-                                }
-                              }
+                              e.currentTarget.style.background = isMarkedForRemoval ? '#c9a679' : '#7a3506';
                             }}
                             onMouseLeave={(e) => {
-                              e.currentTarget.style.transform = 'none';
-                              e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.06)';
-                              
-                              // Reset removal state when leaving the work card
-                              if (isMarkedForRemoval) {
-                                setRemovingWork(null);
-                              }
-                              
-                              const btn = e.currentTarget.querySelector('button');
-                              if (btn && !isMarkedForRemoval) {
-                                btn.style.opacity = '0';
-                                btn.style.pointerEvents = 'none';
-                                btn.style.background = '#9a4207'; // Reset to default theme color
-                              }
+                              e.currentTarget.style.background = isMarkedForRemoval ? '#d4b895' : '#9a4207';
                             }}
+                            title={isMarkedForRemoval ? 'Confirm removal' : 'Remove from shelf'}
                           >
-                            {isMarkedForRemoval ? (
-                              <button
-                                style={styles.confirmRemoveButton}
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleRemoveFromShelf(shelf.shelfId, work.workId);
-                                }}
-                                onMouseEnter={(e) => {
-                                  e.currentTarget.style.background = '#c9a679';
-                                }}
-                                onMouseLeave={(e) => {
-                                  e.currentTarget.style.background = '#d4b895';
-                                }}
-                                title="Confirm removal"
-                              >
-                                ✓ Remove
-                              </button>
-                            ) : (
-                              <button
-                                style={styles.removeButton}
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleRemoveFromShelf(shelf.shelfId, work.workId);
-                                }}
-                                onMouseEnter={(e) => {
-                                  e.currentTarget.style.background = '#7a3506';
-                                }}
-                                onMouseLeave={(e) => {
-                                  e.currentTarget.style.background = '#9a4207';
-                                }}
-                                title="Remove from shelf"
-                              >
-                                <FiX size={16} />
-                              </button>
-                            )}
-                            <img
-                              src={work.coverUrl}
-                              alt={work.title || 'Work cover'}
-                              style={styles.coverImage}
-                              onError={(e) => {
-                                console.log('Image error for work:', work.workId, work.coverUrl);
-                                e.target.src = '/album_covers/default.jpg';
-                              }}
-                            />
-                            <div style={styles.workInfo}>
-                              <strong 
-                                title={work.title}
-                                style={{
-                                  display: 'block',
-                                  overflow: 'hidden',
-                                  textOverflow: 'ellipsis',
-                                  whiteSpace: 'nowrap',
-                                  marginBottom: 4
-                                }}
-                              >
-                                {work.title || `Work ${work.workId}`}
-                              </strong>
-                              {r ? (
-                                <>
-                                  <div style={styles.ratingText}>Score: {r.score}★</div>
-                                  <div style={styles.ratingDate}>
-                                    {new Date(r.ratedAt || r.createdAt).toLocaleDateString()}
-                                  </div>
-                                </>
-                              ) : (
-                                <div style={styles.ratingText}>Unrated</div>
-                              )}
-                            </div>
-                          </div>
+                            {isMarkedForRemoval ? '✓ Remove' : <FiX size={14} />}
+                          </button>
                         );
-                      })}
-                    </div>
+                      }}
+                      onCardMouseLeave={(card) => {
+                        // Reset removal state when mouse leaves the card
+                        if (card?.data?.isMarkedForRemoval && removingWork) {
+                          setRemovingWork(null);
+                        }
+                      }}
+                    />
                   )}
                 </div>
               )}
