@@ -18,12 +18,10 @@ export default function UserRatings({ ratings = {}, works = [] }) {
       id: workId,
       title: work.title,
       coverUrl: work.coverUrl,
-      badge: {
-        text: `${rating.score}★`,
-        background: 'rgba(0, 0, 0, 0.8)',
-        color: '#ff9f5a'
-      },
-      metaPrimary: rating ? `Rated on ${new Date(rating.ratedAt).toLocaleDateString()}` : 'Not Rated yet',
+      averageRating: work.averageRating || work.rating || 0,
+      userRating: rating?.score || null,
+      ratedAt: rating?.ratedAt || null,
+      metaPrimary: work.creator || work.author || work.artist || 'Unknown Creator',
       metaSecondary: work.year ? `${work.type || 'Work'} • ${work.year}` : (work.type || undefined),
       link: `/works/${work.id || work.workId}`
     };

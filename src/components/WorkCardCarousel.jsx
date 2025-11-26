@@ -182,14 +182,15 @@ export default function WorkCardCarousel({
                         e.target.src = '/album_covers/default.jpg';
                       }}
                     />
-                    {badge?.text && (
+                    {/* Average rating - always displayed in top right */}
+                    {card.averageRating !== undefined && card.averageRating !== null && (
                       <div
                         style={{
                           position: 'absolute',
                           top: 8,
                           right: 8,
-                          background: badge.background || 'rgba(0, 0, 0, 0.8)',
-                          color: badge.color || '#ff9f5a',
+                          background: '#392c2c',
+                          color: '#d4b895',
                           padding: '4px 10px',
                           borderRadius: 16,
                           fontSize: 14,
@@ -199,7 +200,7 @@ export default function WorkCardCarousel({
                           gap: 2
                         }}
                       >
-                        {badge.text}
+                        ★ {typeof card.averageRating === 'number' ? card.averageRating.toFixed(1) : card.averageRating}
                       </div>
                     )}
                   </div>
@@ -227,6 +228,18 @@ export default function WorkCardCarousel({
                     >
                       {title}
                     </strong>
+                    {/* Your Rating */}
+                    {card.userRating !== undefined && (
+                      <div style={{ fontSize: 12, color: 'rgba(57, 44, 44, 0.9)', marginBottom: 2 }}>
+                        <strong>Your Rating:</strong> {card.userRating !== null ? `${card.userRating}★` : 'Not rated'}
+                      </div>
+                    )}
+                    {/* Rated on date */}
+                    {card.ratedAt && (
+                      <div style={{ fontSize: 11, color: 'rgba(57, 44, 44, 0.7)', marginBottom: 4 }}>
+                        <strong>Rated on:</strong> {new Date(card.ratedAt).toLocaleDateString()}
+                      </div>
+                    )}
                     {card.metaPrimary && (
                       <div style={{ fontSize: 12, color: 'rgba(57, 44, 44, 0.9)', marginBottom: 4 }}>
                         {card.metaPrimary}

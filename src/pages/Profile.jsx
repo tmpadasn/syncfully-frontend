@@ -112,8 +112,8 @@ export default function Profile() {
 
             {/* PROFILE SECTION */}
             <div style={profileCard}>
-              <div style={{ display: "flex", gap: 32, alignItems: "flex-start" }}>
-                {/* Avatar */}
+              <div style={{ display: "flex", gap: 48, alignItems: "center" }}>
+                {/* Column 1: Avatar */}
                 <img
                   src={
                     profileUser.profilePictureUrl ||
@@ -123,27 +123,16 @@ export default function Profile() {
                   style={avatarStyle}
                 />
 
-                {/* User Info */}
-                <div style={{ flex: 1 }}>
-                  <h2 style={{ margin: 0, marginBottom: 20, fontSize: 32, fontWeight: 800, color: "#3b2e2e" }}>
-                    {profileUser.username}
-                  </h2>
+                {/* Column 2: Username */}
+                <div style={{ flex: 1, textAlign: 'center' }}>
+                  <div style={{ ...infoLabel, fontSize: 14, marginBottom: 10 }}>USERNAME</div>
+                  <div style={{ ...infoText, fontSize: 22 }}>{profileUser.username}</div>
+                </div>
 
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
-                    <div>
-                      <div style={infoLabel}>Email Address</div>
-                      <div style={infoText}>{profileUser.email}</div>
-                    </div>
-
-                    <div>
-                      <div style={infoLabel}>Member Since</div>
-                      <div style={infoText}>
-                        {profileUser.createdAt
-                          ? new Date(profileUser.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })
-                          : "N/A"}
-                      </div>
-                    </div>
-                  </div>
+                {/* Column 3: Email Address */}
+                <div style={{ flex: 1, textAlign: 'center' }}>
+                  <div style={{ ...infoLabel, fontSize: 14, marginBottom: 10 }}>EMAIL ADDRESS</div>
+                  <div style={{ ...infoText, fontSize: 18 }}>{profileUser.email}</div>
                 </div>
               </div>
 

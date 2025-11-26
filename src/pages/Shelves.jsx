@@ -496,7 +496,8 @@ export default function Shelves() {
                     workId: workId,
                     title: `Work #${workId}`,
                     coverUrl: '/album_covers/default.jpg',
-                    type: 'unknown'
+                    type: 'unknown',
+                    averageRating: 0
                   };
                 }
 
@@ -506,7 +507,8 @@ export default function Shelves() {
                   coverUrl: workData.coverUrl || workData.cover || '/album_covers/default.jpg',
                   type: workData.type,
                   creator: workData.creator || workData.author,
-                  year: workData.year || workData.releaseYear
+                  year: workData.year || workData.releaseYear,
+                  averageRating: workData.averageRating || workData.rating || 0
                 };
               } catch (err) {
                 console.error(`Error loading work ${workId}:`, err);
@@ -514,7 +516,8 @@ export default function Shelves() {
                   workId: workId,
                   title: `Work #${workId}`,
                   coverUrl: '/album_covers/default.jpg',
-                  type: 'unknown'
+                  type: 'unknown',
+                  averageRating: 0
                 };
               }
             })
@@ -756,20 +759,15 @@ export default function Shelves() {
                         if (!work) return null;
                         const rating = userRatings[work.workId] || userRatings[String(work.workId)];
                         const isMarkedForRemoval = removingWork?.shelfId === shelf.shelfId && removingWork?.workId === work.workId;
-                        const badgeText = rating ? `${rating.score}★` : 'Unrated';
 
                         return {
                           id: `${shelf.shelfId}-${work.workId}`,
                           title: work.title || `Work ${work.workId}`,
                           coverUrl: work.coverUrl,
-                          badge: {
-                            text: badgeText,
-                            background: rating ? 'rgba(0, 0, 0, 0.8)' : 'rgba(0, 0, 0, 0.4)',
-                            color: rating ? '#ff9f5a' : '#fff'
-                          },
-                          metaPrimary: rating
-                            ? `Rated on ${new Date(rating.ratedAt || rating.createdAt).toLocaleDateString()}`
-                            : 'Not Rated yet',
+                          averageRating: work.averageRating || work.rating || 0,
+                          userRating: rating?.score || null,
+                          ratedAt: rating?.ratedAt || rating?.createdAt || null,
+                          metaPrimary: work.creator || work.author || work.artist || 'Unknown Creator',
                           metaSecondary: work.year ? `${work.type || 'Work'} • ${work.year}` : undefined,
                           link: `/works/${work.workId}`,
                           data: {

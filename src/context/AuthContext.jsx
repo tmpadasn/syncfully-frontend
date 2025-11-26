@@ -5,6 +5,7 @@ export const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
+  const [authLoading, setAuthLoading] = useState(true);
 
   // Add a default profile picture URL
   const DEFAULT_PROFILE_PIC = 'http://localhost:3000/uploads/profiles/profile_picture.jpg';
@@ -74,17 +75,23 @@ export function AuthProvider({ children }) {
 
   // Restore session
   useEffect(() => {
-    try {
-      const stored = localStorage.getItem('authUser');
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        if (parsed?.userId) {
-          setUser(parsed);
+    const restoreSession = async () => {
+      try {
+        const stored = localStorage.getItem('authUser');
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (parsed?.userId) {
+            setUser(parsed);
+          }
         }
+      } catch (err) {
+        // Silently fail if localStorage is unavailable
+      } finally {
+        setAuthLoading(false);
       }
-    } catch (err) {
-      // Silently fail if localStorage is unavailable
-    }
+    };
+    
+    restoreSession();
   }, []);
 
   const login = async (identifier, password) => {
@@ -119,6 +126,7 @@ export function AuthProvider({ children }) {
         user,
         setUser,
         isGuest: !user,
+        authLoading,
         login,
         signup,
         logout,

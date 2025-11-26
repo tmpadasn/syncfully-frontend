@@ -32,6 +32,90 @@ export default function SearchResults() {
   const [favouritingWork, setFavouritingWork] = useState(null);
   const [favouritesShelfId, setFavouritesShelfId] = useState(null);
 
+  const normalizeWorkEntity = (item) => {
+    if (!item) return null;
+
+    const entityId = item.entityId || item.id || item.workId || item._id;
+    if (!entityId) return null;
+
+    const genresArray = Array.isArray(item.genres)
+      ? item.genres
+      : (typeof item.genre === 'string' ? item.genre.split(/[,;]/).map(g => g.trim()).filter(Boolean) : []);
+
+    const yearValue = item.year || item.releaseYear || item.publishedYear;
+    const workType = item.type || item.workType || item.category;
+    const ratingValue = Number(item.averageRating || item.rating || item.avgRating || item.score || 0);
+
+    const normalizedGenres = genresArray.map(g => g.toLowerCase());
+    const normalizedType = workType ? String(workType).toLowerCase() : 'unknown';
+    const normalizedYear = yearValue ? Number(yearValue) : null;
+    const finalRating = Number.isNaN(ratingValue) ? 0 : ratingValue;
+
+    return {
+      entityId: String(entityId),
+      kind: 'work',
+      title: item.title || item.name || 'Untitled Work',
+      coverUrl: item.coverUrl || item.cover || '/album_covers/default.jpg',
+      subtitle: item.creator || item.author || item.artist || 'Unknown Creator',
+      meta: `${yearValue || 'Unknown Year'} • ${workType || 'Unknown Type'} • ${genresArray.length > 0 ? genresArray.join(', ') : 'Unknown Genre'}`,
+      description: item.description || '',
+      rating: finalRating,
+      workType: normalizedType,
+      year: normalizedYear,
+      genres: normalizedGenres,
+      raw: item
+    };
+  };
+
+  const mergeUniqueWorks = (primary, secondary) => {
+    const seen = new Set(primary.map(work => work.entityId));
+    const merged = [...primary];
+    secondary.forEach(work => {
+      if (work && !seen.has(work.entityId)) {
+        seen.add(work.entityId);
+        merged.push(work);
+      }
+    });
+    return merged;
+  };
+
+  const applyClientFilters = (worksList, filters) => {
+    if (!Array.isArray(worksList)) return [];
+
+    const genreFilterValue = filters.genre ? String(filters.genre).toLowerCase() : '';
+    const ratingFilterValue = filters.rating ? Number(filters.rating) : null;
+    const yearFilterValue = filters.year ? Number(filters.year) : null;
+    const typeFilterValue = filters.type ? String(filters.type).toLowerCase() : '';
+
+    return worksList.filter(work => {
+      if (!work) return false;
+
+      if (typeFilterValue && typeFilterValue !== 'user') {
+        if (!work.workType || work.workType !== typeFilterValue) {
+          return false;
+        }
+      }
+
+      if (genreFilterValue) {
+        if (!Array.isArray(work.genres) || !work.genres.some(g => g === genreFilterValue)) {
+          return false;
+        }
+      }
+
+      if (ratingFilterValue && !(work.rating >= ratingFilterValue)) {
+        return false;
+      }
+
+      if (yearFilterValue) {
+        if (!work.year || !(work.year >= yearFilterValue)) {
+          return false;
+        }
+      }
+
+      return true;
+    });
+  };
+
   // Load user's Favourites shelf and check which works are already in it
   useEffect(() => {
     const loadFavourites = async () => {
@@ -105,6 +189,56 @@ export default function SearchResults() {
     loadFavourites();
   }, [user]);
 
+  useEffect(() => {
+    const loadShelfContents = async () => {
+      if (!addToShelfId) {
+        setAddedWorks(new Set());
+        return;
+      }
+
+      try {
+        const shelfWorksResponse = await getShelfWorks(addToShelfId);
+        let worksArray = [];
+
+        if (Array.isArray(shelfWorksResponse)) {
+          worksArray = shelfWorksResponse;
+        } else if (Array.isArray(shelfWorksResponse?.data?.works)) {
+          worksArray = shelfWorksResponse.data.works;
+        } else if (Array.isArray(shelfWorksResponse?.works)) {
+          worksArray = shelfWorksResponse.works;
+        } else if (Array.isArray(shelfWorksResponse?.data)) {
+          worksArray = shelfWorksResponse.data;
+        } else if (Array.isArray(shelfWorksResponse?.data?.shelf?.works)) {
+          worksArray = shelfWorksResponse.data.shelf.works;
+        }
+
+        const workIds = worksArray
+          .map(work => {
+            if (!work) return null;
+            if (typeof work === 'string' || typeof work === 'number') {
+              return String(work);
+            }
+
+            const nestedWork = typeof work.work === 'object' ? work.work : null;
+            const nestedId = nestedWork
+              ? (nestedWork.id || nestedWork.workId || nestedWork._id || nestedWork.entityId)
+              : null;
+            const directId = work.workId || work.id || work._id || work.entityId;
+            const finalId = directId || nestedId;
+            return finalId ? String(finalId) : null;
+          })
+          .filter(Boolean);
+
+        setAddedWorks(new Set(workIds));
+      } catch (error) {
+        console.error('Failed to load works already in shelf:', error);
+        setAddedWorks(new Set());
+      }
+    };
+
+    loadShelfContents();
+  }, [addToShelfId]);
+
   // Generate dynamic page title based on filters
   const getPageTitle = () => {
     if (loading) return 'Searching...';
@@ -167,104 +301,134 @@ export default function SearchResults() {
         });
 
         // Always use search API to support both works and users
-        console.log('📡 SearchResults: Making API call with:', { searchTerm, filters });
-        
-        let data;
-        // Always use searchItems API (works with or without search term)
-        data = await searchItems(searchTerm, filters);
-        console.log('📦 SearchResults: Search API response:', data);
-        
-        // Extract results based on API response format
-        let works = [];
-        // Search API returns { results: [...] } or { works: [...], users: [...] }
-        if (data.results) {
-          works = data.results;
-        } else if (data.works || data.users) {
-          // Combine works and users based on itemType filter (which comes from typeFilter="user")
-          if (filters.itemType === 'user') {
-            works = data.users || []; // Users will be handled differently in mapping
-          } else {
-            // Show both works and users when no itemType filter, or just works if work-type specified
-            if (filters.type) {
-              // If a specific work type is selected (movie, book, etc.), show only works
+        const shouldUseAllWorksEndpoint = !searchTerm && filters.itemType !== 'user';
+        let mappedWorks = [];
+        let mappedUsers = [];
+
+        if (shouldUseAllWorksEndpoint) {
+          console.log('� SearchResults: No query provided, loading full works catalog');
+          const worksResponse = await getAllWorks({
+            type: filters.type,
+            genre: filters.genre,
+            year: filters.year,
+            rating: filters.rating
+          });
+
+          let worksArray = [];
+          if (Array.isArray(worksResponse?.works)) worksArray = worksResponse.works;
+          else if (Array.isArray(worksResponse?.data?.works)) worksArray = worksResponse.data.works;
+          else if (Array.isArray(worksResponse?.data)) worksArray = worksResponse.data;
+          else if (Array.isArray(worksResponse)) worksArray = worksResponse;
+
+          mappedWorks = worksArray
+            .map(normalizeWorkEntity)
+            .filter(Boolean);
+        } else {
+          console.log('📡 SearchResults: Making search API call with:', { searchTerm, filters });
+          const data = await searchItems(searchTerm, filters);
+          console.log('📦 SearchResults: Search API response:', data);
+
+          let works = [];
+          if (data.results) {
+            works = data.results;
+          } else if (data.works || data.users) {
+            if (filters.itemType === 'user') {
+              works = data.users || [];
+            } else if (filters.type) {
               works = data.works || [];
             } else {
-              // No filters or only non-type filters, show both
               works = [...(data.works || []), ...(data.users || [])];
             }
           }
+
+          console.log('📦 SearchResults: Extracted works:', works.length);
+
+          const validItems = works.filter(item => item && (item.title || item.username || item.name) && (item.id || item.workId || item.userId));
+          mappedWorks = (filters.itemType === 'user') ? [] : validItems
+            .filter(item => !(item.userId || item.username) || item.title)
+            .map(normalizeWorkEntity)
+            .filter(Boolean);
+
+          const shouldShowUsers = !filters.type &&
+                                  !filters.year &&
+                                  !filters.genre &&
+                                  !filters.rating &&
+                                  filters.itemType !== 'user';
+
+          mappedUsers = shouldShowUsers ?
+            validItems
+              .filter(item => (item.userId || item.username) && !item.title)
+              .map(item => ({
+                entityId: item.userId || item.id,
+                kind: 'user',
+                title: item.username || item.name,
+                coverUrl: item.profilePictureUrl || item.avatarUrl || '/profile_picture.jpg',
+                subtitle: item.email || 'User',
+                meta: `Ratings: ${item.ratedWorksCount !== undefined ? item.ratedWorksCount : (item.ratedWorks ? Object.keys(item.ratedWorks).length : 0)}`,
+                description: item.bio || 'User profile',
+                rating: 0
+              }))
+            : (filters.itemType === 'user' ? validItems
+              .filter(item => (item.userId || item.username) && !item.title)
+              .map(item => ({
+                entityId: item.userId || item.id,
+                kind: 'user',
+                title: item.username || item.name,
+                coverUrl: item.profilePictureUrl || item.avatarUrl || '/profile_picture.jpg',
+                subtitle: item.email || 'User',
+                meta: `Ratings: ${item.ratedWorksCount !== undefined ? item.ratedWorksCount : (item.ratedWorks ? Object.keys(item.ratedWorks).length : 0)}`,
+                description: item.bio || 'User profile',
+                rating: 0
+              })) : []);
         }
-        
-        console.log('📦 SearchResults: Extracted works:', works.length);
-        
-        // Separate works and users, then map each
-        const validItems = works.filter(item => item && (item.title || item.username || item.name) && (item.id || item.workId || item.userId));
-        
-        // Only process works if we're showing works
-        const mappedWorks = (filters.itemType === 'user') ? [] : validItems
-          .filter(item => !(item.userId || item.username) || item.title) // Items with title are works
-          .map(item => ({
-            entityId: String(item.id || item.workId),
-            kind: 'work',
-            title: item.title,
-            coverUrl: item.coverUrl || '/album_covers/default.jpg',
-            subtitle: item.creator || 'Unknown Creator',
-            meta: `${item.year || 'Unknown Year'} • ${item.type || 'Unknown Type'} • ${Array.isArray(item.genres) ? item.genres.join(', ') : (item.genre || 'Unknown Genre')}`,
-            description: item.description || '',
-            rating: item.averageRating || item.rating || 0
-          }));
-        
-        // Only process users if we're not filtering by a specific work type
-        // Also hide users when year, genre, or rating filters are active (these only apply to works)
-        const shouldShowUsers = !filters.type && 
-                                !filters.year && 
-                                !filters.genre && 
-                                !filters.rating && 
-                                filters.itemType !== 'user';
-        
-        const mappedUsers = shouldShowUsers ? 
-          validItems
-            .filter(item => (item.userId || item.username) && !item.title) // Users don't have title
-            .map(item => ({
-              entityId: item.userId || item.id,
-              kind: 'user',
-              title: item.username || item.name,
-              coverUrl: item.profilePictureUrl || item.avatarUrl || '/profile_picture.jpg',
-              subtitle: item.email || 'User',
-              meta: `Ratings: ${item.ratedWorksCount !== undefined ? item.ratedWorksCount : (item.ratedWorks ? Object.keys(item.ratedWorks).length : 0)}`,
-              description: item.bio || 'User profile',
-              rating: 0
-            }))
-          : (filters.itemType === 'user' ? validItems
-            .filter(item => (item.userId || item.username) && !item.title) // Users don't have title
-            .map(item => ({
-              entityId: item.userId || item.id,
-              kind: 'user',
-              title: item.username || item.name,
-              coverUrl: item.profilePictureUrl || item.avatarUrl || '/profile_picture.jpg',
-              subtitle: item.email || 'User',
-              meta: `Ratings: ${item.ratedWorksCount !== undefined ? item.ratedWorksCount : (item.ratedWorks ? Object.keys(item.ratedWorks).length : 0)}`,
-              description: item.bio || 'User profile',
-              rating: 0
-            })) : []);
-        
-        console.log('✅ SearchResults: Filtered results:', {
-          totalWorks: mappedWorks.length,
+
+  if (!shouldUseAllWorksEndpoint && !searchTerm && filters.itemType !== 'user') {
+          console.log('📚 SearchResults: Merging search results with full works catalog for completeness');
+          const worksResponse = await getAllWorks({
+            type: filters.type,
+            genre: filters.genre,
+            year: filters.year,
+            rating: filters.rating
+          });
+
+          let worksArray = [];
+          if (Array.isArray(worksResponse?.works)) worksArray = worksResponse.works;
+          else if (Array.isArray(worksResponse?.data?.works)) worksArray = worksResponse.data.works;
+          else if (Array.isArray(worksResponse?.data)) worksArray = worksResponse.data;
+          else if (Array.isArray(worksResponse)) worksArray = worksResponse;
+
+          const normalizedFromAll = worksArray
+            .map(normalizeWorkEntity)
+            .filter(Boolean);
+
+          mappedWorks = mergeUniqueWorks(mappedWorks, normalizedFromAll);
+        }
+
+        const clientFilteredWorks = applyClientFilters(mappedWorks, {
+          type: filters.type || '',
+          genre: filters.genre || '',
+          rating: filters.rating || '',
+          year: filters.year || ''
+        });
+
+        console.log('✅ SearchResults: Final results summary:', {
+          totalWorksBeforeFilters: mappedWorks.length,
+          totalWorksAfterFilters: clientFilteredWorks.length,
           totalUsers: mappedUsers.length,
           appliedFilters: filters,
-          searchTerm
+          searchTerm,
+          dataSource: shouldUseAllWorksEndpoint ? 'works-endpoint' : 'search+works'
         });
-        
-        // Debug: Log the first few work IDs from search results
-        if (mappedWorks.length > 0) {
-          console.log('🔍 Sample work IDs from search results:', mappedWorks.slice(0, 3).map(w => ({
+
+        if (clientFilteredWorks.length > 0) {
+          console.log('🔍 Sample work IDs from final set:', clientFilteredWorks.slice(0, 3).map(w => ({
             title: w.title,
             entityId: w.entityId,
             type: typeof w.entityId
           })));
         }
-        
-        setResults({ works: mappedWorks, users: mappedUsers });
+
+        setResults({ works: clientFilteredWorks, users: mappedUsers });
       } catch (error) {
         console.error('Failed to fetch results:', error);
         setResults({ works: [], users: [] });
@@ -278,14 +442,25 @@ export default function SearchResults() {
 
   const handleAddToShelf = async (workId) => {
     if (!addToShelfId) return;
+    const workIdStr = String(workId);
+    const isInShelf = addedWorks.has(workIdStr);
     
-    setAddingWork(workId);
+    setAddingWork(workIdStr);
     try {
-      await addWorkToShelf(addToShelfId, workId);
-      setAddedWorks(prev => new Set([...prev, workId]));
+      if (isInShelf) {
+        await removeWorkFromShelf(addToShelfId, workId);
+        setAddedWorks(prev => {
+          const updated = new Set(prev);
+          updated.delete(workIdStr);
+          return updated;
+        });
+      } else {
+        await addWorkToShelf(addToShelfId, workId);
+        setAddedWorks(prev => new Set([...prev, workIdStr]));
+      }
       setTimeout(() => setAddingWork(null), 500);
     } catch (error) {
-      console.error('Failed to add work to shelf:', error);
+      console.error('Failed to toggle work in shelf:', error);
       setAddingWork(null);
     }
   };
@@ -374,30 +549,77 @@ export default function SearchResults() {
     <>
       <FilterBar />
       
-      <div className="page-container">
-        <div className="page-inner">
-          {/* Banner for adding to shelf */}
-          {addToShelfId && shelfName && (
-            <div
-              style={{
-                background: '#9a4207',
-                padding: '12px 16px',
-                position: 'sticky',
-                top: 0,
-                zIndex: 100,
-                boxSizing: 'border-box',
-                borderRadius: 10,
-                marginTop: 8
-              }}
-            >
-              <div
+      {/* Fixed banner for adding to shelf - positioned on the right */}
+      {addToShelfId && shelfName && (
+        <div
+          style={{
+            position: 'fixed',
+            right: 20,
+            top: 100,
+            width: 320,
+            background: '#9a4207',
+            padding: '16px',
+            zIndex: 1000,
+            boxSizing: 'border-box',
+            borderRadius: 10,
+            boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
+          }}
+        >
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 12,
+              color: 'white'
+            }}
+          >
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between'
+            }}>
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+                fontSize: 15,
+                fontWeight: '600'
+              }}>
+                <FiPlus size={18} />
+                <span>Adding to shelf</span>
+              </div>
+              <button
+                onClick={closeBanner}
                 style={{
+                  background: 'rgba(255, 255, 255, 0.2)',
+                  border: 'none',
+                  color: 'white',
+                  cursor: 'pointer',
+                  padding: 6,
+                  borderRadius: 6,
                   display: 'flex',
                   alignItems: 'center',
-                  gap: 16,
-                  color: 'white'
+                  justifyContent: 'center',
+                  transition: 'background 0.2s ease'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.3)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.2)';
                 }}
               >
+                <FiX size={18} />
+              </button>
+            </div>
+            <div style={{
+              fontSize: 14,
+              fontWeight: '500',
+              padding: '8px 0',
+              borderTop: '1px solid rgba(255, 255, 255, 0.2)'
+            }}>
+              "{shelfName}"
+            </div>
             <button
               onClick={goBackToShelves}
               style={{
@@ -405,14 +627,16 @@ export default function SearchResults() {
                 border: 'none',
                 color: 'white',
                 cursor: 'pointer',
-                padding: '8px 14px',
+                padding: '10px 14px',
                 borderRadius: 6,
                 display: 'flex',
                 alignItems: 'center',
+                justifyContent: 'center',
                 gap: 8,
                 fontSize: 14,
                 fontWeight: '600',
-                transition: 'background 0.2s ease'
+                transition: 'background 0.2s ease',
+                width: '100%'
               }}
               onMouseEnter={(e) => {
                 e.currentTarget.style.background = 'rgba(255, 255, 255, 0.3)';
@@ -424,43 +648,12 @@ export default function SearchResults() {
               <FiArrowLeft size={18} />
               Back to Shelves
             </button>
-            <div style={{
-              flex: 1,
-              display: 'flex',
-              alignItems: 'center',
-              gap: 12,
-              fontSize: 15,
-              fontWeight: '600'
-            }}>
-              <FiPlus size={18} />
-              <span>Adding works to "{shelfName}"</span>
-            </div>
-            <button
-              onClick={closeBanner}
-              style={{
-                background: 'rgba(255, 255, 255, 0.2)',
-                border: 'none',
-                color: 'white',
-                cursor: 'pointer',
-                padding: 8,
-                borderRadius: 6,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                transition: 'background 0.2s ease'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.3)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.2)';
-              }}
-            >
-              <FiX size={20} />
-            </button>
-              </div>
-            </div>
-          )}
+          </div>
+        </div>
+      )}
+      
+      <div className="page-container">
+        <div className="page-inner">
           <main className="page-main">
             <div style={{ maxWidth: 900, margin: '0 auto', padding: '20px 16px', boxSizing: 'border-box' }}>
               <div style={{ display: 'flex', justifyContent: 'flex-start', marginTop: 0 }}>
@@ -517,6 +710,9 @@ export default function SearchResults() {
                         {results.works.map((entity, idx) => {
                           // Debug: Check if this work is favourited
                           const isFavourited = favouritedWorks.has(String(entity.entityId));
+                          const workIdStr = String(entity.entityId);
+                          const isInShelf = addedWorks.has(workIdStr);
+                          const isProcessingWork = addingWork === workIdStr;
                           if (idx === 0) {
                             console.log('🔍 First work check:', {
                               entityId: entity.entityId,
@@ -585,7 +781,7 @@ export default function SearchResults() {
                                     e.stopPropagation();
                                     handleAddToShelf(entity.entityId);
                                   }}
-                                  disabled={addedWorks.has(entity.entityId) || addingWork === entity.entityId}
+                                  disabled={isProcessingWork}
                                   style={{
                                     position: 'absolute',
                                     top: 8,
@@ -594,31 +790,29 @@ export default function SearchResults() {
                                     height: 32,
                                     borderRadius: '50%',
                                     border: 'none',
-                                    background: addedWorks.has(entity.entityId) ? '#4caf50' : '#9a4207c8',
+                                    background: isInShelf ? '#4caf50' : '#9a4207c8',
                                     color: 'white',
-                                    cursor: addedWorks.has(entity.entityId) || addingWork === entity.entityId ? 'default' : 'pointer',
+                                    cursor: isProcessingWork ? 'default' : 'pointer',
                                     display: 'flex',
                                     alignItems: 'center',
                                     justifyContent: 'center',
                                     boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
                                     transition: 'all 0.2s ease',
                                     zIndex: 10,
-                                    opacity: addingWork === entity.entityId ? 0.6 : 1
+                                    opacity: isProcessingWork ? 0.6 : 1
                                   }}
                                   onMouseEnter={(e) => {
-                                    if (!addedWorks.has(entity.entityId) && addingWork !== entity.entityId) {
-                                      e.currentTarget.style.transform = 'scale(1.1)';
-                                      e.currentTarget.style.background = '#7d3506';
-                                    }
+                                    if (isProcessingWork) return;
+                                    e.currentTarget.style.transform = 'scale(1.1)';
+                                    e.currentTarget.style.background = isInShelf ? '#3d8b40' : '#7d3506';
                                   }}
                                   onMouseLeave={(e) => {
-                                    if (!addedWorks.has(entity.entityId)) {
-                                      e.currentTarget.style.transform = 'scale(1)';
-                                      e.currentTarget.style.background = '#9a4207c8';
-                                    }
+                                    if (isProcessingWork) return;
+                                    e.currentTarget.style.transform = 'scale(1)';
+                                    e.currentTarget.style.background = isInShelf ? '#4caf50' : '#9a4207c8';
                                   }}
                                 >
-                                  {addedWorks.has(entity.entityId) ? <FiCheck size={18} /> : <FiPlus size={18} />}
+                                  {isInShelf ? <FiCheck size={18} /> : <FiPlus size={18} />}
                                 </button>
                               )}
                               

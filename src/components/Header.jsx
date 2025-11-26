@@ -28,7 +28,18 @@ export default function Header() {
 
   const doSearch = () => {
     const q = (term || '').trim();
-    navigate(q ? `/search?q=${encodeURIComponent(q)}` : '/search');
+    
+    // Preserve existing URL parameters (like addToShelf and shelfName)
+    const currentParams = new URLSearchParams(location.search);
+    
+    // Update or remove the search query
+    if (q) {
+      currentParams.set('q', q);
+    } else {
+      currentParams.delete('q');
+    }
+    
+    navigate(`/search?${currentParams.toString()}`);
   };
 
   return (
