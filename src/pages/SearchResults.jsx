@@ -2,8 +2,10 @@ import { useEffect, useState } from 'react';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
 import { getAllWorks } from '../api/works';
 import { searchItems } from '../api/search';
+import { addWorkToShelf } from '../api/shelves';
 import FilterBar from '../components/FilterBar';
 import useNavigationWithClearFilters from '../hooks/useNavigationWithClearFilters';
+import { FiPlus, FiCheck, FiX, FiArrowLeft } from 'react-icons/fi';
 
 export default function SearchResults() {
   const { search } = useLocation();
@@ -16,8 +18,14 @@ export default function SearchResults() {
   const genreFilter = params.get('genre') || '';
   const ratingFilter = params.get('rating') || '';
   
+  // Shelf context for adding works
+  const addToShelfId = params.get('addToShelf') || '';
+  const shelfName = params.get('shelfName') || '';
+  
   const [results, setResults] = useState({ works: [], users: [] });
   const [loading, setLoading] = useState(true);
+  const [addedWorks, setAddedWorks] = useState(new Set());
+  const [addingWork, setAddingWork] = useState(null);
 
   // Generate dynamic page title based on filters
   const getPageTitle = () => {
@@ -181,11 +189,123 @@ export default function SearchResults() {
     fetchResults();
   }, [query, typeFilter, yearFilter, genreFilter, ratingFilter]);
 
+  const handleAddToShelf = async (workId) => {
+    if (!addToShelfId) return;
+    
+    setAddingWork(workId);
+    try {
+      await addWorkToShelf(addToShelfId, workId);
+      setAddedWorks(prev => new Set([...prev, workId]));
+      setTimeout(() => setAddingWork(null), 500);
+    } catch (error) {
+      console.error('Failed to add work to shelf:', error);
+      setAddingWork(null);
+    }
+  };
+
+  const closeBanner = () => {
+    // Remove shelf params from URL
+    const newParams = new URLSearchParams(search);
+    newParams.delete('addToShelf');
+    newParams.delete('shelfName');
+    navigate(`/search?${newParams.toString()}`, { replace: true });
+  };
+
+  const goBackToShelves = () => {
+    navigate('/shelves');
+  };
+
   return (
     <>
       <FilterBar />
+      
       <div className="page-container">
         <div className="page-inner">
+          {/* Banner for adding to shelf */}
+          {addToShelfId && shelfName && (
+            <div
+              style={{
+                background: '#9a4207',
+                padding: '12px 16px',
+                position: 'sticky',
+                top: 0,
+                zIndex: 100,
+                boxSizing: 'border-box',
+                borderRadius: 10,
+                marginTop: 8
+              }}
+            >
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 16,
+                  color: 'white'
+                }}
+              >
+            <button
+              onClick={goBackToShelves}
+              style={{
+                background: 'rgba(255, 255, 255, 0.2)',
+                border: 'none',
+                color: 'white',
+                cursor: 'pointer',
+                padding: '8px 14px',
+                borderRadius: 6,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+                fontSize: 14,
+                fontWeight: '600',
+                transition: 'background 0.2s ease'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.3)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.2)';
+              }}
+            >
+              <FiArrowLeft size={18} />
+              Back to Shelves
+            </button>
+            <div style={{
+              flex: 1,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 12,
+              fontSize: 15,
+              fontWeight: '600'
+            }}>
+              <FiPlus size={18} />
+              <span>Adding works to "{shelfName}"</span>
+            </div>
+            <button
+              onClick={closeBanner}
+              style={{
+                background: 'rgba(255, 255, 255, 0.2)',
+                border: 'none',
+                color: 'white',
+                cursor: 'pointer',
+                padding: 8,
+                borderRadius: 6,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                transition: 'background 0.2s ease'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.3)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.2)';
+              }}
+            >
+              <FiX size={20} />
+            </button>
+              </div>
+            </div>
+          )}
           <main className="page-main">
             <div style={{ maxWidth: 900, margin: '0 auto', padding: '20px 16px', boxSizing: 'border-box' }}>
               <div style={{ display: 'flex', justifyContent: 'flex-start', marginTop: 0 }}>
@@ -241,7 +361,52 @@ export default function SearchResults() {
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                         {results.works.map((entity, idx) => (
                           <div key={entity.entityId}>
-                            <div style={{ width: '100%', display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+                            <div style={{ width: '100%', display: 'flex', gap: 12, alignItems: 'flex-start', position: 'relative' }}>
+                              
+                              {/* Plus button for adding to shelf */}
+                              {addToShelfId && (
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleAddToShelf(entity.entityId);
+                                  }}
+                                  disabled={addedWorks.has(entity.entityId) || addingWork === entity.entityId}
+                                  style={{
+                                    position: 'absolute',
+                                    top: 8,
+                                    right: 8,
+                                    width: 32,
+                                    height: 32,
+                                    borderRadius: '50%',
+                                    border: 'none',
+                                    background: addedWorks.has(entity.entityId) ? '#4caf50' : '#9a4207c8',
+                                    color: 'white',
+                                    cursor: addedWorks.has(entity.entityId) || addingWork === entity.entityId ? 'default' : 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
+                                    transition: 'all 0.2s ease',
+                                    zIndex: 10,
+                                    opacity: addingWork === entity.entityId ? 0.6 : 1
+                                  }}
+                                  onMouseEnter={(e) => {
+                                    if (!addedWorks.has(entity.entityId) && addingWork !== entity.entityId) {
+                                      e.currentTarget.style.transform = 'scale(1.1)';
+                                      e.currentTarget.style.background = '#7d3506';
+                                    }
+                                  }}
+                                  onMouseLeave={(e) => {
+                                    if (!addedWorks.has(entity.entityId)) {
+                                      e.currentTarget.style.transform = 'scale(1)';
+                                      e.currentTarget.style.background = '#9a4207c8';
+                                    }
+                                  }}
+                                >
+                                  {addedWorks.has(entity.entityId) ? <FiCheck size={18} /> : <FiPlus size={18} />}
+                                </button>
+                              )}
+                              
                               <div
                                 onClick={() => navigateAndClearFilters(`/works/${entity.entityId}`)}
                                 style={{ 

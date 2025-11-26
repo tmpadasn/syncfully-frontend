@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import useAuth from '../hooks/useAuth';
 import useShelves from '../hooks/useShelves';
 import { getWork } from '../api/works';
@@ -124,6 +125,10 @@ const styles = {
   },
   deleteButton: {
     background: '#9a4207',
+    color: 'white'
+  },
+  addButton: {
+    background: '#6b8e23',
     color: 'white'
   },
   shelfContent: {
@@ -408,6 +413,7 @@ const styles = {
 export default function Shelves() {
   const { user, isGuest } = useAuth();
   const { shelves, loading, error, createNewShelf, updateExistingShelf, deleteExistingShelf, getOrCreateFavourites } = useShelves(user?.userId);
+  const navigate = useNavigate();
   
   const [expandedShelves, setExpandedShelves] = useState({});
   const [shelfWorks, setShelfWorks] = useState({});
@@ -572,6 +578,11 @@ export default function Shelves() {
     setDeleteConfirmation({ shelfId, shelfName });
   };
 
+  const handleAddWorks = (shelfId, shelfName) => {
+    // Navigate to search page with shelf context
+    navigate(`/search?addToShelf=${shelfId}&shelfName=${encodeURIComponent(shelfName)}`);
+  };
+
   const confirmDelete = async () => {
     if (!deleteConfirmation) return;
     
@@ -696,6 +707,16 @@ export default function Shelves() {
                 <div style={styles.shelfActions} onClick={(e) => e.stopPropagation()}>
                   {!isFavourites && (
                     <>
+                      <button
+                        style={{ ...styles.actionButton, ...styles.addButton }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleAddWorks(shelf.shelfId, shelf.name);
+                        }}
+                      >
+                        <FiPlus size={16} />
+                        Add
+                      </button>
                       <button
                         style={{ ...styles.actionButton, ...styles.editButton }}
                         onClick={(e) => {
