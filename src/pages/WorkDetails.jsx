@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { getWork, getWorkRatings, postWorkRating, getSimilarWorks } from '../api/works';
+import { getUserRecommendations } from '../api/users';
 import WorkCard from '../components/WorkCard';
+import Toast from '../components/Toast';
 import useNavigationWithClearFilters from '../hooks/useNavigationWithClearFilters';
 import useAuth from '../hooks/useAuth';
 import useShelves from '../hooks/useShelves';
@@ -83,6 +85,8 @@ export default function WorkDetails() {
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState('');
   const [ratingSubmittedMessage, setRatingSubmittedMessage] = useState(false);
+  const [showRecommendationToast, setShowRecommendationToast] = useState(false);
+  const [recommendationVersion, setRecommendationVersion] = useState(null);
 
   useEffect(() => {
     setLoading(true);
@@ -118,6 +122,19 @@ export default function WorkDetails() {
       .finally(() => setLoading(false));
   }, [workId]);
 
+  // Fetch initial recommendation version for logged-in users
+  useEffect(() => {
+    if (!isGuest && loggedUserId) {
+      getUserRecommendations(loggedUserId).then((data) => {
+        if (data && data.version) {
+          setRecommendationVersion(data.version);
+        }
+      }).catch(() => {
+        // Silently fail if recommendations not available
+      });
+    }
+  }, [isGuest, loggedUserId]);
+
   // Set the score to user's existing rating when ratings load
   useEffect(() => {
     if (!isGuest && ratings.length > 0 && loggedUserId) {
@@ -149,11 +166,29 @@ export default function WorkDetails() {
       });
 
       const r = await getWorkRatings(workId);
-      setRatings(r.ratings || []);
+      const processedRatings = processRatingsData(r);
+      setRatings(processedRatings);
       
       // Show success message briefly
       setRatingSubmittedMessage(true);
       setTimeout(() => setRatingSubmittedMessage(false), 2000);
+      
+      // Check if recommendations changed
+      if (loggedUserId) {
+        try {
+          const recommendationsData = await getUserRecommendations(loggedUserId);
+          if (recommendationsData && recommendationsData.version) {
+            if (recommendationVersion && recommendationsData.version !== recommendationVersion) {
+              // Recommendations have changed!
+              setShowRecommendationToast(true);
+            }
+            setRecommendationVersion(recommendationsData.version);
+          }
+        } catch (error) {
+          // Silently fail if recommendations check fails
+          console.log('Could not check recommendations:', error);
+        }
+      }
     } catch (e) {
       const errorMsg = e.response?.data?.message || e.message || 'Failed to submit rating';
       setMessage(errorMsg);
@@ -540,9 +575,11 @@ export default function WorkDetails() {
                       cursor: isGuest ? 'not-allowed' : 'pointer',
                       fontSize: 24,
                       lineHeight: 1,
-                      color: filled ? '#f5b301' : '#ccc',
+                      color: filled ? '#9a4207' : '#888',
                       opacity: isGuest ? 0.4 : 1,
                       transition: 'color 0.2s ease',
+                      fontWeight: filled ? 'normal' : 'bold',
+                      textShadow: filled ? 'none' : '0 0 1px #666',
                     }}
                   >
                     {filled ? '★' : '☆'}
@@ -626,6 +663,15 @@ export default function WorkDetails() {
           {/* Add to shelf actions moved to top-right AddToShelfBtn - old/localStorage button removed */}
         </aside>
       </div>
+
+      {/* Toast notification for new recommendations */}
+      {showRecommendationToast && (
+        <Toast
+          message="You have new recommendations!"
+          onClose={() => setShowRecommendationToast(false)}
+          link="/recommendations"
+        />
+      )}
     </div>
   );
 }

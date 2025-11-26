@@ -4,7 +4,7 @@ import useShelves from '../hooks/useShelves';
 import { getWork } from '../api/works';
 import { getUserRatings } from '../api/users';
 import { removeWorkFromShelf } from '../api/shelves';
-import { FiPlus, FiTrash2, FiEdit2, FiX, FiChevronDown } from 'react-icons/fi';
+import { FiPlus, FiTrash2, FiEdit2, FiX, FiChevronDown, FiHeart } from 'react-icons/fi';
 
 const styles = {
   container: {
@@ -119,11 +119,11 @@ const styles = {
     transition: 'all 0.2s ease'
   },
   editButton: {
-    background: '#4CAF50',
-    color: 'white'
+    background: '#d4b895',
+    color: '#392c2c'
   },
   deleteButton: {
-    background: '#f44336',
+    background: '#9a4207',
     color: 'white'
   },
   shelfContent: {
@@ -151,7 +151,7 @@ const styles = {
     position: 'absolute',
     top: 8,
     right: 8,
-    background: '#f44336',
+    background: '#9a4207',
     color: 'white',
     border: 'none',
     borderRadius: 4,
@@ -174,8 +174,8 @@ const styles = {
     position: 'absolute',
     top: 8,
     right: 8,
-    background: '#4caf50',
-    color: 'white',
+    background: '#d4b895',
+    color: '#392c2c',
     border: 'none',
     borderRadius: 4,
     padding: '6px 12px',
@@ -345,6 +345,63 @@ const styles = {
     cursor: 'pointer',
     fontSize: 14,
     fontWeight: '600'
+  },
+  confirmOverlay: {
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    background: 'rgba(0, 0, 0, 0.5)',
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1000
+  },
+  confirmDialog: {
+    background: 'white',
+    borderRadius: 12,
+    padding: 24,
+    maxWidth: 400,
+    width: '90%',
+    boxShadow: '0 8px 32px rgba(0, 0, 0, 0.2)'
+  },
+  confirmTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#392c2c',
+    marginBottom: 12
+  },
+  confirmMessage: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 24,
+    lineHeight: 1.5
+  },
+  confirmButtons: {
+    display: 'flex',
+    gap: 12,
+    justifyContent: 'flex-end'
+  },
+  confirmCancelButton: {
+    padding: '10px 20px',
+    background: '#e0e0e0',
+    color: '#333',
+    border: 'none',
+    borderRadius: 6,
+    cursor: 'pointer',
+    fontSize: 14,
+    fontWeight: '600'
+  },
+  confirmDeleteButton: {
+    padding: '10px 20px',
+    background: '#9a4207',
+    color: 'white',
+    border: 'none',
+    borderRadius: 6,
+    cursor: 'pointer',
+    fontSize: 14,
+    fontWeight: '600'
   }
 };
 
@@ -363,6 +420,7 @@ export default function Shelves() {
   const [message, setMessage] = useState(null);
   const [loadingWorks, setLoadingWorks] = useState({});
   const [removingWork, setRemovingWork] = useState(null); // { shelfId, workId }
+  const [deleteConfirmation, setDeleteConfirmation] = useState(null); // { shelfId, shelfName }
 
   // Auto-create Favourites shelf on first load
   useEffect(() => {
@@ -510,15 +568,25 @@ export default function Shelves() {
     }
   };
 
-  const handleDelete = async (shelfId) => {
-    if (window.confirm('Are you sure you want to delete this shelf?')) {
-      try {
-        await deleteExistingShelf(shelfId);
-        setMessage({ type: 'success', text: 'Shelf deleted successfully!' });
-      } catch (err) {
-        setMessage({ type: 'error', text: err.message || 'Error deleting shelf' });
-      }
+  const handleDelete = async (shelfId, shelfName) => {
+    setDeleteConfirmation({ shelfId, shelfName });
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteConfirmation) return;
+    
+    try {
+      await deleteExistingShelf(deleteConfirmation.shelfId);
+      setMessage({ type: 'success', text: 'Shelf deleted successfully!' });
+      setDeleteConfirmation(null);
+    } catch (err) {
+      setMessage({ type: 'error', text: err.message || 'Error deleting shelf' });
+      setDeleteConfirmation(null);
     }
+  };
+
+  const cancelDelete = () => {
+    setDeleteConfirmation(null);
   };
 
   const handleRemoveFromShelf = async (shelfId, workId) => {
@@ -613,7 +681,7 @@ export default function Shelves() {
                   </div>
                   <div style={styles.shelfInfo}>
                     <div style={isFavourites ? styles.favouritesShelfName : styles.shelfName}>
-                      {isFavourites && <span>⭐</span>}
+                      {isFavourites && <FiHeart size={20} style={{ color: '#9a4207', fill: '#9a4207' }} />}
                       {shelf.name}
                     </div>
                     {shelf.description && (
@@ -642,7 +710,7 @@ export default function Shelves() {
                         style={{ ...styles.actionButton, ...styles.deleteButton }}
                         onClick={(e) => {
                           e.stopPropagation();
-                          handleDelete(shelf.shelfId);
+                          handleDelete(shelf.shelfId, shelf.name);
                         }}
                       >
                         <FiTrash2 size={16} />
@@ -681,14 +749,19 @@ export default function Shelves() {
                               }
                             }}
                             onMouseLeave={(e) => {
-                              if (!isMarkedForRemoval) {
-                                e.currentTarget.style.transform = 'none';
-                                e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.06)';
-                                const btn = e.currentTarget.querySelector('button');
-                                if (btn) {
-                                  btn.style.opacity = '0';
-                                  btn.style.pointerEvents = 'none';
-                                }
+                              e.currentTarget.style.transform = 'none';
+                              e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.06)';
+                              
+                              // Reset removal state when leaving the work card
+                              if (isMarkedForRemoval) {
+                                setRemovingWork(null);
+                              }
+                              
+                              const btn = e.currentTarget.querySelector('button');
+                              if (btn && !isMarkedForRemoval) {
+                                btn.style.opacity = '0';
+                                btn.style.pointerEvents = 'none';
+                                btn.style.background = '#9a4207'; // Reset to default theme color
                               }
                             }}
                           >
@@ -700,10 +773,10 @@ export default function Shelves() {
                                   handleRemoveFromShelf(shelf.shelfId, work.workId);
                                 }}
                                 onMouseEnter={(e) => {
-                                  e.currentTarget.style.background = '#45a049';
+                                  e.currentTarget.style.background = '#c9a679';
                                 }}
                                 onMouseLeave={(e) => {
-                                  e.currentTarget.style.background = '#4caf50';
+                                  e.currentTarget.style.background = '#d4b895';
                                 }}
                                 title="Confirm removal"
                               >
@@ -717,10 +790,10 @@ export default function Shelves() {
                                   handleRemoveFromShelf(shelf.shelfId, work.workId);
                                 }}
                                 onMouseEnter={(e) => {
-                                  e.currentTarget.style.background = '#d32f2f';
+                                  e.currentTarget.style.background = '#7a3506';
                                 }}
                                 onMouseLeave={(e) => {
-                                  e.currentTarget.style.background = '#f44336';
+                                  e.currentTarget.style.background = '#9a4207';
                                 }}
                                 title="Remove from shelf"
                               >
@@ -826,6 +899,32 @@ export default function Shelves() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Dialog */}
+      {deleteConfirmation && (
+        <div style={styles.confirmOverlay} onClick={cancelDelete}>
+          <div style={styles.confirmDialog} onClick={(e) => e.stopPropagation()}>
+            <h3 style={styles.confirmTitle}>Delete Shelf?</h3>
+            <p style={styles.confirmMessage}>
+              Are you sure you want to delete "<strong>{deleteConfirmation.shelfName}</strong>"? This action cannot be undone.
+            </p>
+            <div style={styles.confirmButtons}>
+              <button
+                style={styles.confirmCancelButton}
+                onClick={cancelDelete}
+              >
+                Cancel
+              </button>
+              <button
+                style={styles.confirmDeleteButton}
+                onClick={confirmDelete}
+              >
+                Delete
+              </button>
+            </div>
           </div>
         </div>
       )}
