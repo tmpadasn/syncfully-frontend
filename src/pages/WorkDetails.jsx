@@ -9,6 +9,7 @@ import useAuth from '../hooks/useAuth';
 import useShelves from '../hooks/useShelves';
 import AddToShelfBtn from '../components/AddToShelfBtn';
 import { WorkDetailsSkeleton } from '../components/Skeleton';
+import logger from '../utils/logger';
 
 // Helper functions for data processing
 const processWorkData = (workResponse) => {
@@ -187,7 +188,7 @@ export default function WorkDetails() {
           }
         } catch (error) {
           // Silently fail if recommendations check fails
-          console.log('Could not check recommendations:', error);
+          logger.debug('Could not check recommendations:', error);
         }
       }
     } catch (e) {

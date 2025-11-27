@@ -8,6 +8,7 @@ import useNavigationWithClearFilters from '../hooks/useNavigationWithClearFilter
 import useAuth from '../hooks/useAuth';
 import { FiPlus, FiCheck, FiX, FiArrowLeft, FiHeart } from 'react-icons/fi';
 import { WorkGridSkeleton } from '../components/Skeleton';
+import logger from '../utils/logger';
 
 export default function SearchResults() {
   const { search } = useLocation();
@@ -123,31 +124,31 @@ export default function SearchResults() {
       if (!user) return;
       
       try {
-        console.log('🔄 Loading favourites for user:', user.userId);
+        logger.debug('🔄', 'Loading favourites for user:', user.userId);
         
         // Get user's shelves
         const shelvesData = await getUserShelves(user.userId);
-        console.log('📚 User shelves data:', shelvesData);
+        logger.debug('📚', 'User shelves data:', shelvesData);
         
         // Extract the shelves array from the response: {success: true, data: {shelves: [...]}}
         const shelves = Array.isArray(shelvesData) 
           ? shelvesData 
           : (shelvesData.data?.shelves || shelvesData.shelves || []);
-        console.log('📚 Shelves array:', shelves);
-        console.log('📚 Shelves count:', shelves.length);
+        logger.debug('📚', 'Shelves array:', shelves);
+        logger.debug('📚', 'Shelves count:', shelves.length);
         if (shelves.length > 0) {
-          console.log('📚 Shelf names:', shelves.map(s => s.name));
+          logger.debug('📚', 'Shelf names:', shelves.map(s => s.name));
         }
         
         // Find or create Favourites shelf
         const favourites = await getOrCreateFavouritesShelf(user.userId, shelves);
-        console.log('⭐ Favourites shelf after getOrCreate:', favourites);
-        console.log('⭐ Favourites shelf:', favourites);
+        logger.debug('⭐', 'Favourites shelf after getOrCreate:', favourites);
+        logger.debug('⭐', 'Favourites shelf:', favourites);
         setFavouritesShelfId(favourites.shelfId);
         
         // Get works in Favourites shelf
         const favouritesWorksData = await getShelfWorks(favourites.shelfId);
-        console.log('📦 Raw favourites works data:', favouritesWorksData);
+        logger.debug('📦', 'Raw favourites works data:', favouritesWorksData);
         
         // Extract works array from API response: {success: true, data: {works: [...]}}
         let favouritesWorks = [];
@@ -158,7 +159,7 @@ export default function SearchResults() {
         } else if (Array.isArray(favouritesWorksData)) {
           favouritesWorks = favouritesWorksData;
         }
-        console.log('✨ Favourites works array:', favouritesWorks);
+        logger.debug('✨', 'Favourites works array:', favouritesWorks);
         
         // Create a set of work IDs that are in Favourites
         // Handles both populated work objects and primitive IDs from mock data
@@ -168,22 +169,22 @@ export default function SearchResults() {
           }
 
           if (typeof w === 'string' || typeof w === 'number') {
-            console.log('Work in Favourites (primitive ID):', w);
+            logger.debug('Work in Favourites (primitive ID):', w);
             return String(w);
           }
 
           const nestedWork = typeof w.work === 'object' ? w.work : null;
           const nestedWorkId = nestedWork ? (nestedWork.id || nestedWork._id) : null;
           const id = w.id || w.workId || w._id || w.entityId || nestedWorkId;
-          console.log('Work in Favourites (object):', w.title || w.name || 'Unknown title', 'Extracted ID:', id);
+          logger.debug('Work in Favourites (object):', w.title || w.name || 'Unknown title', 'Extracted ID:', id);
           return id ? String(id) : null;
         }).filter(Boolean);
 
         const workIds = new Set(extractedIds);
-        console.log('💾 Favourited work IDs (as strings):', Array.from(workIds));
+        logger.debug('💾', 'Favourited work IDs (as strings):', Array.from(workIds));
         setFavouritedWorks(workIds);
       } catch (error) {
-        console.error('❌ Failed to load favourites:', error);
+        logger.error('Failed to load favourites:', error);
       }
     };
     
@@ -285,7 +286,7 @@ export default function SearchResults() {
         if (genreFilter && genreFilter !== 'Any' && genreFilter !== '') filters.genre = genreFilter;
         if (ratingFilter && ratingFilter !== 'Any' && ratingFilter !== '') filters.rating = ratingFilter;
         
-        console.log('🔍 SearchResults: Applied filters:', {
+        logger.debug('🔍', 'SearchResults: Applied filters:', {
           searchTerm,
           typeFilter,
           yearFilter, 
@@ -294,7 +295,7 @@ export default function SearchResults() {
           finalFilters: filters
         });
         
-        console.log('🔍 SearchResults: Raw URL params:', {
+        logger.debug('🔍', 'SearchResults: Raw URL params:', {
           type: params.get('type'),
           year: params.get('year'),
           genre: params.get('genre'),
@@ -307,7 +308,7 @@ export default function SearchResults() {
         let mappedUsers = [];
 
         if (shouldUseAllWorksEndpoint) {
-          console.log('� SearchResults: No query provided, loading full works catalog');
+          logger.debug('� SearchResults: No query provided, loading full works catalog');
           const worksResponse = await getAllWorks({
             type: filters.type,
             genre: filters.genre,
@@ -325,9 +326,9 @@ export default function SearchResults() {
             .map(normalizeWorkEntity)
             .filter(Boolean);
         } else {
-          console.log('📡 SearchResults: Making search API call with:', { searchTerm, filters });
+          logger.debug('📡', 'SearchResults: Making search API call with:', { searchTerm, filters });
           const data = await searchItems(searchTerm, filters);
-          console.log('📦 SearchResults: Search API response:', data);
+          logger.debug('📦', 'SearchResults: Search API response:', data);
 
           let works = [];
           if (data.results) {
@@ -342,7 +343,7 @@ export default function SearchResults() {
             }
           }
 
-          console.log('📦 SearchResults: Extracted works:', works.length);
+          logger.debug('📦', 'SearchResults: Extracted works:', works.length);
 
           const validItems = works.filter(item => item && (item.title || item.username || item.name) && (item.id || item.workId || item.userId));
           mappedWorks = (filters.itemType === 'user') ? [] : validItems
@@ -384,7 +385,7 @@ export default function SearchResults() {
         }
 
   if (!shouldUseAllWorksEndpoint && !searchTerm && filters.itemType !== 'user') {
-          console.log('📚 SearchResults: Merging search results with full works catalog for completeness');
+          logger.debug('📚', 'SearchResults: Merging search results with full works catalog for completeness');
           const worksResponse = await getAllWorks({
             type: filters.type,
             genre: filters.genre,
@@ -412,7 +413,7 @@ export default function SearchResults() {
           year: filters.year || ''
         });
 
-        console.log('✅ SearchResults: Final results summary:', {
+        logger.debug('✅', 'SearchResults: Final results summary:', {
           totalWorksBeforeFilters: mappedWorks.length,
           totalWorksAfterFilters: clientFilteredWorks.length,
           totalUsers: mappedUsers.length,
@@ -422,7 +423,7 @@ export default function SearchResults() {
         });
 
         if (clientFilteredWorks.length > 0) {
-          console.log('🔍 Sample work IDs from final set:', clientFilteredWorks.slice(0, 3).map(w => ({
+          logger.debug('🔍', 'Sample work IDs from final set:', clientFilteredWorks.slice(0, 3).map(w => ({
             title: w.title,
             entityId: w.entityId,
             type: typeof w.entityId
@@ -431,7 +432,7 @@ export default function SearchResults() {
 
         setResults({ works: clientFilteredWorks, users: mappedUsers });
       } catch (error) {
-        console.error('Failed to fetch results:', error);
+        logger.error('Failed to fetch results:', error);
         setResults({ works: [], users: [] });
       } finally {
         setLoading(false);
@@ -461,21 +462,21 @@ export default function SearchResults() {
       }
       setTimeout(() => setAddingWork(null), 500);
     } catch (error) {
-      console.error('Failed to toggle work in shelf:', error);
+      logger.error('Failed to toggle work in shelf:', error);
       setAddingWork(null);
     }
   };
 
   const handleAddToFavourites = async (workId) => {
     if (!user) {
-      console.log('⏭️ Skipping - no user');
+      logger.debug('⏭️', 'Skipping - no user');
       return;
     }
     
     const workIdStr = String(workId);
     const isCurrentlyFavourited = favouritedWorks.has(workIdStr);
     
-    console.log('💗 Toggling favourite for work:', workId, 'Currently favourited:', isCurrentlyFavourited);
+    logger.debug('💗', 'Toggling favourite for work:', workId, 'Currently favourited:', isCurrentlyFavourited);
     setFavouritingWork(workId);
     
     try {
@@ -483,53 +484,53 @@ export default function SearchResults() {
       
       // If we don't have the shelf ID yet, get or create it
       if (!shelfId) {
-        console.log('🔍 No shelf ID, creating/fetching Favourites shelf');
+        logger.debug('🔍', 'No shelf ID, creating/fetching Favourites shelf');
         const shelvesData = await getUserShelves(user.userId);
-        console.log('📚 Fetched shelves data:', shelvesData);
+        logger.debug('📚', 'Fetched shelves data:', shelvesData);
         
         // Extract the shelves array from the response: {success: true, data: {shelves: [...]}}
         const shelves = Array.isArray(shelvesData) 
           ? shelvesData 
           : (shelvesData.data?.shelves || shelvesData.shelves || []);
-        console.log('📚 Shelves array:', shelves);
+        logger.debug('📚', 'Shelves array:', shelves);
         
         const favourites = await getOrCreateFavouritesShelf(user.userId, shelves);
         shelfId = favourites.shelfId;
         setFavouritesShelfId(shelfId);
-        console.log('✅ Got shelf ID:', shelfId);
+        logger.debug('✅', 'Got shelf ID:', shelfId);
       }
       
       if (isCurrentlyFavourited) {
         // Remove from favourites
-        console.log('➖ Removing work', workId, 'from shelf', shelfId);
+        logger.debug('➖', 'Removing work', workId, 'from shelf', shelfId);
         await removeWorkFromShelf(shelfId, workId);
-        console.log('✅ Work removed successfully!');
+        logger.debug('✅', 'Work removed successfully!');
         
         setFavouritedWorks(prev => {
           const newSet = new Set([...prev]);
           newSet.delete(workIdStr);
-          console.log('💾 Updated favourited works (removed):', Array.from(newSet));
+          logger.debug('💾', 'Updated favourited works (removed):', Array.from(newSet));
           return newSet;
         });
       } else {
         // Add to favourites
-        console.log('➕ Adding work', workId, 'to shelf', shelfId);
+        logger.debug('➕', 'Adding work', workId, 'to shelf', shelfId);
         await addWorkToShelf(shelfId, workId);
-        console.log('✅ Work added successfully!');
+        logger.debug('✅', 'Work added successfully!');
         
         setFavouritedWorks(prev => {
           const newSet = new Set([...prev, workIdStr]);
-          console.log('💾 Updated favourited works (added):', Array.from(newSet));
+          logger.debug('💾', 'Updated favourited works (added):', Array.from(newSet));
           return newSet;
         });
       }
       
       setTimeout(() => {
         setFavouritingWork(null);
-        console.log('✨ Animation complete');
+        logger.debug('✨', 'Animation complete');
       }, 500);
     } catch (error) {
-      console.error('❌ Failed to toggle favourite:', error);
+      logger.error('Failed to toggle favourite:', error);
       setFavouritingWork(null);
     }
   };
@@ -719,7 +720,7 @@ export default function SearchResults() {
                           const isInShelf = addedWorks.has(workIdStr);
                           const isProcessingWork = addingWork === workIdStr;
                           if (idx === 0) {
-                            console.log('🔍 First work check:', {
+                            logger.debug('🔍', 'First work check:', {
                               entityId: entity.entityId,
                               entityIdType: typeof entity.entityId,
                               favouritedWorks: Array.from(favouritedWorks),
@@ -736,9 +737,9 @@ export default function SearchResults() {
                                 <button
                                   onClick={(e) => {
                                     e.stopPropagation();
-                                    console.log('❤️ Heart clicked for work:', entity.entityId);
-                                    console.log('Current favourited works:', Array.from(favouritedWorks));
-                                    console.log('Is favourited?', favouritedWorks.has(String(entity.entityId)));
+                                    logger.debug('❤️', 'Heart clicked for work:', entity.entityId);
+                                    logger.debug('Current favourited works:', Array.from(favouritedWorks));
+                                    logger.debug('Is favourited?', favouritedWorks.has(String(entity.entityId)));
                                     handleAddToFavourites(entity.entityId);
                                   }}
                                   disabled={favouritingWork === entity.entityId}

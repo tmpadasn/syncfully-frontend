@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import logger from '../utils/logger';
 import {
   getUserShelves,
   createShelf,
@@ -33,7 +34,7 @@ export default function useShelves(userId) {
         setShelves(response.data?.shelves || []);
       } catch (err) {
         setError(err.message);
-        console.error('Error loading shelves:', err);
+        logger.error('Error loading shelves:', err);
       } finally {
         setLoading(false);
       }

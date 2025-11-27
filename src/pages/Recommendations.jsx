@@ -6,6 +6,7 @@ import { getAllWorks } from '../api/works';
 import useNavigationWithClearFilters from '../hooks/useNavigationWithClearFilters';
 import { WorkGridSkeleton } from '../components/Skeleton';
 import HomeCarousel from '../components/HomeCarousel';
+import logger from '../utils/logger';
 
 export default function Recommendations() {
   useNavigationWithClearFilters();
@@ -147,7 +148,7 @@ export default function Recommendations() {
             }));
           }
         } catch (recError) {
-          console.error('Error fetching personalized recommendations:', recError);
+          logger.error('Error fetching personalized recommendations:', recError);
         }
 
         // If no personalized recommendations, use random works
@@ -162,7 +163,7 @@ export default function Recommendations() {
           explore: staticExplore,
         });
       } catch (err) {
-        console.error('Failed to fetch recommendations:', err);
+        logger.error('Failed to fetch recommendations:', err);
         setError('Unable to load recommendations. Please try again later.');
         setLists({ current: [], profile: [], friends: [], explore: [] });
       } finally {

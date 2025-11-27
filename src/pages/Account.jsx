@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import useAuth from "../hooks/useAuth";
 import { Skeleton } from "../components/Skeleton";
+import logger from "../utils/logger";
 
 import { 
   getUserById, 
@@ -38,7 +39,7 @@ export default function Account() {
           getUserById(userId),
           getUserRatings(userId),
           getAllWorks().catch(err => {
-            console.error("Failed to fetch works:", err);
+            logger.error("Failed to fetch works:", err);
             return { works: [] };
           })
         ]);
@@ -63,7 +64,7 @@ export default function Account() {
 
       } catch (err) {
         // Handle errors - set backendUser to the auth user if API fails
-        console.error("Account load failed:", err);
+        logger.error("Account load failed:", err);
         setBackendUser(user);
       } finally {
         setLoading(false);
@@ -123,8 +124,7 @@ export default function Account() {
       logout();
       navigate("/");
     } catch (err) {
-      // Show error but don't crash
-      console.log("Delete failed silently");
+      logger.error("Delete account failed:", err);
     }
   };
 

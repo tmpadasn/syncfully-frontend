@@ -1,20 +1,21 @@
 import api from './client';
+import logger from '../utils/logger';
 
 // Search for items (works, users, etc.)
 export const searchItems = async (query, filters = {}) => {
   try {
     const params = new URLSearchParams();
-    if (query) params.append('query', query); // Backend expects 'query' not 'q'
+    if (query) params.append('query', query);
     
-    console.log('🔍 searchItems: Input filters:', filters);
+    logger.debug('🔍', 'searchItems: Input filters:', filters);
     
     // Map frontend filter names to backend search API parameter names
     const paramMapping = {
-      'type': 'work-type',     // Frontend 'type' becomes 'work-type'
-      'itemType': 'item-type', // Frontend 'itemType' becomes 'item-type'
-      'genre': 'genre',        // Keep as is
-      'year': 'year',          // Keep as is
-      'rating': 'rating'       // Keep as is
+      'type': 'work-type',
+      'itemType': 'item-type',
+      'genre': 'genre',
+      'year': 'year',
+      'rating': 'rating'
     };
     
     // Add filters with correct parameter names for search API
@@ -22,51 +23,33 @@ export const searchItems = async (query, filters = {}) => {
       if (filters[key] && filters[key] !== '' && filters[key] !== 'Any') {
         const backendParam = paramMapping[key] || key;
         params.append(backendParam, filters[key]);
-        console.log(`🔍 searchItems: Added filter ${backendParam}=${filters[key]}`);
+        logger.debug('🔍', `searchItems: Added filter ${backendParam}=${filters[key]}`);
       }
     });
-    
-    // If itemType not supplied we allow backend to return both works & users.
     
     const queryString = params.toString();
     const url = queryString ? `/search?${queryString}` : '/search';
     
-    console.log('📡 searchItems: API call to:', url);
+    logger.api('GET', url);
     
     const res = await api.get(url);
     if (!res || !res.data) {
-      console.log('❌ searchItems: No response data');
+      logger.debug('❌', 'searchItems: No response data');
       return { results: [] };
     }
     
-    console.log('📦 searchItems: Raw response:', res.data);
+    logger.debug('📦', 'searchItems: Raw response:', res.data);
     
-    // Handle backend response format: { success: true, data: { works: [], users: [] } }
-    if (res.data.success && res.data.data) {
-      const { works = [], users = [] } = res.data.data;
-      const results = [...works, ...users];
-      console.log('✅ searchItems: Extracted results:', results.length);
-      return { results };
-    }
+    // Backend now returns standardized format: { success: true, data: { works: [], users: [], totalWorks: 0, totalUsers: 0 }, message: "..." }
+    const responseData = res.data.data || res.data;
+    const works = responseData.works || [];
+    const users = responseData.users || [];
+    const results = [...works, ...users];
     
-    // Fallback for other response formats
-    if (Array.isArray(res.data)) {
-      console.log('✅ searchItems: Using array response:', res.data.length);
-      return { results: res.data };
-    }
-    if (res.data.results) {
-      console.log('✅ searchItems: Using results property:', res.data.results.length);
-      return res.data;
-    }
-    if (res.data.items) {
-      console.log('✅ searchItems: Using items property:', res.data.items.length);
-      return { results: res.data.items };
-    }
-    
-    console.log('⚠️ searchItems: No recognized data format, returning empty');
-    return { results: [] };
+    logger.debug('✅', 'searchItems: Extracted results:', results.length);
+    return { results };
   } catch (error) {
-    console.error('❌ searchItems failed:', error);
+    logger.error('searchItems failed:', error);
     return { results: [] };
   }
 };
@@ -77,7 +60,7 @@ export const searchWorks = async (query, filters = {}) => {
     const searchFilters = { ...filters, itemType: 'work' };
     return await searchItems(query, searchFilters);
   } catch (error) {
-    console.error('searchWorks failed:', error);
+    logger.error('searchWorks failed:', error);
     return { results: [] };
   }
 };
@@ -88,7 +71,7 @@ export const searchUsers = async (query, filters = {}) => {
     const searchFilters = { ...filters, itemType: 'user' };
     return await searchItems(query, searchFilters);
   } catch (error) {
-    console.error('searchUsers failed:', error);
+    logger.error('searchUsers failed:', error);
     return { results: [] };
   }
 };

@@ -8,6 +8,7 @@ import { removeWorkFromShelf } from '../api/shelves';
 import { FiPlus, FiTrash2, FiEdit2, FiX, FiChevronDown, FiHeart } from 'react-icons/fi';
 import WorkCardCarousel from '../components/WorkCardCarousel';
 import { Skeleton } from '../components/Skeleton';
+import logger from '../utils/logger';
 
 const styles = {
   container: {
@@ -465,7 +466,7 @@ export default function Shelves() {
         .then(data => {
           // Backend returns an object map of ratings keyed by workId
           const ratingsObject = data?.ratings || data || {};
-          console.log('User ratings loaded:', ratingsObject);
+          logger.debug('User ratings loaded:', ratingsObject);
           setUserRatings(ratingsObject);
         })
         .catch(() => {
@@ -490,7 +491,7 @@ export default function Shelves() {
                 const workData = await getWork(workId);
                 
                 // getWork already handles response extraction, so workData should be the work object directly
-                console.log('Loaded work:', { workId, work: workData });
+                logger.debug('Loaded work:', { workId, work: workData });
 
                 if (!workData) {
                   return {
@@ -512,7 +513,7 @@ export default function Shelves() {
                   averageRating: workData.averageRating || workData.rating || 0
                 };
               } catch (err) {
-                console.error(`Error loading work ${workId}:`, err);
+                logger.error(`Error loading work ${workId}:`, err);
                 return {
                   workId: workId,
                   title: `Work #${workId}`,
@@ -526,7 +527,7 @@ export default function Shelves() {
           setShelfWorks({ ...shelfWorks, [shelfId]: workDetails });
         }
       } catch (err) {
-        console.error('Error loading shelf works:', err);
+        logger.error('Error loading shelf works:', err);
       } finally {
         setLoadingWorks({ ...loadingWorks, [shelfId]: false });
       }

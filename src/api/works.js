@@ -1,4 +1,5 @@
 import api from './client';
+import logger from '../utils/logger';
 
 // Get popular works
 export const getPopularWorks = async () => {
@@ -109,7 +110,7 @@ export const getWorkRatings = async (workId) => {
     if (Array.isArray(res.data.ratings)) return { ratings: res.data.ratings };
     return res.data;
   } catch (e) {
-    console.warn('getWorkRatings failed', e);
+    logger.warn('getWorkRatings failed', e);
     return { ratings: [] };
   }
 };
@@ -120,7 +121,7 @@ export const postWorkRating = async (workId, payload) => {
     const res = await api.post(`/works/${encodeURIComponent(workId)}/ratings`, payload);
     return res.data;
   } catch (e) {
-    console.warn('postWorkRating failed', e);
+    logger.warn('postWorkRating failed', e);
     throw e;
   }
 };
@@ -140,7 +141,7 @@ export const getSimilarWorks = async (workId) => {
     if (responseData.items && Array.isArray(responseData.items)) return responseData.items;
     return [];
   } catch (e) {
-    console.warn('getSimilarWorks failed', e);
+    logger.warn('getSimilarWorks failed', e);
     return [];
   }
 };

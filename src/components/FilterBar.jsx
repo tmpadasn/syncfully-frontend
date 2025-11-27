@@ -2,6 +2,7 @@ import { useRef, useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { FiChevronDown, FiBook, FiMusic, FiFilm } from 'react-icons/fi';
 import { getAllWorks } from '../api/works';
+import logger from '../utils/logger';
 
 export default function FilterBar() {
   const location = useLocation();
@@ -26,7 +27,7 @@ export default function FilterBar() {
         const worksData = await getAllWorks();
         const works = worksData?.works || worksData?.data || [];
         
-        console.log('🔍 FilterBar: Backend works data:', works.length, 'items');
+        logger.debug('🔍', 'FilterBar: Backend works data:', works.length, 'items');
         
         if (works.length > 0) {
           // Extract unique types from backend data
@@ -35,8 +36,8 @@ export default function FilterBar() {
               .filter(Boolean)
           )].sort();
           
-          console.log('🔍 FilterBar: Raw backend types:', types);
-          console.log('🔍 FilterBar: Sample work:', works[0]);
+          logger.debug('🔍', 'FilterBar: Raw backend types:', types);
+          logger.debug('🔍', 'FilterBar: Sample work:', works[0]);
           
           // Generate year range from 1850 to current year
           const currentYear = new Date().getFullYear();
@@ -72,9 +73,9 @@ export default function FilterBar() {
           
           const genres = Array.from(genresSet).sort();
           
-          console.log('🔍 FilterBar: Raw backend genres:', genres);
+          logger.debug('🔍', 'FilterBar: Raw backend genres:', genres);
           
-          console.log('🔍 FilterBar: Extracted from backend:', {
+          logger.debug('🔍', 'FilterBar: Extracted from backend:', {
             types: types.length,
             years: years.length, 
             genres: genres.length

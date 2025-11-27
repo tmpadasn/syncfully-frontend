@@ -7,6 +7,7 @@ import useNavigationWithClearFilters from '../hooks/useNavigationWithClearFilter
 import useAuth from '../hooks/useAuth';
 import { WorkGridSkeleton, FriendGridSkeleton } from '../components/Skeleton';
 import HomeCarousel from '../components/HomeCarousel';
+import logger from '../utils/logger';
 
 // Default avatar for users without profile picture
 const defaultAvatarUrl = 'https://upload.wikimedia.org/wikipedia/commons/a/ac/Default_pfp.jpg';
@@ -96,7 +97,7 @@ const getRandomWorks = (allWorks, type, limit = 10) => {
       year: work.year
     }));
   } catch (error) {
-    console.error('Error getting random works:', error);
+    logger.error('Error getting random works:', error);
     return [];
   }
 };

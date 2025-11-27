@@ -3,6 +3,7 @@ import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { getUserById, getUserRatings } from "../api/users";
 import { getAllWorks } from "../api/works";
 import UserRatings from "../components/users/UserRatings";
+import logger from "../utils/logger";
 
 export default function Profile() {
   const { userId } = useParams();
@@ -31,7 +32,7 @@ export default function Profile() {
         setRatings(ratingsObject);
         setWorks(allWorks?.works || []);
       } catch (err) {
-        console.log("Profile load failed");
+        logger.error("Profile load failed", err);
       } finally {
         setLoading(false);
       }
