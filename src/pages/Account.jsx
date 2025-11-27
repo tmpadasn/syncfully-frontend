@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import useAuth from "../hooks/useAuth";
 import { Skeleton } from "../components/Skeleton";
 import logger from "../utils/logger";
+import { DEFAULT_AVATAR_URL } from "../config/constants";
 
 import { 
   getUserById, 
@@ -215,7 +216,7 @@ export default function Account() {
                 <img
                   src={
                     backendUser.profilePictureUrl ||
-                    "https://upload.wikimedia.org/wikipedia/commons/a/ac/Default_pfp.jpg"
+                    DEFAULT_AVATAR_URL
                   }
                   alt="avatar"
                   style={avatarStyle}

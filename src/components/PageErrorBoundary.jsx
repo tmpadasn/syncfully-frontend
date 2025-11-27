@@ -1,5 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import logger from '../utils/logger';
+import { IS_DEVELOPMENT } from '../config/constants';
 
 /**
  * Page-level Error Boundary
@@ -21,7 +23,7 @@ class PageErrorBoundaryClass extends React.Component {
   }
 
   componentDidCatch(error, errorInfo) {
-    console.error('Page Error Boundary caught an error:', error, errorInfo);
+    logger.error('Page Error Boundary caught an error:', error, errorInfo);
     
     this.setState({
       error,
@@ -166,7 +168,7 @@ class PageErrorBoundaryClass extends React.Component {
                 </div>
 
                 {/* Development mode error details */}
-                {process.env.NODE_ENV === 'development' && this.state.error && (
+                {IS_DEVELOPMENT && this.state.error && (
                   <details style={{ marginTop: '30px', textAlign: 'left' }}>
                     <summary style={{ 
                       cursor: 'pointer', 

@@ -1,4 +1,6 @@
 import React from 'react';
+import logger from '../utils/logger';
+import { IS_DEVELOPMENT } from '../config/constants';
 
 /**
  * Base Error Boundary Component
@@ -22,7 +24,7 @@ class ErrorBoundary extends React.Component {
 
   componentDidCatch(error, errorInfo) {
     // Log error details for debugging
-    console.error('ErrorBoundary caught an error:', error, errorInfo);
+    logger.error('ErrorBoundary caught an error:', error, errorInfo);
     
     this.setState({
       error,
@@ -114,7 +116,7 @@ class ErrorBoundary extends React.Component {
           </div>
 
           {/* Show error details in development mode */}
-          {process.env.NODE_ENV === 'development' && this.state.error && (
+          {IS_DEVELOPMENT && this.state.error && (
             <details style={{ textAlign: 'left', marginTop: '20px' }}>
               <summary style={{ cursor: 'pointer', fontWeight: 'bold', marginBottom: '10px' }}>
                 Error Details (Development Only)

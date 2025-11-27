@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import useAuth from "../hooks/useAuth";
+import { STORAGE_KEY_JUST_LOGGED_IN } from "../config/constants";
 
 const styles = {
   pageContainer: {
@@ -211,7 +212,7 @@ export default function Login() {
       }
 
       // Set flag for fresh login
-      sessionStorage.setItem('justLoggedIn', 'true');
+      sessionStorage.setItem(STORAGE_KEY_JUST_LOGGED_IN, 'true');
       navigate("/");
     } catch (err) {
       // Handle specific error messages from AuthContext

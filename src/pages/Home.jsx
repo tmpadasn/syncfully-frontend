@@ -8,9 +8,12 @@ import useAuth from '../hooks/useAuth';
 import { WorkGridSkeleton, FriendGridSkeleton } from '../components/Skeleton';
 import HomeCarousel from '../components/HomeCarousel';
 import logger from '../utils/logger';
-
-// Default avatar for users without profile picture
-const defaultAvatarUrl = 'https://upload.wikimedia.org/wikipedia/commons/a/ac/Default_pfp.jpg';
+import { 
+  DEFAULT_AVATAR_URL, 
+  WORK_TYPES, 
+  HOME_CAROUSEL_LIMIT, 
+  STORAGE_KEY_JUST_LOGGED_IN 
+} from '../config/constants';
 
 /* ---------------------- DATA PROCESSING HELPERS ---------------------- */
 
@@ -60,7 +63,7 @@ const processFriendsData = async (users, allWorks, currentUserId) => {
         friendsWithActivity.push({
           id: user.userId,
           name: user.username,
-          avatar: user.profilePictureUrl || defaultAvatarUrl,
+          avatar: user.profilePictureUrl || DEFAULT_AVATAR_URL,
           likedAlbum: {
             title: ratedWork.title,
             coverUrl: ratedWork.coverUrl || '/album_covers/default.jpg',
@@ -206,9 +209,9 @@ export default function Home() {
 
   // Check if user just logged in
   useEffect(() => {
-    if (sessionStorage.getItem('justLoggedIn') === 'true') {
+    if (sessionStorage.getItem(STORAGE_KEY_JUST_LOGGED_IN) === 'true') {
       setShowWelcome(true);
-      sessionStorage.removeItem('justLoggedIn');
+      sessionStorage.removeItem(STORAGE_KEY_JUST_LOGGED_IN);
     }
   }, []);
 
@@ -242,8 +245,8 @@ export default function Home() {
       setFriendsLoading(false);
 
       // Load random movies and music
-      const movies = getRandomWorks(allWorks, 'movie', 10);
-      const music = getRandomWorks(allWorks, 'music', 10);
+      const movies = getRandomWorks(allWorks, WORK_TYPES.MOVIE, HOME_CAROUSEL_LIMIT);
+      const music = getRandomWorks(allWorks, WORK_TYPES.MUSIC, HOME_CAROUSEL_LIMIT);
       
       setRecentMovies(movies);
       setRecentMusic(music);

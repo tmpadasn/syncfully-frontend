@@ -1,14 +1,19 @@
 import { createContext, useState, useEffect } from 'react';
 import { login as apiLogin, signup as apiSignup } from '../api/auth';
+import {
+  DEFAULT_PROFILE_PICTURE,
+  STORAGE_KEY_AUTH_USER,
+  ERROR_CODE_USER_NOT_FOUND,
+  ERROR_CODE_BAD_CREDENTIALS,
+  ERROR_MESSAGES,
+  ERROR_KEYWORDS
+} from '../config/constants';
 
 export const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
-
-  // Add a default profile picture URL
-  const DEFAULT_PROFILE_PIC = 'http://localhost:3000/uploads/profiles/profile_picture.jpg';
 
   // Normalize backend response → extract ONLY user data and ensure profilePicUrl
   const normalizeUser = (res) => {
@@ -25,7 +30,7 @@ export function AuthProvider({ children }) {
         if (obj.profile_pic_url) obj.profilePicUrl = obj.profile_pic_url;
         else if (obj.avatarUrl) obj.profilePicUrl = obj.avatarUrl;
         else if (obj.avatar_url) obj.profilePicUrl = obj.avatar_url;
-        else obj.profilePicUrl = DEFAULT_PROFILE_PIC;
+        else obj.profilePicUrl = DEFAULT_PROFILE_PICTURE;
       }
     };
 
@@ -41,19 +46,19 @@ export function AuthProvider({ children }) {
         const rawMsg = (payload.message || '').toString();
         const m = rawMsg.toLowerCase();
 
-        if (m.includes('does not exist') || m.includes('no user') || m.includes('not found') || m.includes('not exist')) {
-          const err = new Error('The user does not exist, please create an account');
-          err.code = 'USER_NOT_FOUND';
+        if (ERROR_KEYWORDS.USER_NOT_FOUND.some(keyword => m.includes(keyword))) {
+          const err = new Error(ERROR_MESSAGES.USER_NOT_FOUND);
+          err.code = ERROR_CODE_USER_NOT_FOUND;
           throw err;
         }
 
-        if (m.includes('credentials') || m.includes('password') || m.includes('incorrect') || m.includes('wrong')) {
-          const err = new Error('The credentials dont match');
-          err.code = 'BAD_CREDENTIALS';
+        if (ERROR_KEYWORDS.BAD_CREDENTIALS.some(keyword => m.includes(keyword))) {
+          const err = new Error(ERROR_MESSAGES.BAD_CREDENTIALS);
+          err.code = ERROR_CODE_BAD_CREDENTIALS;
           throw err;
         }
 
-        const err = new Error(payload.message || 'Authentication failed.');
+        const err = new Error(payload.message || ERROR_MESSAGES.AUTH_FAILED);
         throw err;
       }
 
@@ -77,7 +82,7 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     const restoreSession = async () => {
       try {
-        const stored = localStorage.getItem('authUser');
+        const stored = localStorage.getItem(STORAGE_KEY_AUTH_USER);
         if (stored) {
           const parsed = JSON.parse(stored);
           if (parsed?.userId) {
@@ -100,7 +105,7 @@ export function AuthProvider({ children }) {
     // normalizeUser will throw for unsuccessful logins — allow that to propagate
     setUser(u);
     try {
-      localStorage.setItem('authUser', JSON.stringify(u));
+      localStorage.setItem(STORAGE_KEY_AUTH_USER, JSON.stringify(u));
     } catch (err) {
       // ignore localStorage errors
     }
@@ -111,13 +116,13 @@ export function AuthProvider({ children }) {
     const raw = await apiSignup(data);
     const u = normalizeUser(raw);
     setUser(u);
-    localStorage.setItem('authUser', JSON.stringify(u));
+    localStorage.setItem(STORAGE_KEY_AUTH_USER, JSON.stringify(u));
     return u;
   };
 
   const logout = () => {
     setUser(null);
-    localStorage.removeItem('authUser');
+    localStorage.removeItem(STORAGE_KEY_AUTH_USER);
   };
 
   return (

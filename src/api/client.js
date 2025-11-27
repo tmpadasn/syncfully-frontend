@@ -1,14 +1,10 @@
 import axios from 'axios';
-
-const baseURL = process.env.REACT_APP_API_URL || 'http://localhost:3000/api';
+import { API_BASE_URL, API_TIMEOUT, DEFAULT_HEADERS } from '../config/constants';
 
 const api = axios.create({
-  baseURL,
-  headers: {
-    'Content-Type': 'application/json',
-    'Accept': 'application/json',
-  },
-  timeout: 15000,
+  baseURL: API_BASE_URL,
+  headers: DEFAULT_HEADERS,
+  timeout: API_TIMEOUT,
   withCredentials: false,
   validateStatus: function (status) {
     return status >= 200 && status < 500;
@@ -24,7 +20,7 @@ api.interceptors.response.use(
 // Test connection function
 export const testConnection = async () => {
   try {
-    await axios.get(`${baseURL}/users`);
+    await axios.get(`${API_BASE_URL}/users`);
     return true;
   } catch (error) {
     return false;

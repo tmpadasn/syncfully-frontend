@@ -4,6 +4,7 @@ import { getUserById, getUserRatings } from "../api/users";
 import { getAllWorks } from "../api/works";
 import UserRatings from "../components/users/UserRatings";
 import logger from "../utils/logger";
+import { DEFAULT_AVATAR_URL } from "../config/constants";
 
 export default function Profile() {
   const { userId } = useParams();
@@ -118,7 +119,7 @@ export default function Profile() {
                 <img
                   src={
                     profileUser.profilePictureUrl ||
-                    "https://upload.wikimedia.org/wikipedia/commons/a/ac/Default_pfp.jpg"
+                    DEFAULT_AVATAR_URL
                   }
                   alt="avatar"
                   style={avatarStyle}

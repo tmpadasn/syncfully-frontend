@@ -4,14 +4,14 @@
  * In production, logs are disabled by default
  */
 
-const isDebugEnabled = process.env.REACT_APP_ENABLE_DEBUG_LOGS === 'true';
+import { IS_DEBUG_ENABLED } from '../config/constants';
 
 const logger = {
   /**
    * Log informational messages (only in debug mode)
    */
   log: (...args) => {
-    if (isDebugEnabled) {
+    if (IS_DEBUG_ENABLED) {
       console.log(...args);
     }
   },
@@ -20,7 +20,7 @@ const logger = {
    * Log warning messages (only in debug mode)
    */
   warn: (...args) => {
-    if (isDebugEnabled) {
+    if (IS_DEBUG_ENABLED) {
       console.warn(...args);
     }
   },
@@ -36,7 +36,7 @@ const logger = {
    * Log debug information with emoji prefix (only in debug mode)
    */
   debug: (emoji, ...args) => {
-    if (isDebugEnabled) {
+    if (IS_DEBUG_ENABLED) {
       console.log(emoji, ...args);
     }
   },
@@ -45,7 +45,7 @@ const logger = {
    * Group logs together (only in debug mode)
    */
   group: (label, callback) => {
-    if (isDebugEnabled) {
+    if (IS_DEBUG_ENABLED) {
       console.group(label);
       callback();
       console.groupEnd();
@@ -56,7 +56,7 @@ const logger = {
    * Log API calls (only in debug mode)
    */
   api: (method, url, data) => {
-    if (isDebugEnabled) {
+    if (IS_DEBUG_ENABLED) {
       console.log(`🔄 API ${method.toUpperCase()}: ${url}`, data || '');
     }
   },
@@ -65,7 +65,7 @@ const logger = {
    * Log navigation events (only in debug mode)
    */
   nav: (message, ...args) => {
-    if (isDebugEnabled) {
+    if (IS_DEBUG_ENABLED) {
       console.log(`🔍 Navigation: ${message}`, ...args);
     }
   }

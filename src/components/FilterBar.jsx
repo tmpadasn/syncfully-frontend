@@ -23,7 +23,7 @@ export default function FilterBar() {
   useEffect(() => {
     const loadFilterOptions = async () => {
       try {
-        console.log('🔍 FilterBar: Loading filter options from backend...');
+        logger.debug('🔍 FilterBar: Loading filter options from backend...');
         const worksData = await getAllWorks();
         const works = worksData?.works || worksData?.data || [];
         
@@ -89,9 +89,9 @@ export default function FilterBar() {
             ratings: ['5','4','3','2','1'] // Standard rating scale
           });
           
-          console.log('✅ FilterBar: Using backend filter options exclusively');
+          logger.debug('✅ FilterBar: Using backend filter options exclusively');
         } else {
-          console.warn('⚠️ FilterBar: No works found in backend, using empty arrays');
+          logger.warn('⚠️ FilterBar: No works found in backend, using empty arrays');
           // Use empty arrays when no backend data
           setFilterOptions({
             types: [],
@@ -102,8 +102,8 @@ export default function FilterBar() {
           });
         }
       } catch (error) {
-        console.error('❌ FilterBar: Failed to load filter options from backend:', error);
-        console.log('❌ FilterBar: Using empty arrays due to backend error');
+        logger.error('❌ FilterBar: Failed to load filter options from backend:', error);
+        logger.debug('❌ FilterBar: Using empty arrays due to backend error');
         // Use empty arrays on error - no fallback to mock data
         setFilterOptions({
           types: [],
@@ -114,7 +114,7 @@ export default function FilterBar() {
         });
       } finally {
         setOptionsLoaded(true);
-        console.log('✅ FilterBar: Filter options loading completed');
+        logger.debug('✅ FilterBar: Filter options loading completed');
       }
     };
     
@@ -122,11 +122,11 @@ export default function FilterBar() {
   }, []);
 
   function updateParam(key, value) {
-    console.log(`🔍 FilterBar: Updating ${key} to:`, value);
+    logger.debug(`🔍 FilterBar: Updating ${key} to:`, value);
     if (!value) params.delete(key);
     else params.set(key, value);
 
-    console.log(`🔍 FilterBar: New URL params:`, params.toString());
+    logger.debug(`🔍 FilterBar: New URL params:`, params.toString());
     navigate(
       { pathname: location.pathname, search: params.toString() },
       { replace: true }

@@ -233,7 +233,7 @@ export default function SearchResults() {
 
         setAddedWorks(new Set(workIds));
       } catch (error) {
-        console.error('Failed to load works already in shelf:', error);
+        logger.error('Failed to load works already in shelf:', error);
         setAddedWorks(new Set());
       }
     };

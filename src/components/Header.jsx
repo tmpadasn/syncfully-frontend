@@ -2,9 +2,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { FiSearch, FiLogIn, FiZap, FiGrid, FiLogOut } from "react-icons/fi";
 import { useState, useEffect, useRef } from 'react';
 import useAuth from '../hooks/useAuth';
-
-const defaultAvatar =
-  "https://upload.wikimedia.org/wikipedia/commons/a/ac/Default_pfp.jpg";
+import { DEFAULT_AVATAR_URL } from '../config/constants';
 
 export default function Header() {
   const { user, isGuest, logout } = useAuth();
@@ -184,7 +182,7 @@ export default function Header() {
           ) : (
             <>
               <img
-                src={user?.profilePictureUrl || defaultAvatar}
+                src={user?.profilePictureUrl || DEFAULT_AVATAR_URL}
                 alt="avatar"
                 style={{
                   width: 40,

@@ -9,6 +9,7 @@ import {
   removeWorkFromShelf,
   getOrCreateFavouritesShelf
 } from '../api/shelves';
+import { SHELF_NAMES } from '../config/constants';
 
 /**
  * Custom hook for managing user shelves
@@ -117,7 +118,7 @@ export default function useShelves(userId) {
       
       // Check if a Favourites shelf already exists by name (case-insensitive)
       const existingFavourites = shelves.find(s => 
-        s.name?.toLowerCase() === 'favourites'
+        s.name?.toLowerCase() === SHELF_NAMES.FAVOURITES
       );
       
       // Only add if we don't have any Favourites shelf yet
