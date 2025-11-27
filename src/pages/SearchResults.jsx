@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
 import { getAllWorks } from '../api/works';
 import { searchItems } from '../api/search';
@@ -23,6 +23,8 @@ export default function SearchResults() {
   const navigate = useNavigate();
   const { navigateAndClearFilters } = useNavigationWithClearFilters();
   const { user } = useAuth();
+  const isMountedRef = useRef(true);
+  
   const params = new URLSearchParams(search);
   const query = params.get('q') || '';
   const typeFilter = params.get('type') || '';        // TYPE filter (movie, book, music, user, etc.)
@@ -42,101 +44,130 @@ export default function SearchResults() {
   const [favouritingWork, setFavouritingWork] = useState(null);
   const [favouritesShelfId, setFavouritesShelfId] = useState(null);
 
+  // Memoize filters object to prevent unnecessary re-renders
+  const filters = useMemo(() => ({
+    type: typeFilter,
+    genre: genreFilter,
+    year: yearFilter,
+    rating: ratingFilter
+  }), [typeFilter, genreFilter, yearFilter, ratingFilter]);
+
   // Load user's Favourites shelf and check which works are already in it
-  useEffect(() => {
-    const loadFavourites = async () => {
-      if (!user) return;
-      
-      try {
-        logger.debug('🔄', 'Loading favourites for user:', user.userId);
-        
-        // Get user's shelves
-        const shelvesData = await getUserShelves(user.userId);
-        logger.debug('📚', 'User shelves data:', shelvesData);
-        
-        // Extract the shelves array from the response
-        const shelves = extractShelvesFromResponse(shelvesData);
-        logger.debug('📚', 'Shelves array:', shelves);
-        logger.debug('📚', 'Shelves count:', shelves.length);
-        if (shelves.length > 0) {
-          logger.debug('📚', 'Shelf names:', shelves.map(s => s.name));
-        }
-        
-        // Find or create Favourites shelf
-        const favourites = await getOrCreateFavouritesShelf(user.userId, shelves);
-        logger.debug('⭐', 'Favourites shelf after getOrCreate:', favourites);
-        logger.debug('⭐', 'Favourites shelf:', favourites);
-        setFavouritesShelfId(favourites.shelfId);
-        
-        // Get works in Favourites shelf
-        const favouritesWorksData = await getShelfWorks(favourites.shelfId);
-        logger.debug('📦', 'Raw favourites works data:', favouritesWorksData);
-        
-        // Extract works array from API response
-        const favouritesWorks = extractWorksFromResponse(favouritesWorksData);
-        logger.debug('✨', 'Favourites works array:', favouritesWorks);
-        
-        // Create a set of work IDs that are in Favourites
-        const workIds = extractWorkIdsFromShelf(favouritesWorks);
-        logger.debug('💾', 'Favourited work IDs (as strings):', Array.from(workIds));
-        setFavouritedWorks(workIds);
-      } catch (error) {
-        logger.error('Failed to load favourites:', error);
-      }
-    };
+  const loadFavourites = useCallback(async () => {
+    if (!user || !isMountedRef.current) return;
     
-    loadFavourites();
+    try {
+      logger.debug('🔄', 'Loading favourites for user:', user.userId);
+      
+      // Get user's shelves
+      const shelvesData = await getUserShelves(user.userId);
+      if (!isMountedRef.current) return;
+      
+      logger.debug('📚', 'User shelves data:', shelvesData);
+      
+      // Extract the shelves array from the response
+      const shelves = extractShelvesFromResponse(shelvesData);
+      logger.debug('📚', 'Shelves array:', shelves);
+      logger.debug('📚', 'Shelves count:', shelves.length);
+      if (shelves.length > 0) {
+        logger.debug('📚', 'Shelf names:', shelves.map(s => s.name));
+      }
+      
+      // Find or create Favourites shelf
+      const favourites = await getOrCreateFavouritesShelf(user.userId, shelves);
+      if (!isMountedRef.current) return;
+      
+      logger.debug('⭐', 'Favourites shelf after getOrCreate:', favourites);
+      logger.debug('⭐', 'Favourites shelf:', favourites);
+      setFavouritesShelfId(favourites.shelfId);
+      
+      // Get works in Favourites shelf
+      const favouritesWorksData = await getShelfWorks(favourites.shelfId);
+      if (!isMountedRef.current) return;
+      
+      logger.debug('📦', 'Raw favourites works data:', favouritesWorksData);
+      
+      // Extract works array from API response
+      const favouritesWorks = extractWorksFromResponse(favouritesWorksData);
+      logger.debug('✨', 'Favourites works array:', favouritesWorks);
+      
+      // Create a set of work IDs that are in Favourites
+      const workIds = extractWorkIdsFromShelf(favouritesWorks);
+      logger.debug('💾', 'Favourited work IDs (as strings):', Array.from(workIds));
+      
+      if (isMountedRef.current) {
+        setFavouritedWorks(workIds);
+      }
+    } catch (error) {
+      logger.error('Failed to load favourites:', error);
+    }
   }, [user]);
 
   useEffect(() => {
-    const loadShelfContents = async () => {
-      if (!addToShelfId) {
-        setAddedWorks(new Set());
-        return;
-      }
+    isMountedRef.current = true;
+    loadFavourites();
 
-      try {
-        const shelfWorksResponse = await getShelfWorks(addToShelfId);
-        let worksArray = [];
-
-        if (Array.isArray(shelfWorksResponse)) {
-          worksArray = shelfWorksResponse;
-        } else if (Array.isArray(shelfWorksResponse?.data?.works)) {
-          worksArray = shelfWorksResponse.data.works;
-        } else if (Array.isArray(shelfWorksResponse?.works)) {
-          worksArray = shelfWorksResponse.works;
-        } else if (Array.isArray(shelfWorksResponse?.data)) {
-          worksArray = shelfWorksResponse.data;
-        } else if (Array.isArray(shelfWorksResponse?.data?.shelf?.works)) {
-          worksArray = shelfWorksResponse.data.shelf.works;
-        }
-
-        const workIds = worksArray
-          .map(work => {
-            if (!work) return null;
-            if (typeof work === 'string' || typeof work === 'number') {
-              return String(work);
-            }
-
-            const nestedWork = typeof work.work === 'object' ? work.work : null;
-            const nestedId = nestedWork
-              ? (nestedWork.id || nestedWork.workId || nestedWork._id || nestedWork.entityId)
-              : null;
-            const directId = work.workId || work.id || work._id || work.entityId;
-            const finalId = directId || nestedId;
-            return finalId ? String(finalId) : null;
-          })
-          .filter(Boolean);
-
-        setAddedWorks(new Set(workIds));
-      } catch (error) {
-        logger.error('Failed to load works already in shelf:', error);
-        setAddedWorks(new Set());
-      }
+    return () => {
+      isMountedRef.current = false;
     };
+  }, [loadFavourites]);
 
-    loadShelfContents();
+  // Load shelf contents for "add to shelf" mode
+  const loadShelfContents = useCallback(async () => {
+    if (!addToShelfId || !isMountedRef.current) {
+      setAddedWorks(new Set());
+      return;
+    }
+
+    try {
+      const shelfWorksResponse = await getShelfWorks(addToShelfId);
+      if (!isMountedRef.current) return;
+      
+      let worksArray = [];
+
+      if (Array.isArray(shelfWorksResponse)) {
+        worksArray = shelfWorksResponse;
+      } else if (Array.isArray(shelfWorksResponse?.data?.works)) {
+        worksArray = shelfWorksResponse.data.works;
+      } else if (Array.isArray(shelfWorksResponse?.works)) {
+        worksArray = shelfWorksResponse.works;
+      } else if (Array.isArray(shelfWorksResponse?.data)) {
+        worksArray = shelfWorksResponse.data;
+      } else if (Array.isArray(shelfWorksResponse?.data?.shelf?.works)) {
+        worksArray = shelfWorksResponse.data.shelf.works;
+      }
+
+      const workIds = worksArray
+        .map(work => {
+          if (!work) return null;
+          if (typeof work === 'string' || typeof work === 'number') {
+            return String(work);
+          }
+
+          const nestedWork = typeof work.work === 'object' ? work.work : null;
+          const nestedId = nestedWork
+            ? (nestedWork.id || nestedWork.workId || nestedWork._id || nestedWork.entityId)
+            : null;
+          const directId = work.workId || work.id || work._id || work.entityId;
+          const finalId = directId || nestedId;
+          return finalId ? String(finalId) : null;
+        })
+        .filter(Boolean);
+
+      if (isMountedRef.current) {
+        setAddedWorks(new Set(workIds));
+      }
+    } catch (error) {
+      logger.error('Failed to load works already in shelf:', error);
+      if (isMountedRef.current) {
+        setAddedWorks(new Set());
+      }
+    }
   }, [addToShelfId]);
+
+  useEffect(() => {
+    loadShelfContents();
+  }, [loadShelfContents]);
 
   // Generate dynamic page title based on filters
   const getPageTitle = () => {
@@ -158,10 +189,14 @@ export default function SearchResults() {
     return 'BROWSE ALL';
   };
 
-  useEffect(() => {
-    const fetchResults = async () => {
-      setLoading(true);
-      const searchTerm = query.trim();
+  // Memoized fetch results function
+  const fetchResults = useCallback(async () => {
+    if (!isMountedRef.current) return;
+    
+    // Reset results immediately to prevent flash of old content
+    setResults({ works: [], users: [] });
+    setLoading(true);
+    const searchTerm = query.trim();
       
       try {
         // Prepare filters for backend - ensure consistent parameter names
@@ -329,15 +364,20 @@ export default function SearchResults() {
 
         setResults({ works: clientFilteredWorks, users: mappedUsers });
       } catch (error) {
-        logger.error('Failed to fetch results:', error);
+      logger.error('Failed to fetch results:', error);
+      if (isMountedRef.current) {
         setResults({ works: [], users: [] });
-      } finally {
+      }
+    } finally {
+      if (isMountedRef.current) {
         setLoading(false);
       }
-    };
-    
-    fetchResults();
+    }
   }, [query, typeFilter, yearFilter, genreFilter, ratingFilter]);
+
+  useEffect(() => {
+    fetchResults();
+  }, [fetchResults]);
 
   const handleAddToShelf = async (workId) => {
     if (!addToShelfId) return;

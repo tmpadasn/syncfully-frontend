@@ -248,7 +248,10 @@ export default function FilterBar() {
 
 function MenuControl({ label, options, onSelect, currentValue = '', disabled = false, showIcons = false }) {
   const [open, setOpen] = useState(false);
+  const [focusedIndex, setFocusedIndex] = useState(-1);
   const ref = useRef(null);
+  const buttonRef = useRef(null);
+  const menuRef = useRef(null);
 
   useEffect(() => {
     function onDoc(e) {
@@ -259,6 +262,60 @@ function MenuControl({ label, options, onSelect, currentValue = '', disabled = f
     document.addEventListener('mousedown', onDoc);
     return () => document.removeEventListener('mousedown', onDoc);
   }, []);
+
+  // Keyboard navigation for dropdown
+  useEffect(() => {
+    if (!open) return;
+
+    const handleKeyDown = (e) => {
+      const flatOptions = !showIcons 
+        ? options 
+        : options; // In case of grouped options, we still navigate through all
+
+      switch (e.key) {
+        case 'Escape':
+          e.preventDefault();
+          setOpen(false);
+          buttonRef.current?.focus();
+          break;
+        case 'ArrowDown':
+          e.preventDefault();
+          setFocusedIndex(prev => (prev < flatOptions.length - 1 ? prev + 1 : 0));
+          break;
+        case 'ArrowUp':
+          e.preventDefault();
+          setFocusedIndex(prev => (prev > 0 ? prev - 1 : flatOptions.length - 1));
+          break;
+        case 'Enter':
+        case ' ':
+          e.preventDefault();
+          if (focusedIndex >= 0 && focusedIndex < flatOptions.length) {
+            onSelect(flatOptions[focusedIndex].value);
+            setOpen(false);
+            buttonRef.current?.focus();
+          }
+          break;
+        case 'Home':
+          e.preventDefault();
+          setFocusedIndex(0);
+          break;
+        case 'End':
+          e.preventDefault();
+          setFocusedIndex(flatOptions.length - 1);
+          break;
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [open, focusedIndex, options, onSelect, showIcons]);
+
+  // Reset focused index when opening
+  useEffect(() => {
+    if (open) {
+      setFocusedIndex(-1);
+    }
+  }, [open]);
 
   // Find the currently selected option to display its label
   const selectedOption = options.find(opt => opt.value === currentValue);
@@ -361,10 +418,14 @@ function MenuControl({ label, options, onSelect, currentValue = '', disabled = f
 
   return (
     <div style={wrapper} ref={ref}>
-      <div 
+      <button
+        ref={buttonRef}
+        type="button"
         style={{
           ...labelStyle,
-          backgroundColor: open ? '#f5f5f5' : 'transparent',
+          backgroundColor: open ? '#f5f5f5' : (isSelected ? '#f8f5f0' : 'transparent'),
+          border: 'none',
+          cursor: disabled ? 'not-allowed' : 'pointer',
         }}
         onClick={() => !disabled && setOpen(s => !s)}
         onMouseEnter={(e) => {
@@ -374,32 +435,49 @@ function MenuControl({ label, options, onSelect, currentValue = '', disabled = f
         }}
         onMouseLeave={(e) => {
           if (!disabled && !open) {
-            e.target.style.backgroundColor = 'transparent';
+            e.target.style.backgroundColor = isSelected ? '#f8f5f0' : 'transparent';
           }
         }}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        aria-label={`${label} filter${isSelected ? `, currently set to ${displayLabel}` : ''}`}
+        disabled={disabled}
       >
         {disabled ? 'LOADING...' : displayLabel}
-        {!disabled && <FiChevronDown style={{ transform: open ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s ease' }} />}
-      </div>
+        {!disabled && <FiChevronDown style={{ transform: open ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s ease' }} aria-hidden="true" />}
+      </button>
       {open && !disabled && (
-        <div style={menuStyle} role="menu">
+        <div 
+          ref={menuRef}
+          style={menuStyle} 
+          role="listbox"
+          aria-label={`${label} options`}
+        >
           {!showIcons ? (
             // Regular options without grouping
-            options.map(opt => (
+            options.map((opt, idx) => (
               <div
                 key={opt.label + opt.value}
-                style={optStyle}
+                style={{
+                  ...optStyle,
+                  backgroundColor: focusedIndex === idx ? '#f5f5f5' : 'transparent',
+                }}
                 onClick={() => {
                   onSelect(opt.value);
                   setOpen(false);
+                  buttonRef.current?.focus();
                 }}
                 onMouseEnter={(e) => {
                   e.target.style.backgroundColor = '#f5f5f5';
+                  setFocusedIndex(idx);
                 }}
                 onMouseLeave={(e) => {
-                  e.target.style.backgroundColor = 'transparent';
+                  if (focusedIndex !== idx) {
+                    e.target.style.backgroundColor = 'transparent';
+                  }
                 }}
-                role="menuitem"
+                role="option"
+                aria-selected={opt.value === currentValue}
               >
                 {opt.label}
               </div>
@@ -408,21 +486,32 @@ function MenuControl({ label, options, onSelect, currentValue = '', disabled = f
             // Grouped options with icons
             <>
               {/* ALL option */}
-              {options.filter(opt => opt.value === '').map(opt => (
+              {options.filter(opt => opt.value === '').map((opt, idx) => (
                 <div
                   key={opt.label + opt.value}
-                  style={{...optStyle, marginBottom: 8, borderBottom: '1px solid #e0e0e0', paddingBottom: 8}}
+                  style={{
+                    ...optStyle, 
+                    marginBottom: 8, 
+                    borderBottom: '1px solid #e0e0e0', 
+                    paddingBottom: 8,
+                    backgroundColor: focusedIndex === idx ? '#f5f5f5' : 'transparent',
+                  }}
                   onClick={() => {
                     onSelect(opt.value);
                     setOpen(false);
+                    buttonRef.current?.focus();
                   }}
                   onMouseEnter={(e) => {
                     e.currentTarget.style.backgroundColor = '#f5f5f5';
+                    setFocusedIndex(idx);
                   }}
                   onMouseLeave={(e) => {
-                    e.currentTarget.style.backgroundColor = 'transparent';
+                    if (focusedIndex !== idx) {
+                      e.currentTarget.style.backgroundColor = 'transparent';
+                    }
                   }}
-                  role="menuitem"
+                  role="option"
+                  aria-selected={opt.value === currentValue}
                 >
                   {opt.label}
                 </div>
@@ -449,6 +538,7 @@ function MenuControl({ label, options, onSelect, currentValue = '', disabled = f
                       onClick={() => {
                         onSelect(opt.value);
                         setOpen(false);
+                        buttonRef.current?.focus();
                       }}
                       onMouseEnter={(e) => {
                         e.currentTarget.style.backgroundColor = '#f5f5f5';
@@ -456,10 +546,11 @@ function MenuControl({ label, options, onSelect, currentValue = '', disabled = f
                       onMouseLeave={(e) => {
                         e.currentTarget.style.backgroundColor = 'transparent';
                       }}
-                      role="menuitem"
+                      role="option"
+                      aria-selected={opt.value === currentValue}
                     >
                       {getIcon('book')}
-                      {opt.label}
+                      <span>{opt.label}</span>
                     </div>
                   ))}
                 </>
@@ -486,6 +577,7 @@ function MenuControl({ label, options, onSelect, currentValue = '', disabled = f
                       onClick={() => {
                         onSelect(opt.value);
                         setOpen(false);
+                        buttonRef.current?.focus();
                       }}
                       onMouseEnter={(e) => {
                         e.currentTarget.style.backgroundColor = '#f5f5f5';
@@ -493,10 +585,11 @@ function MenuControl({ label, options, onSelect, currentValue = '', disabled = f
                       onMouseLeave={(e) => {
                         e.currentTarget.style.backgroundColor = 'transparent';
                       }}
-                      role="menuitem"
+                      role="option"
+                      aria-selected={opt.value === currentValue}
                     >
                       {getIcon('music')}
-                      {opt.label}
+                      <span>{opt.label}</span>
                     </div>
                   ))}
                 </>
@@ -523,6 +616,7 @@ function MenuControl({ label, options, onSelect, currentValue = '', disabled = f
                       onClick={() => {
                         onSelect(opt.value);
                         setOpen(false);
+                        buttonRef.current?.focus();
                       }}
                       onMouseEnter={(e) => {
                         e.currentTarget.style.backgroundColor = '#f5f5f5';
@@ -530,10 +624,11 @@ function MenuControl({ label, options, onSelect, currentValue = '', disabled = f
                       onMouseLeave={(e) => {
                         e.currentTarget.style.backgroundColor = 'transparent';
                       }}
-                      role="menuitem"
+                      role="option"
+                      aria-selected={opt.value === currentValue}
                     >
                       {getIcon('movie')}
-                      {opt.label}
+                      <span>{opt.label}</span>
                     </div>
                   ))}
                 </>
@@ -560,6 +655,7 @@ function MenuControl({ label, options, onSelect, currentValue = '', disabled = f
                       onClick={() => {
                         onSelect(opt.value);
                         setOpen(false);
+                        buttonRef.current?.focus();
                       }}
                       onMouseEnter={(e) => {
                         e.currentTarget.style.backgroundColor = '#f5f5f5';
@@ -567,7 +663,8 @@ function MenuControl({ label, options, onSelect, currentValue = '', disabled = f
                       onMouseLeave={(e) => {
                         e.currentTarget.style.backgroundColor = 'transparent';
                       }}
-                      role="menuitem"
+                      role="option"
+                      aria-selected={opt.value === currentValue}
                     >
                       {opt.label}
                     </div>

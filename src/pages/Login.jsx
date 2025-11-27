@@ -244,17 +244,26 @@ export default function Login() {
           </p>
 
           {redirectMessage && (
-            <div style={styles.infoBox}>{redirectMessage}</div>
+            <div style={styles.infoBox} role="status" aria-live="polite">
+              {redirectMessage}
+            </div>
           )}
 
-          {error && <div style={styles.errorBox}>{error}</div>}
+          {error && (
+            <div style={styles.errorBox} role="alert" aria-live="assertive">
+              {error}
+            </div>
+          )}
 
           <form onSubmit={handleSubmit} style={styles.form} noValidate>
             {!isLogin && (
               <>
                 <div style={styles.field}>
-                  <label style={styles.label}>Username</label>
+                  <label htmlFor="username-input" style={styles.label}>
+                    Username
+                  </label>
                   <input
+                    id="username-input"
                     type="text"
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
@@ -268,12 +277,24 @@ export default function Login() {
                     }}
                     onFocus={(e) => (e.target.style.boxShadow = "0 0 0 3px rgba(154, 66, 7, 0.1)")}
                     required
+                    autoComplete="username"
+                    aria-required="true"
+                    aria-invalid={touched.username && !username}
+                    aria-describedby={touched.username && !username ? "username-error" : undefined}
                   />
+                  {touched.username && !username && (
+                    <div id="username-error" style={styles.errorMessage} role="alert">
+                      Username is required
+                    </div>
+                  )}
                 </div>
 
                 <div style={styles.field}>
-                  <label style={styles.label}>Email Address</label>
+                  <label htmlFor="email-input" style={styles.label}>
+                    Email Address
+                  </label>
                   <input
+                    id="email-input"
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
@@ -287,15 +308,27 @@ export default function Login() {
                     }}
                     onFocus={(e) => (e.target.style.boxShadow = "0 0 0 3px rgba(154, 66, 7, 0.1)")}
                     required
+                    autoComplete="email"
+                    aria-required="true"
+                    aria-invalid={touched.email && !email}
+                    aria-describedby={touched.email && !email ? "email-error" : undefined}
                   />
+                  {touched.email && !email && (
+                    <div id="email-error" style={styles.errorMessage} role="alert">
+                      Email is required
+                    </div>
+                  )}
                 </div>
               </>
             )}
 
             {isLogin && (
               <div style={styles.field}>
-                <label style={styles.label}>Email or Username</label>
+                <label htmlFor="identifier-input" style={styles.label}>
+                  Email or Username
+                </label>
                 <input
+                  id="identifier-input"
                   type="text"
                   value={identifier}
                   onChange={(e) => setIdentifier(e.target.value)}
@@ -309,13 +342,25 @@ export default function Login() {
                   }}
                   onFocus={(e) => (e.target.style.boxShadow = "0 0 0 3px rgba(154, 66, 7, 0.1)")}
                   required
+                  autoComplete="username email"
+                  aria-required="true"
+                  aria-invalid={touched.identifier && !identifier}
+                  aria-describedby={touched.identifier && !identifier ? "identifier-error" : undefined}
                 />
+                {touched.identifier && !identifier && (
+                  <div id="identifier-error" style={styles.errorMessage} role="alert">
+                    Email or username is required
+                  </div>
+                )}
               </div>
             )}
 
             <div style={styles.field}>
-              <label style={styles.label}>Password</label>
+              <label htmlFor="password-input" style={styles.label}>
+                Password
+              </label>
               <input
+                id="password-input"
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -331,9 +376,13 @@ export default function Login() {
                 }}
                 onFocus={(e) => (e.target.style.boxShadow = "0 0 0 3px rgba(154, 66, 7, 0.1)")}
                 required
+                autoComplete={isLogin ? "current-password" : "new-password"}
+                aria-required="true"
+                aria-invalid={touched.password && (passwordTooShort || !password)}
+                aria-describedby={touched.password && passwordTooShort ? "password-error" : undefined}
               />
               {touched.password && passwordTooShort && (
-                <div style={styles.errorMessage}>
+                <div id="password-error" style={styles.errorMessage} role="alert">
                   Password too short (min 4 chars)
                 </div>
               )}
@@ -348,6 +397,7 @@ export default function Login() {
               }}
               onMouseEnter={(e) => !loading && (e.currentTarget.style.transform = "translateY(-2px)")}
               onMouseLeave={(e) => (e.currentTarget.style.transform = "none")}
+              aria-busy={loading}
             >
               {loading
                 ? isLogin
@@ -361,7 +411,19 @@ export default function Login() {
 
           <div style={styles.toggleWrapper}>
             {isLogin ? "New here?" : "Already have an account?"}
-            <span onClick={switchMode} style={styles.toggleLink}>
+            <span 
+              onClick={switchMode} 
+              style={styles.toggleLink}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  switchMode();
+                }
+              }}
+              aria-label={isLogin ? "Switch to sign up" : "Switch to login"}
+            >
               {isLogin ? "Create an account" : "Log in instead"}
             </span>
           </div>

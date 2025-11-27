@@ -20,7 +20,12 @@ export default function Profile() {
 
   useEffect(() => {
     const load = async () => {
+      // Reset state immediately to prevent flash of old content
+      setProfileUser(null);
+      setRatings({});
+      setWorks([]);
       setLoading(true);
+      
       try {
         const [u, ratingsResponse, allWorks] = await Promise.all([
           getUserById(userId),

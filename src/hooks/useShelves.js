@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import logger from '../utils/logger';
 import {
   getUserShelves,
@@ -18,31 +18,45 @@ export default function useShelves(userId) {
   const [shelves, setShelves] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const isMountedRef = useRef(true);
 
-  // Load shelves on mount or when userId changes
-  useEffect(() => {
+  // Memoized load shelves function
+  const loadShelves = useCallback(async () => {
     if (!userId) {
       setShelves([]);
       setLoading(false);
       return;
     }
 
-    const loadShelves = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        const response = await getUserShelves(userId);
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await getUserShelves(userId);
+      
+      if (isMountedRef.current) {
         setShelves(response.data?.shelves || []);
-      } catch (err) {
+      }
+    } catch (err) {
+      if (isMountedRef.current) {
         setError(err.message);
         logger.error('Error loading shelves:', err);
-      } finally {
+      }
+    } finally {
+      if (isMountedRef.current) {
         setLoading(false);
       }
-    };
-
-    loadShelves();
+    }
   }, [userId]);
+
+  // Load shelves on mount or when userId changes
+  useEffect(() => {
+    isMountedRef.current = true;
+    loadShelves();
+
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, [loadShelves]);
 
   // Create new shelf
   const createNewShelf = async (name, description = '') => {
@@ -143,18 +157,10 @@ export default function useShelves(userId) {
     addWorkToExistingShelf,
     removeWorkFromExistingShelf,
     getOrCreateFavourites,
-    refetch: () => {
-      if (userId) {
-        const loadShelves = async () => {
-          try {
-            const response = await getUserShelves(userId);
-            setShelves(response.data?.shelves || []);
-          } catch (err) {
-            setError(err.message);
-          }
-        };
+    refetch: useCallback(() => {
+      if (userId && isMountedRef.current) {
         loadShelves();
       }
-    }
+    }, [userId, loadShelves])
   };
 }

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { FiHeart, FiX } from 'react-icons/fi';
 import { addWorkToShelf, getOrCreateFavouritesShelf } from '../api/shelves';
 
@@ -121,12 +121,73 @@ export default function AddToShelfBtn({ workId, userId, shelves, onSuccess }) {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState(null);
   const [availableShelves, setAvailableShelves] = useState([]);
+  const [focusedIndex, setFocusedIndex] = useState(-1);
+  
+  // Refs for focus management
+  const triggerButtonRef = useRef(null);
+  const modalRef = useRef(null);
+  const closeButtonRef = useRef(null);
+  const firstFocusableRef = useRef(null);
 
   useEffect(() => {
     if (showModal && shelves) {
       setAvailableShelves(shelves);
+      setFocusedIndex(-1);
+      
+      // Focus the close button when modal opens
+      setTimeout(() => {
+        closeButtonRef.current?.focus();
+      }, 0);
     }
   }, [showModal, shelves]);
+
+  // Handle Escape key to close modal
+  useEffect(() => {
+    if (!showModal) return;
+
+    const handleEscape = (e) => {
+      if (e.key === 'Escape') {
+        closeModal();
+      }
+    };
+
+    document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
+  }, [showModal]);
+
+  // Trap focus within modal
+  useEffect(() => {
+    if (!showModal || !modalRef.current) return;
+
+    const handleTabKey = (e) => {
+      const focusableElements = modalRef.current.querySelectorAll(
+        'button:not([disabled]), [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+      );
+      const firstElement = focusableElements[0];
+      const lastElement = focusableElements[focusableElements.length - 1];
+
+      if (e.key === 'Tab') {
+        if (e.shiftKey && document.activeElement === firstElement) {
+          e.preventDefault();
+          lastElement?.focus();
+        } else if (!e.shiftKey && document.activeElement === lastElement) {
+          e.preventDefault();
+          firstElement?.focus();
+        }
+      }
+    };
+
+    document.addEventListener('keydown', handleTabKey);
+    return () => document.removeEventListener('keydown', handleTabKey);
+  }, [showModal]);
+
+  const closeModal = () => {
+    setShowModal(false);
+    // Return focus to trigger button
+    setTimeout(() => {
+      triggerButtonRef.current?.focus();
+    }, 0);
+  };
 
   const handleAddToShelf = async (shelfId) => {
     setLoading(true);
@@ -137,7 +198,7 @@ export default function AddToShelfBtn({ workId, userId, shelves, onSuccess }) {
       setMessage({ type: 'success', text: 'Work added to shelf!' });
       
       setTimeout(() => {
-        setShowModal(false);
+        closeModal();
         if (onSuccess) onSuccess();
       }, 1500);
     } catch (error) {
@@ -159,7 +220,7 @@ export default function AddToShelfBtn({ workId, userId, shelves, onSuccess }) {
       setMessage({ type: 'success', text: 'Added to Favourites!' });
       
       setTimeout(() => {
-        setShowModal(false);
+        closeModal();
         if (onSuccess) onSuccess();
       }, 1500);
     } catch (error) {
@@ -172,6 +233,7 @@ export default function AddToShelfBtn({ workId, userId, shelves, onSuccess }) {
   return (
     <>
       <button
+        ref={triggerButtonRef}
         style={styles.addToShelfBtn}
         onClick={() => setShowModal(true)}
         onMouseEnter={(e) => {
@@ -182,37 +244,65 @@ export default function AddToShelfBtn({ workId, userId, shelves, onSuccess }) {
           e.target.style.background = styles.addToShelfBtn.background;
           e.target.style.transform = 'none';
         }}
+        aria-label="Add work to shelf"
+        aria-haspopup="dialog"
       >
-        <FiHeart size={20} />
+        <FiHeart size={20} aria-hidden="true" />
         Add to Shelf
       </button>
 
       {showModal && (
-        <div style={styles.modal} onClick={() => setShowModal(false)}>
-          <div style={styles.modalContent} onClick={(e) => e.stopPropagation()}>
+        <div 
+          style={styles.modal} 
+          onClick={closeModal}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="modal-title"
+        >
+          <div 
+            ref={modalRef}
+            style={styles.modalContent} 
+            onClick={(e) => e.stopPropagation()}
+          >
             <div style={styles.modalHeader}>
-              <h2 style={styles.modalTitle}>Add to Shelf</h2>
-              <button style={styles.closeButton} onClick={() => setShowModal(false)}>
-                <FiX size={24} />
+              <h2 id="modal-title" style={styles.modalTitle}>Add to Shelf</h2>
+              <button 
+                ref={closeButtonRef}
+                style={styles.closeButton} 
+                onClick={closeModal}
+                aria-label="Close dialog"
+              >
+                <FiX size={24} aria-hidden="true" />
               </button>
             </div>
 
             {message && (
-              <div style={message.type === 'error' ? styles.errorMessage : styles.successMessage}>
+              <div 
+                style={message.type === 'error' ? styles.errorMessage : styles.successMessage}
+                role="alert"
+                aria-live="polite"
+              >
                 {message.text}
               </div>
             )}
 
-            {loading && <div style={styles.loadingMessage}>Loading...</div>}
+            {loading && (
+              <div style={styles.loadingMessage} role="status" aria-live="polite">
+                Loading...
+              </div>
+            )}
 
             {!loading && availableShelves.length === 0 && (
-              <div style={styles.loadingMessage}>No shelves available</div>
+              <div style={styles.loadingMessage} role="status">
+                No shelves available
+              </div>
             )}
 
             {!loading && availableShelves.length > 0 && (
-              <div style={styles.shelfOptions}>
+              <div style={styles.shelfOptions} role="list">
                 {/* Favourites button - always first */}
-                <div
+                <button
+                  ref={firstFocusableRef}
                   style={styles.shelfOption}
                   onMouseEnter={(e) => {
                     e.currentTarget.style.borderColor = styles.shelfOptionHover.borderColor;
@@ -223,13 +313,15 @@ export default function AddToShelfBtn({ workId, userId, shelves, onSuccess }) {
                     e.currentTarget.style.background = 'white';
                   }}
                   onClick={() => handleAddToFavourites()}
+                  aria-label="Add to Favourites shelf"
+                  role="listitem"
                 >
                   <div style={styles.shelfOptionName}>
-                    <FiHeart size={16} style={{ marginRight: 8, display: 'inline' }} />
+                    <FiHeart size={16} style={{ marginRight: 8, display: 'inline' }} aria-hidden="true" />
                     Add to Favourites
                   </div>
                   <div style={styles.shelfOptionDesc}>Your favorite works collection</div>
-                </div>
+                </button>
 
                 {/* Other shelves */}
                 {availableShelves.map(shelf => {
@@ -239,8 +331,10 @@ export default function AddToShelfBtn({ workId, userId, shelves, onSuccess }) {
                     return null;
                   }
                   
+                  const workCount = shelf.works?.length || 0;
+                  
                   return (
-                    <div
+                    <button
                       key={shelf.shelfId}
                       style={styles.shelfOption}
                       onMouseEnter={(e) => {
@@ -252,12 +346,14 @@ export default function AddToShelfBtn({ workId, userId, shelves, onSuccess }) {
                         e.currentTarget.style.background = 'white';
                       }}
                       onClick={() => handleAddToShelf(shelf.shelfId)}
+                      aria-label={`Add to ${shelf.name} shelf, contains ${workCount} work${workCount !== 1 ? 's' : ''}`}
+                      role="listitem"
                     >
                       <div style={styles.shelfOptionName}>{shelf.name}</div>
                       <div style={styles.shelfOptionDesc}>
-                        {shelf.works?.length || 0} work{(shelf.works?.length || 0) !== 1 ? 's' : ''}
+                        {workCount} work{workCount !== 1 ? 's' : ''}
                       </div>
-                    </div>
+                    </button>
                   );
                 })}
               </div>

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { getPopularWorks, getAllWorks } from '../api/works';
 import { getAllUsers, getUserRatings, getUserById } from '../api/users';
 import { testConnection } from '../api/client';
@@ -29,7 +29,7 @@ const processPopularWorks = (data) => {
   return normalizeWorks(works);
 };
 
-const processFriendsData = async (users, allWorks, currentUserId) => {
+const processFriendsData = async (users, allWorks, currentUserId, isMountedRef) => {
   const friendsWithActivity = [];
 
   if (!currentUserId) return []; // If not logged in → no friends
@@ -39,8 +39,13 @@ const processFriendsData = async (users, allWorks, currentUserId) => {
   );
 
   for (const user of eligibleUsers) {
+    if (!isMountedRef.current) break; // Stop if component unmounted
+    
     try {
       const ratingsResponse = await getUserRatings(user.userId);
+      
+      if (!isMountedRef.current) break; // Check again after async call
+      
       const ratingsData = ratingsResponse?.data || ratingsResponse || {};
 
       const entries = normalizeRatingsObject(ratingsData);
@@ -178,6 +183,7 @@ export default function Home() {
 
   const { user } = useAuth(); // NOW decides login state
   const currentUserId = user?.userId || null;
+  const isMountedRef = useRef(true);
 
   const [popular, setPopular] = useState([]);
   const [friends, setFriends] = useState([]);
@@ -196,8 +202,20 @@ export default function Home() {
     }
   }, []);
 
-  useEffect(() => {
-    const loadPage = async () => {
+  // Memoized load page function
+  const loadPage = useCallback(async () => {
+    if (!isMountedRef.current) return;
+
+    try {
+      // Reset state immediately to prevent flash of old content
+      setPopular([]);
+      setFriends([]);
+      setRecentMovies([]);
+      setRecentMusic([]);
+      setLoading(true);
+      setFriendsLoading(true);
+      setRecentLoading(true);
+
       await testConnection();
 
       const [popularData, worksData] = await Promise.all([
@@ -205,18 +223,27 @@ export default function Home() {
         getAllWorks()
       ]);
 
+      if (!isMountedRef.current) return;
+
       setPopular(processPopularWorks(popularData));
       const allWorks = worksData?.works || [];
 
       if (currentUserId) {
         // Only fetch friends if logged in
         const usersResponse = await getAllUsers();
+        
+        if (!isMountedRef.current) return;
+        
         const users = usersResponse?.data || usersResponse || [];
         const friendActivity = await processFriendsData(
           users,
           allWorks,
-          currentUserId
+          currentUserId,
+          isMountedRef
         );
+        
+        if (!isMountedRef.current) return;
+        
         setFriends(friendActivity);
       } else {
         setFriends([]); // logged-out users see no friends list
@@ -229,13 +256,29 @@ export default function Home() {
       const movies = getRandomWorks(allWorks, WORK_TYPES.MOVIE, HOME_CAROUSEL_LIMIT);
       const music = getRandomWorks(allWorks, WORK_TYPES.MUSIC, HOME_CAROUSEL_LIMIT);
       
+      if (!isMountedRef.current) return;
+      
       setRecentMovies(movies);
       setRecentMusic(music);
       setRecentLoading(false);
-    };
-
-    loadPage();
+    } catch (error) {
+      logger.error('Error loading home page:', error);
+      if (isMountedRef.current) {
+        setLoading(false);
+        setFriendsLoading(false);
+        setRecentLoading(false);
+      }
+    }
   }, [currentUserId]);
+
+  useEffect(() => {
+    isMountedRef.current = true;
+    loadPage();
+
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, [loadPage]);
 
   return (
     <div className="page-container">

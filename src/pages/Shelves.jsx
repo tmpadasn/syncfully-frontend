@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import useAuth from '../hooks/useAuth';
 import useShelves from '../hooks/useShelves';
@@ -417,6 +417,7 @@ export default function Shelves() {
   const { user, isGuest } = useAuth();
   const { shelves, loading, error, createNewShelf, updateExistingShelf, deleteExistingShelf, getOrCreateFavourites } = useShelves(user?.userId);
   const navigate = useNavigate();
+  const isMountedRef = useRef(true);
   
   const [expandedShelves, setExpandedShelves] = useState({});
   const [shelfWorks, setShelfWorks] = useState({});
@@ -433,7 +434,7 @@ export default function Shelves() {
 
   // Auto-create Favourites shelf on first load
   useEffect(() => {
-    if (!loading && !isGuest && shelves.length === 0) {
+    if (!loading && !isGuest && shelves.length === 0 && isMountedRef.current) {
       getOrCreateFavourites().catch(() => {
         // Silently fail
       });
@@ -460,20 +461,32 @@ export default function Shelves() {
     });
 
   // Load user ratings once
-  useEffect(() => {
-    if (user?.userId) {
-      getUserRatings(user.userId)
-        .then(data => {
-          // Backend returns an object map of ratings keyed by workId
-          const ratingsObject = data?.ratings || data || {};
-          logger.debug('User ratings loaded:', ratingsObject);
-          setUserRatings(ratingsObject);
-        })
-        .catch(() => {
-          setUserRatings({});
-        });
+  const loadUserRatings = useCallback(async () => {
+    if (!user?.userId || !isMountedRef.current) return;
+    
+    try {
+      const data = await getUserRatings(user.userId);
+      if (!isMountedRef.current) return;
+      
+      // Backend returns an object map of ratings keyed by workId
+      const ratingsObject = data?.ratings || data || {};
+      logger.debug('User ratings loaded:', ratingsObject);
+      setUserRatings(ratingsObject);
+    } catch {
+      if (isMountedRef.current) {
+        setUserRatings({});
+      }
     }
   }, [user?.userId]);
+
+  useEffect(() => {
+    isMountedRef.current = true;
+    loadUserRatings();
+
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, [loadUserRatings]);
 
   const toggleShelf = async (shelfId) => {
     const newState = !expandedShelves[shelfId];

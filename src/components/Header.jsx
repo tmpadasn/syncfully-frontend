@@ -75,14 +75,17 @@ export default function Header() {
   };
 
   return (
-    <header style={{
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      padding: '12px 20px',
-      background: '#9a4207c8',
-      color: '#392c2cff'
-    }}>
+    <header 
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        padding: '12px 20px',
+        background: '#9a4207c8',
+        color: '#392c2cff'
+      }}
+      role="banner"
+    >
 
       {/* Left Logo */}
       <Link
@@ -98,6 +101,7 @@ export default function Header() {
           zIndex: 10,
           position: 'relative'
         }}
+        aria-label="SyncFully home page"
       >
         <img src="/syncFully_logo.png" alt="SyncFully" style={{ width: 40, height: 40 }} />
         <span style={{ marginLeft: 10, fontSize: 28 }}>
@@ -118,9 +122,14 @@ export default function Header() {
           width: 400,
           boxShadow: '0 2px 6px rgba(0,0,0,0.08)'
         }}
+        role="search"
       >
+        <label htmlFor="search-input" style={{ position: 'absolute', left: '-10000px' }}>
+          Search works or users
+        </label>
         <input
-          type="text"
+          id="search-input"
+          type="search"
           value={term}
           onChange={handleSearchInput}
           onKeyDown={(e) => {
@@ -139,12 +148,29 @@ export default function Header() {
             flex: 1,
             fontSize: 14
           }}
+          aria-label="Search works or users"
         />
-        <FiSearch size={22} color='#392c2cff' style={{ cursor: 'pointer' }} onClick={doSearch} />
+        <button
+          onClick={doSearch}
+          style={{
+            background: 'none',
+            border: 'none',
+            cursor: 'pointer',
+            padding: 0,
+            display: 'flex',
+            alignItems: 'center'
+          }}
+          aria-label="Submit search"
+        >
+          <FiSearch size={22} color='#392c2cff' aria-hidden="true" />
+        </button>
       </div>
 
       {/* Right icons */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
+      <nav 
+        style={{ display: 'flex', alignItems: 'center', gap: 20 }}
+        aria-label="Main navigation"
+      >
 
         <Link
           to={profilePath}
@@ -176,14 +202,15 @@ export default function Header() {
               e.currentTarget.style.transform = 'scale(1)';
             }
           }}
+          aria-label={isGuest ? 'Login to your account' : `View profile for ${user.username}`}
         >
           {isGuest ? (
-            <FiLogIn size={34}/>
+            <FiLogIn size={34} aria-hidden="true" />
           ) : (
             <>
               <img
                 src={user?.profilePictureUrl || DEFAULT_AVATAR_URL}
-                alt="avatar"
+                alt={`${user.username} profile picture`}
                 style={{
                   width: 40,
                   height: 40,
@@ -215,8 +242,9 @@ export default function Header() {
             }}
             onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.1)'}
             onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+            aria-label="View my shelves"
           >
-            <FiGrid size={34} title="My Shelves" />
+            <FiGrid size={34} aria-hidden="true" />
           </Link>
         )}
 
@@ -230,8 +258,9 @@ export default function Header() {
           }}
           onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.1)'}
           onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+          aria-label="View recommendations"
         >
-          <FiZap size={34} title="Recommendations" />
+          <FiZap size={34} aria-hidden="true" />
         </Link>
 
         {!isGuest && (
@@ -265,12 +294,13 @@ export default function Header() {
               e.currentTarget.style.transform = 'translateY(0)';
               e.currentTarget.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.15)';
             }}
+            aria-label="Logout"
           >
-            <FiLogOut size={18} />
+            <FiLogOut size={18} aria-hidden="true" />
             <span>Logout</span>
           </button>
         )}
-      </div>
+      </nav>
     </header>
   );
 }
