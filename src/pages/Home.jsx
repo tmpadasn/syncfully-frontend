@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { getPopularWorks, getAllWorks } from '../api/works';
-import { getAllUsers, getUserRatings, getUserById } from '../api/users';
+import { getAllUsers, getUserRatings, getUserById, getUserFollowers, getUserFollowing } from '../api/users';
 import { testConnection } from '../api/client';
 import { Link } from 'react-router-dom';
 import useNavigationWithClearFilters from '../hooks/useNavigationWithClearFilters';
@@ -77,6 +77,74 @@ const processFriendsData = async (users, allWorks, currentUserId, isMountedRef) 
   }
 
   return friendsWithActivity;
+};
+
+const processFollowingData = async (following, allWorks, isMountedRef) => {
+  const followingWithActivity = [];
+
+  if (!following || following.length === 0) return [];
+
+  // First, fetch all ratings for each user being followed
+  const followingRatings = [];
+  
+  for (const followedUser of following) {
+    if (!isMountedRef.current) break;
+    
+    try {
+      const ratingsResponse = await getUserRatings(followedUser.userId || followedUser.id);
+      
+      if (!isMountedRef.current) break;
+      
+      const ratingsData = ratingsResponse?.data || ratingsResponse || {};
+      const entries = normalizeRatingsObject(ratingsData);
+      if (entries.length === 0) continue;
+
+      // Get all ratings sorted by most recent
+      const sortedRatings = entries.sort((a, b) => b.ratedAt - a.ratedAt);
+      
+      // Get up to 5 most recent ratings per followed user
+      const userWorks = [];
+      for (let i = 0; i < Math.min(5, sortedRatings.length); i++) {
+        const rating = sortedRatings[i];
+        const ratedWork = allWorks.find(w =>
+          (w.id || w.workId) === rating.workId
+        );
+
+        if (ratedWork) {
+          const normalizedWork = normalizeWork(ratedWork);
+          userWorks.push({
+            id: `${followedUser.userId || followedUser.id}-${i}`,
+            followerId: followedUser.userId || followedUser.id,
+            name: followedUser.username,
+            avatar: followedUser.profilePictureUrl || DEFAULT_AVATAR_URL,
+            likedAlbum: {
+              title: normalizedWork.title,
+              coverUrl: normalizedWork.coverUrl,
+              workId: normalizedWork.workId
+            }
+          });
+        }
+      }
+      
+      if (userWorks.length > 0) {
+        followingRatings.push(userWorks);
+      }
+    } catch (error) {
+      logger.error('Failed to fetch ratings for followed user:', followedUser.userId || followedUser.id, error);
+    }
+  }
+
+  // Now alternate between followed users - take one work from each in round-robin fashion
+  let maxWorks = Math.max(...followingRatings.map(f => f.length));
+  for (let i = 0; i < maxWorks; i++) {
+    for (let j = 0; j < followingRatings.length; j++) {
+      if (i < followingRatings[j].length) {
+        followingWithActivity.push(followingRatings[j][i]);
+      }
+    }
+  }
+
+  return followingWithActivity;
 };
 
 const getRandomWorks = (allWorks, type, limit = 10) => {
@@ -189,10 +257,12 @@ export default function Home() {
 
   const [popular, setPopular] = useState([]);
   const [friends, setFriends] = useState([]);
+  const [following, setFollowing] = useState([]);
   const [recentMovies, setRecentMovies] = useState([]);
   const [recentMusic, setRecentMusic] = useState([]);
   const [loading, setLoading] = useState(true);
   const [friendsLoading, setFriendsLoading] = useState(true);
+  const [followingLoading, setFollowingLoading] = useState(true);
   const [recentLoading, setRecentLoading] = useState(true);
   const [showWelcome, setShowWelcome] = useState(false);
 
@@ -212,10 +282,12 @@ export default function Home() {
       // Reset state immediately to prevent flash of old content
       setPopular([]);
       setFriends([]);
+      setFollowing([]);
       setRecentMovies([]);
       setRecentMusic([]);
       setLoading(true);
       setFriendsLoading(true);
+      setFollowingLoading(true);
       setRecentLoading(true);
 
       await testConnection();
@@ -247,12 +319,35 @@ export default function Home() {
         if (!isMountedRef.current) return;
         
         setFriends(friendActivity);
+
+        // Fetch following data
+        try {
+          const followingResponse = await getUserFollowing(currentUserId);
+          const followingList = followingResponse?.following || [];
+          
+          if (!isMountedRef.current) return;
+          
+          const followingActivity = await processFollowingData(
+            followingList,
+            allWorks,
+            isMountedRef
+          );
+          
+          if (!isMountedRef.current) return;
+          
+          setFollowing(followingActivity);
+        } catch (error) {
+          logger.error('Failed to fetch following:', error);
+          setFollowing([]);
+        }
       } else {
         setFriends([]); // logged-out users see no friends list
+        setFollowing([]);
       }
 
       setLoading(false);
       setFriendsLoading(false);
+      setFollowingLoading(false);
 
       // Load random movies and music
       const movies = getRandomWorks(allWorks, WORK_TYPES.MOVIE, HOME_CAROUSEL_LIMIT);
@@ -268,6 +363,7 @@ export default function Home() {
       if (isMountedRef.current) {
         setLoading(false);
         setFriendsLoading(false);
+        setFollowingLoading(false);
         setRecentLoading(false);
       }
     }
@@ -486,17 +582,19 @@ export default function Home() {
             </div>
           )}
 
-          {/* ------------------ FRIENDS ACTIVITY ------------------ */}
+          {/* ------------------ FOLLOWING ACTIVITY (FRIENDS' FAVOURITES SECTION) ------------------ */}
           {user && (
             <>
-              <h3 className="section-title">FRIENDS' FAVOURITES</h3>
-              {friendsLoading ? (
+              <h3 className="section-title" style={{ marginTop: 40 }}>
+                FRIENDS' FAVOURITES 
+              </h3>
+              {followingLoading ? (
                 <FriendGridSkeleton count={4} />
-              ) : friends.length === 0 ? (
-                <p>No recent activity from friends.</p>
+              ) : following.length === 0 ? (
+                <p>You are not following anyone yet, or they haven't rated any works.</p>
               ) : (
                 <HomeCarousel scrollChunk={3}>
-                  {friends.map(f => (
+                  {following.map(f => (
                     <div key={f.id} style={{ flexShrink: 0, width: '180px' }}>
                       <FriendCard friend={f} />
                     </div>

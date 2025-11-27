@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
-import { getUserById, getUserRatings } from "../api/users";
+import { getUserById, getUserRatings, getUserFollowers, getUserFollowing, followUser, unfollowUser } from "../api/users";
+import useAuth from "../hooks/useAuth";
 import { getAllWorks } from "../api/works";
 import UserRatings from "../components/users/UserRatings";
 import logger from "../utils/logger";
@@ -10,6 +11,7 @@ export default function Profile() {
   const { userId } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
+  const { user: currentUser } = useAuth();
   
   const prevSearch = location.state?.prevSearch || '';
 
@@ -17,6 +19,9 @@ export default function Profile() {
   const [ratings, setRatings] = useState({});
   const [works, setWorks] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [followStatus, setFollowStatus] = useState(null); // 'following', 'followers', 'both', null
+  const [isFollowing, setIsFollowing] = useState(false);
+  const [followLoading, setFollowLoading] = useState(false);
 
   useEffect(() => {
     const load = async () => {
@@ -37,6 +42,40 @@ export default function Profile() {
         const ratingsObject = ratingsResponse?.ratings || ratingsResponse || {};
         setRatings(ratingsObject);
         setWorks(allWorks?.works || []);
+
+        // Check follow relationship if user is logged in
+        if (currentUser && currentUser.userId != userId) {
+          try {
+            const [currentUserFollowing, profileUserFollowers] = await Promise.all([
+              getUserFollowing(currentUser.userId),
+              getUserFollowers(userId)
+            ]);
+
+            // Check if current user is following the profile user
+            const isCurrentUserFollowing = currentUserFollowing.following?.some(f => 
+              (f.userId || f.id) === parseInt(userId)
+            );
+            
+            // Check if profile user is following the current user
+            const isProfileUserFollowing = profileUserFollowers.followers?.some(f =>
+              (f.userId || f.id) === currentUser.userId
+            );
+
+            setIsFollowing(isCurrentUserFollowing || false);
+
+            if (isCurrentUserFollowing && isProfileUserFollowing) {
+              setFollowStatus('both');
+            } else if (isCurrentUserFollowing) {
+              setFollowStatus('following');
+            } else if (isProfileUserFollowing) {
+              setFollowStatus('followers');
+            } else {
+              setFollowStatus(null);
+            }
+          } catch (err) {
+            logger.error('Failed to check follow status:', err);
+          }
+        }
       } catch (err) {
         logger.error("Profile load failed", err);
       } finally {
@@ -44,10 +83,34 @@ export default function Profile() {
       }
     };
     load();
-  }, [userId]);
+  }, [userId, currentUser]);
 
   if (loading) return <p style={{ padding: 20 }}>Loading profile…</p>;
   if (!profileUser) return <p style={{ padding: 20 }}>User not found.</p>;
+
+  const handleFollow = async () => {
+    if (!currentUser) {
+      navigate('/login');
+      return;
+    }
+
+    setFollowLoading(true);
+    try {
+      if (isFollowing) {
+        await unfollowUser(currentUser.userId, parseInt(userId));
+        setIsFollowing(false);
+        setFollowStatus(followStatus === 'both' ? 'followers' : null);
+      } else {
+        await followUser(currentUser.userId, parseInt(userId));
+        setIsFollowing(true);
+        setFollowStatus(followStatus === 'followers' ? 'both' : 'following');
+      }
+    } catch (err) {
+      logger.error('Follow action failed:', err);
+    } finally {
+      setFollowLoading(false);
+    }
+  };
 
   const pageContainer = {
     minHeight: "100vh",
@@ -283,8 +346,8 @@ export default function Profile() {
                 </div>
               </div>
 
-              {/* Back Button */}
-              <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 16, marginTop: 32 }}>
+              {/* Back Button and Follow Button */}
+              <div style={{ display: "grid", gridTemplateColumns: currentUser && parseInt(userId) !== currentUser.userId ? "1fr 1fr" : "1fr", gap: 16, marginTop: 32 }}>
                 <button
                   style={actionButton("linear-gradient(135deg,#d4a574,#e8b896)")}
                   onClick={() => prevSearch ? navigate(`/search${prevSearch}`) : navigate(-1)}
@@ -293,6 +356,18 @@ export default function Profile() {
                 >
                   ← Back to Search
                 </button>
+
+                {currentUser && parseInt(userId) !== currentUser.userId && (
+                  <button
+                    style={actionButton(isFollowing ? "#c0392b" : "linear-gradient(135deg,#9a4207,#b95716)")}
+                    onClick={handleFollow}
+                    disabled={followLoading}
+                    onMouseEnter={(e) => (e.currentTarget.style.transform = "translateY(-2px)")}
+                    onMouseLeave={(e) => (e.currentTarget.style.transform = "none")}
+                  >
+                    {isFollowing ? '✕ Unfollow' : '+ Follow'}
+                  </button>
+                )}
               </div>
             </div>
 
