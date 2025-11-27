@@ -10,7 +10,7 @@ export const getUserShelves = async (userId) => {
     return response.data;
   } catch (error) {
     logger.error('Error fetching user shelves:', error);
-    throw error;
+    return { shelves: [] };
   }
 };
 
@@ -85,7 +85,7 @@ export const getShelfWorks = async (shelfId, filters = {}) => {
     return response.data;
   } catch (error) {
     logger.error('Error fetching shelf works:', error);
-    throw error;
+    return { works: [] };
   }
 };
 

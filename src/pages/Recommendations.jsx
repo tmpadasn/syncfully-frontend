@@ -7,6 +7,11 @@ import useNavigationWithClearFilters from '../hooks/useNavigationWithClearFilter
 import { WorkGridSkeleton } from '../components/Skeleton';
 import HomeCarousel from '../components/HomeCarousel';
 import logger from '../utils/logger';
+import {
+  extractWorksFromResponse,
+  normalizeWorks,
+  shuffleArray,
+} from '../utils/normalize';
 
 export default function Recommendations() {
   useNavigationWithClearFilters();
@@ -97,23 +102,16 @@ export default function Recommendations() {
       try {
         // Fetch all works first for fallback sections
         const worksData = await getAllWorks();
-        const allWorks = worksData?.works || [];
+        const allWorks = extractWorksFromResponse(worksData);
 
         if (allWorks.length === 0) {
           throw new Error('No works available from backend');
         }
 
-        const mappedWorks = allWorks.map((work) => ({
-          workId: work.id || work.workId,
-          title: work.title,
-          coverUrl: work.coverUrl || '/album_covers/default.jpg',
-          type: work.type,
-          creator: work.creator,
-          rating: work.averageRating || work.rating || 0,
-        }));
+        const mappedWorks = normalizeWorks(allWorks);
 
         // Generate random static lists for sections 2, 3, 4
-        const shuffled = [...mappedWorks].sort(() => Math.random() - 0.5);
+        const shuffled = shuffleArray(mappedWorks);
         const staticProfile = shuffled.slice(0, 10);
         const staticFriends = shuffled.slice(10, 20);
         const staticExplore = shuffled.slice(20, 30);
@@ -138,14 +136,7 @@ export default function Recommendations() {
           }
 
           if (recommendations.length > 0) {
-            currentRecommendations = recommendations.slice(0, 10).map((rec) => ({
-              workId: rec.id || rec.workId,
-              title: rec.title,
-              coverUrl: rec.coverUrl || '/album_covers/default.jpg',
-              type: rec.type,
-              creator: rec.creator,
-              rating: rec.averageRating || rec.rating || 0,
-            }));
+            currentRecommendations = normalizeWorks(recommendations.slice(0, 10));
           }
         } catch (recError) {
           logger.error('Error fetching personalized recommendations:', recError);

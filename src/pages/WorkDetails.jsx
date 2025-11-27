@@ -10,35 +10,33 @@ import useShelves from '../hooks/useShelves';
 import AddToShelfBtn from '../components/AddToShelfBtn';
 import { WorkDetailsSkeleton } from '../components/Skeleton';
 import logger from '../utils/logger';
+import {
+  extractWorkFromResponse,
+  extractRatingsFromResponse,
+  normalizeWork,
+  normalizeWorks,
+  normalizeGenres,
+} from '../utils/normalize';
 
 // Helper functions for data processing
 const processWorkData = (workResponse) => {
   if (!workResponse) return null;
 
-  let workData = workResponse.data || workResponse;
-
-  let work;
-  if (workData.works && workData.works[0]) {
-    work = workData.works[0];
-  } else if (workData.work) {
-    work = workData.work;
-  } else {
-    work = workData;
-  }
-
+  const work = extractWorkFromResponse(workResponse);
   if (!work) return null;
 
+  const normalized = normalizeWork(work);
+  if (!normalized) return null;
+
   return {
-    ...work,
-    workId: work.id || work.workId,
-    genres: work.genres || [],
-    genre: Array.isArray(work.genres) ? work.genres.join(', ') : work.genre,
-    coverUrl: work.coverUrl || '/album_covers/default.jpg',
-    findAt: work.foundAt
+    ...normalized,
+    genres: normalizeGenres(work.genres),
+    genre: Array.isArray(normalized.genres) ? normalized.genres.join(', ') : '',
+    findAt: work.foundAt || work.foundAt
       ? [
           {
             label: 'External Link',
-            url: work.foundAt,
+            url: work.foundAt || normalized.foundAt,
           },
         ]
       : [],
@@ -46,23 +44,12 @@ const processWorkData = (workResponse) => {
 };
 
 const processRatingsData = (ratingsResponse) => {
-  if (!ratingsResponse) return [];
-  const ratingsData = ratingsResponse.data || ratingsResponse;
-  return ratingsData?.ratings || ratingsData || [];
+  return extractRatingsFromResponse(ratingsResponse);
 };
 
 const processSimilarWorksData = (similarWorksResponse) => {
   if (!similarWorksResponse || !Array.isArray(similarWorksResponse)) return [];
-
-  return similarWorksResponse
-    .map((work) => ({
-      workId: work.id || work.workId,
-      title: work.title,
-      coverUrl: work.coverUrl || '/album_covers/default.jpg',
-      type: work.type,
-      creator: work.creator,
-    }))
-    .filter((work) => work.workId && work.title);
+  return normalizeWorks(similarWorksResponse);
 };
 
 export default function WorkDetails() {

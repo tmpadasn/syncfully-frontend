@@ -49,7 +49,7 @@ export const searchItems = async (query, filters = {}) => {
     logger.debug('✅', 'searchItems: Extracted results:', results.length);
     return { results };
   } catch (error) {
-    logger.error('searchItems failed:', error);
+    logger.error('Error searching items:', error);
     return { results: [] };
   }
 };
@@ -60,7 +60,7 @@ export const searchWorks = async (query, filters = {}) => {
     const searchFilters = { ...filters, itemType: 'work' };
     return await searchItems(query, searchFilters);
   } catch (error) {
-    logger.error('searchWorks failed:', error);
+    logger.error('Error searching works:', error);
     return { results: [] };
   }
 };
@@ -71,7 +71,7 @@ export const searchUsers = async (query, filters = {}) => {
     const searchFilters = { ...filters, itemType: 'user' };
     return await searchItems(query, searchFilters);
   } catch (error) {
-    logger.error('searchUsers failed:', error);
+    logger.error('Error searching users:', error);
     return { results: [] };
   }
 };

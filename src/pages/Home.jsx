@@ -8,6 +8,13 @@ import useAuth from '../hooks/useAuth';
 import { WorkGridSkeleton, FriendGridSkeleton } from '../components/Skeleton';
 import HomeCarousel from '../components/HomeCarousel';
 import logger from '../utils/logger';
+import {
+  extractWorksFromResponse,
+  normalizeWork,
+  normalizeWorks,
+  normalizeRatingsObject,
+  shuffleArray,
+} from '../utils/normalize';
 import { 
   DEFAULT_AVATAR_URL, 
   WORK_TYPES, 
@@ -18,16 +25,8 @@ import {
 /* ---------------------- DATA PROCESSING HELPERS ---------------------- */
 
 const processPopularWorks = (data) => {
-  const works = data?.works || [];
-  return works.map(work => ({
-    workId: work.id || work.workId,
-    title: work.title,
-    rating: work.averageRating || work.rating || 0,
-    coverUrl: work.coverUrl || '/album_covers/default.jpg',
-    type: work.type,
-    creator: work.creator,
-    year: work.year
-  }));
+  const works = extractWorksFromResponse(data);
+  return normalizeWorks(works);
 };
 
 const processFriendsData = async (users, allWorks, currentUserId) => {
@@ -44,15 +43,10 @@ const processFriendsData = async (users, allWorks, currentUserId) => {
       const ratingsResponse = await getUserRatings(user.userId);
       const ratingsData = ratingsResponse?.data || ratingsResponse || {};
 
-      const entries = Object.entries(ratingsData);
+      const entries = normalizeRatingsObject(ratingsData);
       if (entries.length === 0) continue;
 
       const mostRecentRating = entries
-        .map(([workId, r]) => ({
-          workId: parseInt(workId),
-          score: r.score,
-          ratedAt: new Date(r.ratedAt)
-        }))
         .sort((a, b) => b.ratedAt - a.ratedAt)[0];
 
       const ratedWork = allWorks.find(w =>
@@ -60,14 +54,15 @@ const processFriendsData = async (users, allWorks, currentUserId) => {
       );
 
       if (ratedWork) {
+        const normalizedWork = normalizeWork(ratedWork);
         friendsWithActivity.push({
           id: user.userId,
           name: user.username,
           avatar: user.profilePictureUrl || DEFAULT_AVATAR_URL,
           likedAlbum: {
-            title: ratedWork.title,
-            coverUrl: ratedWork.coverUrl || '/album_covers/default.jpg',
-            workId: ratedWork.id || ratedWork.workId
+            title: normalizedWork.title,
+            coverUrl: normalizedWork.coverUrl,
+            workId: normalizedWork.workId
           }
         });
       }
@@ -82,23 +77,9 @@ const getRandomWorks = (allWorks, type, limit = 10) => {
     // Filter works by type
     const filteredWorks = allWorks.filter(work => work.type === type);
     
-    // Shuffle array using Fisher-Yates algorithm
-    const shuffled = [...filteredWorks];
-    for (let i = shuffled.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-    }
-    
-    // Take first 'limit' items and format them
-    return shuffled.slice(0, limit).map(work => ({
-      workId: work.id || work.workId,
-      title: work.title,
-      rating: work.averageRating || work.rating || 0,
-      coverUrl: work.coverUrl || '/album_covers/default.jpg',
-      type: work.type,
-      creator: work.creator,
-      year: work.year
-    }));
+    // Shuffle and take first 'limit' items
+    const shuffled = shuffleArray(filteredWorks);
+    return shuffled.slice(0, limit).map(normalizeWork).filter(Boolean);
   } catch (error) {
     logger.error('Error getting random works:', error);
     return [];

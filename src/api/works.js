@@ -14,7 +14,8 @@ export const getPopularWorks = async () => {
     if (Array.isArray(responseData)) return { works: responseData };
     if (responseData.works && Array.isArray(responseData.works)) return { works: responseData.works };
     return { works: [] };
-  } catch (e) {
+  } catch (error) {
+    logger.error('Error fetching popular works:', error);
     return { works: [] };
   }
 };
@@ -39,7 +40,8 @@ export const getAllWorks = async (filters = {}) => {
     if (Array.isArray(responseData)) return { works: responseData };
     if (responseData.works && Array.isArray(responseData.works)) return { works: responseData.works };
     return { works: [] };
-  } catch (e) {
+  } catch (error) {
+    logger.error('Error fetching all works:', error);
     return { works: [] };
   }
 };
@@ -49,8 +51,9 @@ export const createWork = async (workData) => {
   try {
     const res = await api.post('/works', workData);
     return res.data;
-  } catch (e) {
-    throw e;
+  } catch (error) {
+    logger.error('Error creating work:', error);
+    throw error;
   }
 };
 
@@ -59,8 +62,9 @@ export const updateWork = async (workId, workData) => {
   try {
     const res = await api.put(`/works/${encodeURIComponent(workId)}`, workData);
     return res.data;
-  } catch (e) {
-    throw e;
+  } catch (error) {
+    logger.error('Error updating work:', error);
+    throw error;
   }
 };
 
@@ -69,8 +73,9 @@ export const deleteWork = async (workId) => {
   try {
     const res = await api.delete(`/works/${encodeURIComponent(workId)}`);
     return res.data;
-  } catch (e) {
-    throw e;
+  } catch (error) {
+    logger.error('Error deleting work:', error);
+    throw error;
   }
 };
 
@@ -95,7 +100,8 @@ export const getWork = async (workId) => {
     }
     
     return responseData;
-  } catch (e) {
+  } catch (error) {
+    logger.error('Error fetching work:', error);
     return null;
   }
 };
@@ -109,8 +115,8 @@ export const getWorkRatings = async (workId) => {
     if (Array.isArray(res.data)) return { ratings: res.data };
     if (Array.isArray(res.data.ratings)) return { ratings: res.data.ratings };
     return res.data;
-  } catch (e) {
-    logger.warn('getWorkRatings failed', e);
+  } catch (error) {
+    logger.error('Error fetching work ratings:', error);
     return { ratings: [] };
   }
 };
@@ -120,9 +126,9 @@ export const postWorkRating = async (workId, payload) => {
   try {
     const res = await api.post(`/works/${encodeURIComponent(workId)}/ratings`, payload);
     return res.data;
-  } catch (e) {
-    logger.warn('postWorkRating failed', e);
-    throw e;
+  } catch (error) {
+    logger.error('Error posting work rating:', error);
+    throw error;
   }
 };
 
@@ -140,8 +146,8 @@ export const getSimilarWorks = async (workId) => {
     if (responseData.works && Array.isArray(responseData.works)) return responseData.works;
     if (responseData.items && Array.isArray(responseData.items)) return responseData.items;
     return [];
-  } catch (e) {
-    logger.warn('getSimilarWorks failed', e);
+  } catch (error) {
+    logger.error('Error fetching similar works:', error);
     return [];
   }
 };

@@ -9,6 +9,14 @@ import useAuth from '../hooks/useAuth';
 import { FiPlus, FiCheck, FiX, FiArrowLeft, FiHeart } from 'react-icons/fi';
 import { WorkGridSkeleton } from '../components/Skeleton';
 import logger from '../utils/logger';
+import {
+  normalizeWorkEntity,
+  mergeUniqueWorks,
+  applyWorkFilters,
+  extractShelvesFromResponse,
+  extractWorksFromResponse,
+  extractWorkIdsFromShelf,
+} from '../utils/normalize';
 
 export default function SearchResults() {
   const { search } = useLocation();
@@ -34,90 +42,6 @@ export default function SearchResults() {
   const [favouritingWork, setFavouritingWork] = useState(null);
   const [favouritesShelfId, setFavouritesShelfId] = useState(null);
 
-  const normalizeWorkEntity = (item) => {
-    if (!item) return null;
-
-    const entityId = item.entityId || item.id || item.workId || item._id;
-    if (!entityId) return null;
-
-    const genresArray = Array.isArray(item.genres)
-      ? item.genres
-      : (typeof item.genre === 'string' ? item.genre.split(/[,;]/).map(g => g.trim()).filter(Boolean) : []);
-
-    const yearValue = item.year || item.releaseYear || item.publishedYear;
-    const workType = item.type || item.workType || item.category;
-    const ratingValue = Number(item.averageRating || item.rating || item.avgRating || item.score || 0);
-
-    const normalizedGenres = genresArray.map(g => g.toLowerCase());
-    const normalizedType = workType ? String(workType).toLowerCase() : 'unknown';
-    const normalizedYear = yearValue ? Number(yearValue) : null;
-    const finalRating = Number.isNaN(ratingValue) ? 0 : ratingValue;
-
-    return {
-      entityId: String(entityId),
-      kind: 'work',
-      title: item.title || item.name || 'Untitled Work',
-      coverUrl: item.coverUrl || item.cover || '/album_covers/default.jpg',
-      subtitle: item.creator || item.author || item.artist || 'Unknown Creator',
-      meta: `${yearValue || 'Unknown Year'} • ${workType || 'Unknown Type'} • ${genresArray.length > 0 ? genresArray.join(', ') : 'Unknown Genre'}`,
-      description: item.description || '',
-      rating: finalRating,
-      workType: normalizedType,
-      year: normalizedYear,
-      genres: normalizedGenres,
-      raw: item
-    };
-  };
-
-  const mergeUniqueWorks = (primary, secondary) => {
-    const seen = new Set(primary.map(work => work.entityId));
-    const merged = [...primary];
-    secondary.forEach(work => {
-      if (work && !seen.has(work.entityId)) {
-        seen.add(work.entityId);
-        merged.push(work);
-      }
-    });
-    return merged;
-  };
-
-  const applyClientFilters = (worksList, filters) => {
-    if (!Array.isArray(worksList)) return [];
-
-    const genreFilterValue = filters.genre ? String(filters.genre).toLowerCase() : '';
-    const ratingFilterValue = filters.rating ? Number(filters.rating) : null;
-    const yearFilterValue = filters.year ? Number(filters.year) : null;
-    const typeFilterValue = filters.type ? String(filters.type).toLowerCase() : '';
-
-    return worksList.filter(work => {
-      if (!work) return false;
-
-      if (typeFilterValue && typeFilterValue !== 'user') {
-        if (!work.workType || work.workType !== typeFilterValue) {
-          return false;
-        }
-      }
-
-      if (genreFilterValue) {
-        if (!Array.isArray(work.genres) || !work.genres.some(g => g === genreFilterValue)) {
-          return false;
-        }
-      }
-
-      if (ratingFilterValue && !(work.rating >= ratingFilterValue)) {
-        return false;
-      }
-
-      if (yearFilterValue) {
-        if (!work.year || !(work.year >= yearFilterValue)) {
-          return false;
-        }
-      }
-
-      return true;
-    });
-  };
-
   // Load user's Favourites shelf and check which works are already in it
   useEffect(() => {
     const loadFavourites = async () => {
@@ -130,10 +54,8 @@ export default function SearchResults() {
         const shelvesData = await getUserShelves(user.userId);
         logger.debug('📚', 'User shelves data:', shelvesData);
         
-        // Extract the shelves array from the response: {success: true, data: {shelves: [...]}}
-        const shelves = Array.isArray(shelvesData) 
-          ? shelvesData 
-          : (shelvesData.data?.shelves || shelvesData.shelves || []);
+        // Extract the shelves array from the response
+        const shelves = extractShelvesFromResponse(shelvesData);
         logger.debug('📚', 'Shelves array:', shelves);
         logger.debug('📚', 'Shelves count:', shelves.length);
         if (shelves.length > 0) {
@@ -150,37 +72,12 @@ export default function SearchResults() {
         const favouritesWorksData = await getShelfWorks(favourites.shelfId);
         logger.debug('📦', 'Raw favourites works data:', favouritesWorksData);
         
-        // Extract works array from API response: {success: true, data: {works: [...]}}
-        let favouritesWorks = [];
-        if (favouritesWorksData.data && favouritesWorksData.data.works) {
-          favouritesWorks = favouritesWorksData.data.works;
-        } else if (favouritesWorksData.works) {
-          favouritesWorks = favouritesWorksData.works;
-        } else if (Array.isArray(favouritesWorksData)) {
-          favouritesWorks = favouritesWorksData;
-        }
+        // Extract works array from API response
+        const favouritesWorks = extractWorksFromResponse(favouritesWorksData);
         logger.debug('✨', 'Favourites works array:', favouritesWorks);
         
         // Create a set of work IDs that are in Favourites
-        // Handles both populated work objects and primitive IDs from mock data
-        const extractedIds = favouritesWorks.map(w => {
-          if (w === null || w === undefined) {
-            return null;
-          }
-
-          if (typeof w === 'string' || typeof w === 'number') {
-            logger.debug('Work in Favourites (primitive ID):', w);
-            return String(w);
-          }
-
-          const nestedWork = typeof w.work === 'object' ? w.work : null;
-          const nestedWorkId = nestedWork ? (nestedWork.id || nestedWork._id) : null;
-          const id = w.id || w.workId || w._id || w.entityId || nestedWorkId;
-          logger.debug('Work in Favourites (object):', w.title || w.name || 'Unknown title', 'Extracted ID:', id);
-          return id ? String(id) : null;
-        }).filter(Boolean);
-
-        const workIds = new Set(extractedIds);
+        const workIds = extractWorkIdsFromShelf(favouritesWorks);
         logger.debug('💾', 'Favourited work IDs (as strings):', Array.from(workIds));
         setFavouritedWorks(workIds);
       } catch (error) {
@@ -406,7 +303,7 @@ export default function SearchResults() {
           mappedWorks = mergeUniqueWorks(mappedWorks, normalizedFromAll);
         }
 
-        const clientFilteredWorks = applyClientFilters(mappedWorks, {
+        const clientFilteredWorks = applyWorkFilters(mappedWorks, {
           type: filters.type || '',
           genre: filters.genre || '',
           rating: filters.rating || '',
