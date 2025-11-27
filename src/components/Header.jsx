@@ -1,6 +1,6 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { FiSearch, FiLogIn, FiZap, FiGrid, FiLogOut } from "react-icons/fi";
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import useAuth from '../hooks/useAuth';
 
 const defaultAvatar =
@@ -15,6 +15,7 @@ export default function Header() {
 
   // Search term state
   const [term, setTerm] = useState('');
+  const debounceTimerRef = useRef(null);
 
   useEffect(() => {
     if (location.pathname.startsWith('/search')) {
@@ -26,9 +27,53 @@ export default function Header() {
     }
   }, [location.pathname, location.search]);
 
+  // Cleanup debounce timer on unmount
+  useEffect(() => {
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+    };
+  }, []);
+
   const doSearch = () => {
     const q = (term || '').trim();
-    navigate(q ? `/search?q=${encodeURIComponent(q)}` : '/search');
+    
+    // Preserve existing URL parameters (like addToShelf and shelfName)
+    const currentParams = new URLSearchParams(location.search);
+    
+    // Update or remove the search query
+    if (q) {
+      currentParams.set('q', q);
+    } else {
+      currentParams.delete('q');
+    }
+    
+    navigate(`/search?${currentParams.toString()}`);
+  };
+
+  const handleSearchInput = (e) => {
+    const value = e.target.value;
+    setTerm(value);
+
+    // Clear existing timer
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+
+    // Set new timer for debounced search (300ms)
+    debounceTimerRef.current = setTimeout(() => {
+      const q = (value || '').trim();
+      const currentParams = new URLSearchParams(location.search);
+      
+      if (q) {
+        currentParams.set('q', q);
+      } else {
+        currentParams.delete('q');
+      }
+      
+      navigate(`/search?${currentParams.toString()}`);
+    }, 300);
   };
 
   return (
@@ -50,7 +95,10 @@ export default function Header() {
           color: '#392c2cff',
           textDecoration: 'none',
           fontWeight: 600,
-          marginLeft: 10
+          marginLeft: 10,
+          cursor: 'pointer',
+          zIndex: 10,
+          position: 'relative'
         }}
       >
         <img src="/syncFully_logo.png" alt="SyncFully" style={{ width: 40, height: 40 }} />
@@ -76,8 +124,16 @@ export default function Header() {
         <input
           type="text"
           value={term}
-          onChange={(e) => setTerm(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && doSearch()}
+          onChange={handleSearchInput}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              // Clear debounce timer and search immediately on Enter
+              if (debounceTimerRef.current) {
+                clearTimeout(debounceTimerRef.current);
+              }
+              doSearch();
+            }
+          }}
           placeholder="Search works or users"
           style={{
             border: 'none',

@@ -8,6 +8,7 @@ import useNavigationWithClearFilters from '../hooks/useNavigationWithClearFilter
 import useAuth from '../hooks/useAuth';
 import useShelves from '../hooks/useShelves';
 import AddToShelfBtn from '../components/AddToShelfBtn';
+import { WorkDetailsSkeleton } from '../components/Skeleton';
 
 // Helper functions for data processing
 const processWorkData = (workResponse) => {
@@ -231,7 +232,7 @@ export default function WorkDetails() {
   const userRating = !isGuest && ratings.find((r) => r.userId === loggedUserId);
   const userRatingScore = userRating ? Math.round(Number(userRating.score) || 0) : null;
 
-  if (loading) return <p>Loading work...</p>;
+  if (loading) return <WorkDetailsSkeleton />;
   if (!work) return <p>Work not found.</p>;
 
   const messageBox = (type) => ({
@@ -290,44 +291,50 @@ export default function WorkDetails() {
           <div
             style={{
               marginTop: 12,
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
+              width: 180,
             }}
           >
-            <div style={{ display: 'inline-block' }}>
-              <h3 className="section-title">WHERE TO FIND</h3>
-            </div>
-
             {work && work.findAt && work.findAt.length > 0 ? (
-              <ul style={{ listStyle: 'none', padding: 0, margin: '8px 0' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 16 }}>
                 {work.findAt.map((f, i) => (
-                  <li
+                  <a
                     key={i}
+                    href={f.url}
+                    target="_blank"
+                    rel="noreferrer"
                     style={{
                       display: 'flex',
                       alignItems: 'center',
-                      gap: 8,
                       justifyContent: 'center',
+                      gap: 10,
+                      padding: '14px 20px',
+                      background: 'linear-gradient(135deg, #9a4207, #b95716)',
+                      color: 'white',
+                      textDecoration: 'none',
+                      borderRadius: 10,
+                      fontWeight: '700',
+                      fontSize: 14,
+                      boxShadow: '0 4px 12px rgba(154, 66, 7, 0.3)',
+                      transition: 'all 0.2s ease',
+                      border: 'none',
+                      cursor: 'pointer',
+                      width: '100%',
+                      boxSizing: 'border-box'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.transform = 'translateY(-2px)';
+                      e.currentTarget.style.boxShadow = '0 6px 16px rgba(154, 66, 7, 0.4)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.transform = 'translateY(0)';
+                      e.currentTarget.style.boxShadow = '0 4px 12px rgba(154, 66, 7, 0.3)';
                     }}
                   >
-                    <a
-                      href={f.url}
-                      target="_blank"
-                      rel="noreferrer"
-                      style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: 8,
-                      }}
-                    >
-                      <span style={{ color: '#111' }}>
-                        {f.label || f.url}
-                      </span>
-                    </a>
-                  </li>
+                    <span>🔗</span>
+                    <span>Find it Here{f.label && f.label !== 'External Link' ? `: ${f.label}` : ''}</span>
+                  </a>
                 ))}
-              </ul>
+              </div>
             ) : (
               <p>Available from online stores and libraries.</p>
             )}
@@ -627,20 +634,32 @@ export default function WorkDetails() {
                         style={{
                           flex: 1,
                           background: '#eee',
-                          height: 8,
+                          height: 20,
                           borderRadius: 4,
                           overflow: 'hidden',
                           minWidth: 100,
+                          position: 'relative',
                         }}
                       >
                         <div
                           style={{
                             width: `${pct}%`,
                             height: '100%',
-                            background: '#bfaea0',
+                            background: 'linear-gradient(135deg, #9a4207, #b95716)',
                             transition: 'width 0.3s ease',
                           }}
                         />
+                      </div>
+                      <div
+                        style={{
+                          width: 32,
+                          textAlign: 'left',
+                          fontSize: 13,
+                          fontWeight: 600,
+                          color: '#333',
+                        }}
+                      >
+                        {b.count}
                       </div>
                     </div>
                   );

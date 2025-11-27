@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
+import ErrorBoundary from '../ErrorBoundary';
 
-export default function UserRecommendations({ items = [] }) {
+function UserRecommendationsInner({ items = [] }) {
   if (!items.length) return <p>No recommendations yet.</p>;
 
   return (
@@ -23,5 +24,25 @@ export default function UserRecommendations({ items = [] }) {
         </Link>
       ))}
     </div>
+  );
+}
+
+export default function UserRecommendations(props) {
+  return (
+    <ErrorBoundary
+      fallback={
+        <div style={{
+          padding: '30px',
+          textAlign: 'center',
+          background: '#fff3cd',
+          borderRadius: '8px',
+          border: '1px solid #ffc107'
+        }}>
+          <p style={{ color: '#856404' }}>Unable to load recommendations</p>
+        </div>
+      }
+    >
+      <UserRecommendationsInner {...props} />
+    </ErrorBoundary>
   );
 }

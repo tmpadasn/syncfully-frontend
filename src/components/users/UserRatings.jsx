@@ -1,74 +1,57 @@
-import { Link } from 'react-router-dom';
+import WorkCardCarousel from '../WorkCardCarousel';
+import ErrorBoundary from '../ErrorBoundary';
 
-export default function UserRatings({ ratings = {}, works = [] }) {
+function UserRatingsInner({ ratings = {}, works = [] }) {
   const entries = Object.entries(ratings);
 
-  if (entries.length === 0) return <p>No ratings yet.</p>;
+  // Sort by ratedAt descending (most recent first)
+  const sortedEntries = entries.sort((a, b) => {
+    const dateA = new Date(a[1].ratedAt);
+    const dateB = new Date(b[1].ratedAt);
+    return dateB - dateA;
+  });
+
+  const cards = sortedEntries.map(([workId, rating]) => {
+    const work = works.find(w => (w.id || w.workId) === Number(workId));
+    if (!work) return null;
+
+    return {
+      id: workId,
+      title: work.title,
+      coverUrl: work.coverUrl,
+      averageRating: work.averageRating || work.rating || 0,
+      userRating: rating?.score || null,
+      ratedAt: rating?.ratedAt || null,
+      metaPrimary: work.creator || work.author || work.artist || 'Unknown Creator',
+      metaSecondary: work.year ? `${work.type || 'Work'} • ${work.year}` : (work.type || undefined),
+      link: `/works/${work.id || work.workId}`
+    };
+  }).filter(Boolean);
 
   return (
-    <div style={{
-      display: "grid",
-      gridTemplateColumns:"repeat(auto-fill, minmax(180px,1fr))",
-      gap:16
-    }}>
-      {entries.map(([workId, rating]) => {
-        const work = works.find(w => (w.id||w.workId) === Number(workId));
-        if (!work) return null;
+    <WorkCardCarousel
+      cards={cards}
+      emptyMessage="No ratings yet. Start rating some works!"
+    />
+  );
+}
 
-        return (
-          <Link 
-            key={workId} 
-            to={`/works/${work.id || work.workId}`}
-            style={{ textDecoration: 'none' }}
-          >
-            <div 
-              style={{ 
-                background:"#9a4207c8", 
-                padding:12, 
-                borderRadius:8,
-                cursor: 'pointer',
-                transition: 'transform 0.2s ease, box-shadow 0.2s ease',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-                height: '320px',
-                display: 'flex',
-                flexDirection: 'column'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.transform = 'translateY(-6px)';
-                e.currentTarget.style.boxShadow = '0 8px 20px rgba(0,0,0,0.15)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)';
-              }}
-            >
-              <img 
-                src={work.coverUrl} 
-                alt={work.title}
-                style={{ 
-                  width:"100%", 
-                  height: "220px",
-                  objectFit: "cover",
-                  borderRadius:6
-                }} 
-              />
-              <div style={{ marginTop:8, color:"#392c2c", flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
-                <strong style={{ 
-                  display: 'block',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  whiteSpace: 'nowrap',
-                  marginBottom: 4
-                }}>{work.title}</strong>
-                <div>Score: {rating.score}★</div>
-                <div style={{ fontSize:12 }}>
-                  {new Date(rating.ratedAt).toLocaleDateString()}
-                </div>
-              </div>
-            </div>
-          </Link>
-        );
-      })}
-    </div>
+export default function UserRatings(props) {
+  return (
+    <ErrorBoundary
+      fallback={
+        <div style={{
+          padding: '30px',
+          textAlign: 'center',
+          background: '#fff3cd',
+          borderRadius: '8px',
+          border: '1px solid #ffc107'
+        }}>
+          <p style={{ color: '#856404' }}>Unable to load user ratings</p>
+        </div>
+      }
+    >
+      <UserRatingsInner {...props} />
+    </ErrorBoundary>
   );
 }

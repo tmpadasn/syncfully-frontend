@@ -5,6 +5,8 @@ import { testConnection } from '../api/client';
 import { Link } from 'react-router-dom';
 import useNavigationWithClearFilters from '../hooks/useNavigationWithClearFilters';
 import useAuth from '../hooks/useAuth';
+import { WorkGridSkeleton, FriendGridSkeleton } from '../components/Skeleton';
+import HomeCarousel from '../components/HomeCarousel';
 
 // Default avatar for users without profile picture
 const defaultAvatarUrl = 'https://upload.wikimedia.org/wikipedia/commons/a/ac/Default_pfp.jpg';
@@ -69,6 +71,34 @@ const processFriendsData = async (users, allWorks, currentUserId) => {
   }
 
   return friendsWithActivity;
+};
+
+const getRandomWorks = (allWorks, type, limit = 10) => {
+  try {
+    // Filter works by type
+    const filteredWorks = allWorks.filter(work => work.type === type);
+    
+    // Shuffle array using Fisher-Yates algorithm
+    const shuffled = [...filteredWorks];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    
+    // Take first 'limit' items and format them
+    return shuffled.slice(0, limit).map(work => ({
+      workId: work.id || work.workId,
+      title: work.title,
+      rating: work.averageRating || work.rating || 0,
+      coverUrl: work.coverUrl || '/album_covers/default.jpg',
+      type: work.type,
+      creator: work.creator,
+      year: work.year
+    }));
+  } catch (error) {
+    console.error('Error getting random works:', error);
+    return [];
+  }
 };
 
 /* ---------------------- CARD COMPONENTS ---------------------- */
@@ -166,8 +196,11 @@ export default function Home() {
 
   const [popular, setPopular] = useState([]);
   const [friends, setFriends] = useState([]);
+  const [recentMovies, setRecentMovies] = useState([]);
+  const [recentMusic, setRecentMusic] = useState([]);
   const [loading, setLoading] = useState(true);
   const [friendsLoading, setFriendsLoading] = useState(true);
+  const [recentLoading, setRecentLoading] = useState(true);
   const [showWelcome, setShowWelcome] = useState(false);
 
   // Check if user just logged in
@@ -206,6 +239,14 @@ export default function Home() {
 
       setLoading(false);
       setFriendsLoading(false);
+
+      // Load random movies and music
+      const movies = getRandomWorks(allWorks, 'movie', 10);
+      const music = getRandomWorks(allWorks, 'music', 10);
+      
+      setRecentMovies(movies);
+      setRecentMusic(music);
+      setRecentLoading(false);
     };
 
     loadPage();
@@ -229,47 +270,76 @@ export default function Home() {
           {/* ------------------ FRIENDS ACTIVITY ------------------ */}
           {user && (
             <>
-              <h3 className="section-title">NEW FROM FRIENDS</h3>
+              <h3 className="section-title">FRIENDS' FAVOURITES</h3>
               {friendsLoading ? (
-                <p>Loading friends...</p>
+                <FriendGridSkeleton count={4} />
               ) : friends.length === 0 ? (
                 <p>No recent activity from friends.</p>
               ) : (
-                <div
-                  style={{
-                    display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))',
-                    gap: '16px',
-                    marginBottom: '40px'
-                  }}
-                >
+                <HomeCarousel scrollChunk={3}>
                   {friends.map(f => (
-                    <FriendCard key={f.id} friend={f} />
+                    <div key={f.id} style={{ flexShrink: 0, width: '180px' }}>
+                      <FriendCard friend={f} />
+                    </div>
                   ))}
-                </div>
+                </HomeCarousel>
               )}
             </>
           )}
 
           {/* ------------------ POPULAR WORKS ------------------ */}
           <h3 className="section-title" style={{ marginTop: 20 }}>
-            THIS WEEK'S MOST POPULAR
+            WEEK'S TOP 10
           </h3>
 
           {loading ? (
-            <p>Loading popular works...</p>
+            <WorkGridSkeleton count={6} columns="repeat(auto-fill, minmax(180px, 1fr))" />
           ) : (
-            <div
-              style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))',
-                gap: '16px'
-              }}
-            >
+            <HomeCarousel scrollChunk={3}>
               {popular.map(w => (
-                <PopularWorkCard key={w.workId} work={w} />
+                <div key={w.workId} style={{ flexShrink: 0, width: '180px' }}>
+                  <PopularWorkCard work={w} />
+                </div>
               ))}
-            </div>
+            </HomeCarousel>
+          )}
+
+          {/* ------------------ RECENTLY WATCHED ------------------ */}
+          <h3 className="section-title" style={{ marginTop: 40 }}>
+            RECENTLY WATCHED
+          </h3>
+
+          {recentLoading ? (
+            <WorkGridSkeleton count={6} columns="repeat(auto-fill, minmax(180px, 1fr))" />
+          ) : recentMovies.length === 0 ? (
+            <p>No recently rated movies yet.</p>
+          ) : (
+            <HomeCarousel scrollChunk={3}>
+              {recentMovies.map(w => (
+                <div key={w.workId} style={{ flexShrink: 0, width: '180px' }}>
+                  <PopularWorkCard work={w} />
+                </div>
+              ))}
+            </HomeCarousel>
+          )}
+
+          {/* ------------------ RECENTLY PLAYED ------------------ */}
+          <h3 className="section-title" style={{ marginTop: 40 }}>
+            RECENTLY PLAYED
+          </h3>
+
+          {recentLoading ? (
+            <WorkGridSkeleton count={6} columns="repeat(auto-fill, minmax(180px, 1fr))" />
+          ) : recentMusic.length === 0 ? (
+            <p>No recently rated music yet.</p>
+          ) : (
+            <HomeCarousel scrollChunk={3}>
+              {recentMusic.map(w => (
+                <div key={w.workId} style={{ flexShrink: 0, width: '180px' }}>
+                  <PopularWorkCard work={w} />
+                </div>
+              ))}
+            </HomeCarousel>
           )}
         </main>
       </div>

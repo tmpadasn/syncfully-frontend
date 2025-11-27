@@ -4,6 +4,8 @@ import useAuth from '../hooks/useAuth';
 import { getUserRecommendations } from '../api/users';
 import { getAllWorks } from '../api/works';
 import useNavigationWithClearFilters from '../hooks/useNavigationWithClearFilters';
+import { WorkGridSkeleton } from '../components/Skeleton';
+import HomeCarousel from '../components/HomeCarousel';
 
 export default function Recommendations() {
   useNavigationWithClearFilters();
@@ -11,62 +13,68 @@ export default function Recommendations() {
 
   const { user, isGuest } = useAuth();
 
-  const [lists, setLists] = useState({ current: [], profile: [] });
+  const [lists, setLists] = useState({ 
+    current: [], 
+    profile: [], 
+    friends: [], 
+    explore: [] 
+  });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // ---------- GRID RENDER ----------
-  const renderGrid = (items = []) => (
-    <div
-      style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))',
-        gap: '16px',
-      }}
+  // ---------- CARD COMPONENT ----------
+  const WorkCard = ({ item }) => (
+    <Link
+      to={`/works/${item.workId}`}
+      style={{ textDecoration: 'none', color: 'inherit' }}
     >
-      {items.map((item) => (
-        <Link
-          key={item.workId}
-          to={`/works/${item.workId}`}
-          style={{ textDecoration: 'none', color: 'inherit' }}
+      <div
+        style={{
+          transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+          cursor: 'pointer',
+          height: '280px',
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.transform = 'translateY(-6px)';
+          e.currentTarget.querySelector('div').style.boxShadow = '0 8px 20px rgba(0,0,0,0.15)';
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.transform = 'translateY(0)';
+          e.currentTarget.querySelector('div').style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)';
+        }}
+      >
+        <div
+          style={{
+            borderRadius: '8px',
+            overflow: 'hidden',
+            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
+            height: '100%',
+          }}
         >
-          <div
+          <img
+            src={item.coverUrl}
+            alt={item.title}
             style={{
-              transition: 'transform 0.2s ease',
-              cursor: 'pointer',
-              height: '280px',
+              width: '100%',
+              height: '100%',
+              objectFit: 'cover',
+              display: 'block',
             }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.transform = 'translateY(-4px)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.transform = 'translateY(0)';
-            }}
-          >
-            <div
-              style={{
-                borderRadius: '8px',
-                overflow: 'hidden',
-                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
-                transition: 'box-shadow 0.2s ease',
-                height: '100%',
-              }}
-            >
-              <img
-                src={item.coverUrl}
-                alt={item.title}
-                style={{
-                  width: '100%',
-                  height: '100%',
-                  objectFit: 'cover',
-                  display: 'block',
-                }}
-              />
-            </div>
-          </div>
-        </Link>
+          />
+        </div>
+      </div>
+    </Link>
+  );
+
+  // ---------- GRID RENDER ----------
+  const renderCarousel = (items = []) => (
+    <HomeCarousel scrollChunk={3}>
+      {items.map((item) => (
+        <div key={item.workId} style={{ flexShrink: 0, width: '180px' }}>
+          <WorkCard item={item} />
+        </div>
       ))}
-    </div>
+    </HomeCarousel>
   );
 
   // ---------- MAIN LOGIC ----------
@@ -86,43 +94,7 @@ export default function Recommendations() {
       const userId = user.userId;
 
       try {
-        // 1️⃣ Try personalized recommendations
-        const recommendationsData = await getUserRecommendations(userId);
-        const responseData = recommendationsData?.data || recommendationsData;
-
-        let recommendations = [];
-
-        if (responseData?.recommendations) {
-          recommendations = responseData.recommendations;
-        } else if (responseData?.current || responseData?.profile) {
-          recommendations = [
-            ...(responseData.current || []),
-            ...(responseData.profile || []),
-          ];
-        } else if (Array.isArray(responseData)) {
-          recommendations = responseData;
-        }
-
-        if (recommendations.length > 0) {
-          const mappedRecs = recommendations.map((rec) => ({
-            workId: rec.id || rec.workId,
-            title: rec.title,
-            coverUrl: rec.coverUrl || '/album_covers/default.jpg',
-            type: rec.type,
-            creator: rec.creator,
-            rating: rec.averageRating || rec.rating || 0,
-          }));
-
-          const midpoint = Math.ceil(mappedRecs.length / 2);
-          setLists({
-            current: mappedRecs.slice(0, midpoint),
-            profile: mappedRecs.slice(midpoint),
-          });
-
-          return;
-        }
-
-        // 2️⃣ Fallback → All works (no personal data)
+        // Fetch all works first for fallback sections
         const worksData = await getAllWorks();
         const allWorks = worksData?.works || [];
 
@@ -139,16 +111,60 @@ export default function Recommendations() {
           rating: work.averageRating || work.rating || 0,
         }));
 
+        // Generate random static lists for sections 2, 3, 4
         const shuffled = [...mappedWorks].sort(() => Math.random() - 0.5);
+        const staticProfile = shuffled.slice(0, 10);
+        const staticFriends = shuffled.slice(10, 20);
+        const staticExplore = shuffled.slice(20, 30);
+
+        // 1️⃣ Try personalized recommendations for section 1
+        let currentRecommendations = [];
+        try {
+          const recommendationsData = await getUserRecommendations(userId);
+          const responseData = recommendationsData?.data || recommendationsData;
+
+          let recommendations = [];
+
+          if (responseData?.recommendations) {
+            recommendations = responseData.recommendations;
+          } else if (responseData?.current || responseData?.profile) {
+            recommendations = [
+              ...(responseData.current || []),
+              ...(responseData.profile || []),
+            ];
+          } else if (Array.isArray(responseData)) {
+            recommendations = responseData;
+          }
+
+          if (recommendations.length > 0) {
+            currentRecommendations = recommendations.slice(0, 10).map((rec) => ({
+              workId: rec.id || rec.workId,
+              title: rec.title,
+              coverUrl: rec.coverUrl || '/album_covers/default.jpg',
+              type: rec.type,
+              creator: rec.creator,
+              rating: rec.averageRating || rec.rating || 0,
+            }));
+          }
+        } catch (recError) {
+          console.error('Error fetching personalized recommendations:', recError);
+        }
+
+        // If no personalized recommendations, use random works
+        if (currentRecommendations.length === 0) {
+          currentRecommendations = shuffled.slice(30, 40);
+        }
 
         setLists({
-          current: shuffled.slice(0, 5),
-          profile: shuffled.slice(5, 10),
+          current: currentRecommendations,
+          profile: staticProfile,
+          friends: staticFriends,
+          explore: staticExplore,
         });
       } catch (err) {
         console.error('Failed to fetch recommendations:', err);
         setError('Unable to load recommendations. Please try again later.');
-        setLists({ current: [], profile: [] });
+        setLists({ current: [], profile: [], friends: [], explore: [] });
       } finally {
         setLoading(false);
       }
@@ -191,9 +207,9 @@ export default function Recommendations() {
           {/* CURRENT */}
           <h3 className="section-title">BASED ON YOUR LATEST INTEREST</h3>
           {loading ? (
-            <p style={{ color: '#392c2cff' }}>Loading recommendations...</p>
+            <WorkGridSkeleton count={10} columns="repeat(auto-fill, minmax(180px, 1fr))" />
           ) : lists.current.length > 0 ? (
-            renderGrid(lists.current)
+            renderCarousel(lists.current)
           ) : (
             <p style={{ color: '#392c2cff' }}>
               No recommendations available at the moment.
@@ -201,16 +217,44 @@ export default function Recommendations() {
           )}
 
           {/* PROFILE */}
-          <h3 className="section-title" style={{ marginTop: 30 }}>
+          <h3 className="section-title" style={{ marginTop: 40 }}>
             BASED ON YOUR PROFILE
           </h3>
           {loading ? (
-            <p style={{ color: '#392c2cff' }}>Loading recommendations...</p>
+            <WorkGridSkeleton count={10} columns="repeat(auto-fill, minmax(180px, 1fr))" />
           ) : lists.profile.length > 0 ? (
-            renderGrid(lists.profile)
+            renderCarousel(lists.profile)
           ) : (
             <p style={{ color: '#392c2cff' }}>
               No profile-based recommendations available.
+            </p>
+          )}
+
+          {/* FRIENDS */}
+          <h3 className="section-title" style={{ marginTop: 40 }}>
+            BASED ON YOUR FRIEND'S FAVOURITES
+          </h3>
+          {loading ? (
+            <WorkGridSkeleton count={10} columns="repeat(auto-fill, minmax(180px, 1fr))" />
+          ) : lists.friends.length > 0 ? (
+            renderCarousel(lists.friends)
+          ) : (
+            <p style={{ color: '#392c2cff' }}>
+              No friend-based recommendations available.
+            </p>
+          )}
+
+          {/* EXPLORE */}
+          <h3 className="section-title" style={{ marginTop: 40 }}>
+            EXPLORE MORE
+          </h3>
+          {loading ? (
+            <WorkGridSkeleton count={10} columns="repeat(auto-fill, minmax(180px, 1fr))" />
+          ) : lists.explore.length > 0 ? (
+            renderCarousel(lists.explore)
+          ) : (
+            <p style={{ color: '#392c2cff' }}>
+              No additional works to explore.
             </p>
           )}
         </main>

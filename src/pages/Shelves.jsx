@@ -1,10 +1,13 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import useAuth from '../hooks/useAuth';
 import useShelves from '../hooks/useShelves';
 import { getWork } from '../api/works';
 import { getUserRatings } from '../api/users';
 import { removeWorkFromShelf } from '../api/shelves';
 import { FiPlus, FiTrash2, FiEdit2, FiX, FiChevronDown, FiHeart } from 'react-icons/fi';
+import WorkCardCarousel from '../components/WorkCardCarousel';
+import { Skeleton } from '../components/Skeleton';
 
 const styles = {
   container: {
@@ -124,6 +127,10 @@ const styles = {
   },
   deleteButton: {
     background: '#9a4207',
+    color: 'white'
+  },
+  addButton: {
+    background: '#6b8e23',
     color: 'white'
   },
   shelfContent: {
@@ -408,6 +415,7 @@ const styles = {
 export default function Shelves() {
   const { user, isGuest } = useAuth();
   const { shelves, loading, error, createNewShelf, updateExistingShelf, deleteExistingShelf, getOrCreateFavourites } = useShelves(user?.userId);
+  const navigate = useNavigate();
   
   const [expandedShelves, setExpandedShelves] = useState({});
   const [shelfWorks, setShelfWorks] = useState({});
@@ -489,7 +497,8 @@ export default function Shelves() {
                     workId: workId,
                     title: `Work #${workId}`,
                     coverUrl: '/album_covers/default.jpg',
-                    type: 'unknown'
+                    type: 'unknown',
+                    averageRating: 0
                   };
                 }
 
@@ -499,7 +508,8 @@ export default function Shelves() {
                   coverUrl: workData.coverUrl || workData.cover || '/album_covers/default.jpg',
                   type: workData.type,
                   creator: workData.creator || workData.author,
-                  year: workData.year || workData.releaseYear
+                  year: workData.year || workData.releaseYear,
+                  averageRating: workData.averageRating || workData.rating || 0
                 };
               } catch (err) {
                 console.error(`Error loading work ${workId}:`, err);
@@ -507,7 +517,8 @@ export default function Shelves() {
                   workId: workId,
                   title: `Work #${workId}`,
                   coverUrl: '/album_covers/default.jpg',
-                  type: 'unknown'
+                  type: 'unknown',
+                  averageRating: 0
                 };
               }
             })
@@ -572,6 +583,11 @@ export default function Shelves() {
     setDeleteConfirmation({ shelfId, shelfName });
   };
 
+  const handleAddWorks = (shelfId, shelfName) => {
+    // Navigate to search page with shelf context
+    navigate(`/search?addToShelf=${shelfId}&shelfName=${encodeURIComponent(shelfName)}`);
+  };
+
   const confirmDelete = async () => {
     if (!deleteConfirmation) return;
     
@@ -632,7 +648,37 @@ export default function Shelves() {
       )}
 
       {/* Loading state */}
-      {loading && <div style={styles.loadingMessage}>Loading your shelves...</div>}
+      {loading && (
+        <div style={{ padding: '40px 0' }}>
+          <div style={{ marginBottom: 30 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
+              <Skeleton width="200px" height="24px" />
+              <Skeleton width="150px" height="40px" borderRadius="8px" />
+            </div>
+          </div>
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} style={{ 
+              marginBottom: 30, 
+              background: '#f9f9f9', 
+              borderRadius: 12, 
+              border: '1px solid #e0e0e0',
+              overflow: 'hidden'
+            }}>
+              <div style={{ padding: 20, background: '#fff', borderBottom: '1px solid #e0e0e0' }}>
+                <Skeleton width="180px" height="20px" style={{ marginBottom: 8 }} />
+                <Skeleton width="120px" height="14px" />
+              </div>
+              <div style={{ padding: 20, background: '#fff' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 16 }}>
+                  {Array.from({ length: 4 }).map((_, j) => (
+                    <Skeleton key={j} width="100%" height="240px" borderRadius="8px" />
+                  ))}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Error state */}
       {error && !loading && (
@@ -697,6 +743,16 @@ export default function Shelves() {
                   {!isFavourites && (
                     <>
                       <button
+                        style={{ ...styles.actionButton, ...styles.addButton }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleAddWorks(shelf.shelfId, shelf.name);
+                        }}
+                      >
+                        <FiPlus size={16} />
+                        Add
+                      </button>
+                      <button
                         style={{ ...styles.actionButton, ...styles.editButton }}
                         onClick={(e) => {
                           e.stopPropagation();
@@ -725,118 +781,86 @@ export default function Shelves() {
               {expandedShelves[shelf.shelfId] && (
                 <div style={styles.shelfContent}>
                   {loadingWorks[shelf.shelfId] ? (
-                    <div style={styles.emptyShelf}>Loading works...</div>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 16 }}>
+                      {Array.from({ length: 4 }).map((_, i) => (
+                        <Skeleton key={i} width="100%" height="240px" borderRadius="8px" />
+                      ))}
+                    </div>
                   ) : !shelfWorks[shelf.shelfId] || shelfWorks[shelf.shelfId].length === 0 ? (
                     <div style={styles.emptyShelf}>This shelf is empty</div>
                   ) : (
-                    <div style={styles.worksList}>
-                      {shelfWorks[shelf.shelfId].map(work => {
-                        const r = userRatings[work.workId] || userRatings[String(work.workId)];
+                    <WorkCardCarousel
+                      cards={shelfWorks[shelf.shelfId].map(work => {
+                        if (!work) return null;
+                        const rating = userRatings[work.workId] || userRatings[String(work.workId)];
                         const isMarkedForRemoval = removingWork?.shelfId === shelf.shelfId && removingWork?.workId === work.workId;
+
+                        return {
+                          id: `${shelf.shelfId}-${work.workId}`,
+                          title: work.title || `Work ${work.workId}`,
+                          coverUrl: work.coverUrl,
+                          averageRating: work.averageRating || work.rating || 0,
+                          userRating: rating?.score || null,
+                          ratedAt: rating?.ratedAt || rating?.createdAt || null,
+                          metaPrimary: work.creator || work.author || work.artist || 'Unknown Creator',
+                          metaSecondary: work.year ? `${work.type || 'Work'} • ${work.year}` : undefined,
+                          link: `/works/${work.workId}`,
+                          data: {
+                            shelfId: shelf.shelfId,
+                            workId: work.workId,
+                            isMarkedForRemoval
+                          }
+                        };
+                      }).filter(Boolean)}
+                      emptyMessage="This shelf is empty"
+                      renderCardExtras={(card, { isHovered }) => {
+                        if (!card?.data) return null;
+                        const { shelfId: cardShelfId, workId: cardWorkId, isMarkedForRemoval } = card.data;
+                        const showButton = isHovered || isMarkedForRemoval;
                         return (
-                          <div
-                            key={work.workId}
-                            style={styles.workCard}
+                          <button
+                            style={{
+                              position: 'absolute',
+                              top: 12,
+                              right: 12,
+                              background: isMarkedForRemoval ? '#d4b895' : '#9a4207',
+                              color: isMarkedForRemoval ? '#392c2c' : '#fff',
+                              border: 'none',
+                              borderRadius: 6,
+                              padding: isMarkedForRemoval ? '6px 10px' : '4px 6px',
+                              fontSize: 12,
+                              fontWeight: 600,
+                              cursor: 'pointer',
+                              transition: 'all 0.2s ease',
+                              boxShadow: '0 2px 6px rgba(0,0,0,0.2)',
+                              opacity: showButton ? 1 : 0,
+                              pointerEvents: showButton ? 'auto' : 'none',
+                              zIndex: 20
+                            }}
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              handleRemoveFromShelf(cardShelfId, cardWorkId);
+                            }}
                             onMouseEnter={(e) => {
-                              if (!isMarkedForRemoval) {
-                                e.currentTarget.style.transform = 'translateY(-4px)';
-                                e.currentTarget.style.boxShadow = '0 6px 18px rgba(0,0,0,0.12)';
-                                const btn = e.currentTarget.querySelector('button');
-                                if (btn) {
-                                  btn.style.opacity = '1';
-                                  btn.style.pointerEvents = 'auto';
-                                }
-                              }
+                              e.currentTarget.style.background = isMarkedForRemoval ? '#c9a679' : '#7a3506';
                             }}
                             onMouseLeave={(e) => {
-                              e.currentTarget.style.transform = 'none';
-                              e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.06)';
-                              
-                              // Reset removal state when leaving the work card
-                              if (isMarkedForRemoval) {
-                                setRemovingWork(null);
-                              }
-                              
-                              const btn = e.currentTarget.querySelector('button');
-                              if (btn && !isMarkedForRemoval) {
-                                btn.style.opacity = '0';
-                                btn.style.pointerEvents = 'none';
-                                btn.style.background = '#9a4207'; // Reset to default theme color
-                              }
+                              e.currentTarget.style.background = isMarkedForRemoval ? '#d4b895' : '#9a4207';
                             }}
+                            title={isMarkedForRemoval ? 'Confirm removal' : 'Remove from shelf'}
                           >
-                            {isMarkedForRemoval ? (
-                              <button
-                                style={styles.confirmRemoveButton}
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleRemoveFromShelf(shelf.shelfId, work.workId);
-                                }}
-                                onMouseEnter={(e) => {
-                                  e.currentTarget.style.background = '#c9a679';
-                                }}
-                                onMouseLeave={(e) => {
-                                  e.currentTarget.style.background = '#d4b895';
-                                }}
-                                title="Confirm removal"
-                              >
-                                ✓ Remove
-                              </button>
-                            ) : (
-                              <button
-                                style={styles.removeButton}
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleRemoveFromShelf(shelf.shelfId, work.workId);
-                                }}
-                                onMouseEnter={(e) => {
-                                  e.currentTarget.style.background = '#7a3506';
-                                }}
-                                onMouseLeave={(e) => {
-                                  e.currentTarget.style.background = '#9a4207';
-                                }}
-                                title="Remove from shelf"
-                              >
-                                <FiX size={16} />
-                              </button>
-                            )}
-                            <img
-                              src={work.coverUrl}
-                              alt={work.title || 'Work cover'}
-                              style={styles.coverImage}
-                              onError={(e) => {
-                                console.log('Image error for work:', work.workId, work.coverUrl);
-                                e.target.src = '/album_covers/default.jpg';
-                              }}
-                            />
-                            <div style={styles.workInfo}>
-                              <strong 
-                                title={work.title}
-                                style={{
-                                  display: 'block',
-                                  overflow: 'hidden',
-                                  textOverflow: 'ellipsis',
-                                  whiteSpace: 'nowrap',
-                                  marginBottom: 4
-                                }}
-                              >
-                                {work.title || `Work ${work.workId}`}
-                              </strong>
-                              {r ? (
-                                <>
-                                  <div style={styles.ratingText}>Score: {r.score}★</div>
-                                  <div style={styles.ratingDate}>
-                                    {new Date(r.ratedAt || r.createdAt).toLocaleDateString()}
-                                  </div>
-                                </>
-                              ) : (
-                                <div style={styles.ratingText}>Unrated</div>
-                              )}
-                            </div>
-                          </div>
+                            {isMarkedForRemoval ? '✓ Remove' : <FiX size={14} />}
+                          </button>
                         );
-                      })}
-                    </div>
+                      }}
+                      onCardMouseLeave={(card) => {
+                        // Reset removal state when mouse leaves the card
+                        if (card?.data?.isMarkedForRemoval && removingWork) {
+                          setRemovingWork(null);
+                        }
+                      }}
+                    />
                   )}
                 </div>
               )}
