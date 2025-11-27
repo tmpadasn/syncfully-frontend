@@ -116,7 +116,11 @@ export function AuthProvider({ children }) {
     const raw = await apiSignup(data);
     const u = normalizeUser(raw);
     setUser(u);
-    localStorage.setItem(STORAGE_KEY_AUTH_USER, JSON.stringify(u));
+    try {
+      localStorage.setItem(STORAGE_KEY_AUTH_USER, JSON.stringify(u));
+    } catch (err) {
+      // ignore localStorage errors
+    }
     return u;
   };
 

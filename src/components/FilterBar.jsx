@@ -166,6 +166,17 @@ export default function FilterBar() {
   return (
     <div style={outer}>
       <div style={bar}>
+        {!optionsLoaded ? (
+          <div style={{ 
+            ...container, 
+            justifyContent: 'center',
+            color: '#8a6f5f',
+            fontSize: 14,
+            fontStyle: 'italic'
+          }}>
+            Loading filters...
+          </div>
+        ) : (
         <div style={container}>
           <div style={{ flex: 1, display: 'flex', justifyContent: 'center' }}>
             <MenuControl
@@ -241,6 +252,7 @@ export default function FilterBar() {
             />
           </div>
         </div>
+        )}
       </div>
     </div>
   );

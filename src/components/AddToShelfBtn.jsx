@@ -301,27 +301,39 @@ export default function AddToShelfBtn({ workId, userId, shelves, onSuccess }) {
             {!loading && availableShelves.length > 0 && (
               <div style={styles.shelfOptions} role="list">
                 {/* Favourites button - always first */}
-                <button
-                  ref={firstFocusableRef}
-                  style={styles.shelfOption}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.borderColor = styles.shelfOptionHover.borderColor;
-                    e.currentTarget.style.background = styles.shelfOptionHover.background;
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.borderColor = '#ddd';
-                    e.currentTarget.style.background = 'white';
-                  }}
-                  onClick={() => handleAddToFavourites()}
-                  aria-label="Add to Favourites shelf"
-                  role="listitem"
-                >
-                  <div style={styles.shelfOptionName}>
-                    <FiHeart size={16} style={{ marginRight: 8, display: 'inline' }} aria-hidden="true" />
-                    Add to Favourites
-                  </div>
-                  <div style={styles.shelfOptionDesc}>Your favorite works collection</div>
-                </button>
+                {(() => {
+                  // Find Favourites shelf to get work count
+                  const favouritesShelf = availableShelves.find(
+                    shelf => shelf.name?.toLowerCase() === 'favourites' || shelf.name?.toLowerCase() === 'favorite'
+                  );
+                  const favouritesCount = favouritesShelf?.works?.length || 0;
+                  
+                  return (
+                    <button
+                      ref={firstFocusableRef}
+                      style={styles.shelfOption}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.borderColor = styles.shelfOptionHover.borderColor;
+                        e.currentTarget.style.background = styles.shelfOptionHover.background;
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.borderColor = '#ddd';
+                        e.currentTarget.style.background = 'white';
+                      }}
+                      onClick={() => handleAddToFavourites()}
+                      aria-label={`Add to Favourites shelf, contains ${favouritesCount} work${favouritesCount !== 1 ? 's' : ''}`}
+                      role="listitem"
+                    >
+                      <div style={styles.shelfOptionName}>
+                        <FiHeart size={16} style={{ color: '#9a4207', fill: '#9a4207', verticalAlign: 'middle', marginRight: 6 }} aria-hidden="true" />
+                        Favourites
+                      </div>
+                      <div style={styles.shelfOptionDesc}>
+                        {favouritesCount} work{favouritesCount !== 1 ? 's' : ''}
+                      </div>
+                    </button>
+                  );
+                })()}
 
                 {/* Other shelves */}
                 {availableShelves.map(shelf => {

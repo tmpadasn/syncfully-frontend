@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, useLocation, useSearchParams } from "react-router-dom";
 import useAuth from "../hooks/useAuth";
 import { STORAGE_KEY_JUST_LOGGED_IN } from "../config/constants";
 
@@ -7,9 +7,12 @@ const styles = {
   pageContainer: {
     display: "flex",
     justifyContent: "center",
-    alignItems: "center",
+    alignItems: "flex-start",
     minHeight: "100vh",
-    padding: "40px 20px",
+    paddingTop: "80px",
+    paddingBottom: "40px",
+    paddingLeft: "20px",
+    paddingRight: "20px",
     background: "linear-gradient(135deg, #faf8f5 0%, #f5f0ea 100%)",
   },
   cardWrapper: {
@@ -142,10 +145,12 @@ export default function Login() {
   const { login, signup } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
   const redirectMessage = location.state?.message || null;
+  const initialMode = searchParams.get('mode') === 'signup' ? 'signup' : 'login';
 
-  const [mode, setMode] = useState("login");
+  const [mode, setMode] = useState(initialMode);
   const [identifier, setIdentifier] = useState("");
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
@@ -199,6 +204,13 @@ export default function Login() {
         }
         if (!email.trim()) {
           setError("Please enter an email address.");
+          setLoading(false);
+          return;
+        }
+        // Email format validation
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email.trim())) {
+          setError("Please enter a valid email address.");
           setLoading(false);
           return;
         }
