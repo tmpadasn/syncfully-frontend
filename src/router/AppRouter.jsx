@@ -10,8 +10,8 @@ import Profile from '../pages/Profile';
 import Login from '../pages/Login';
 import Account from '../pages/Account';
 import EditAccount from '../pages/EditAccount';
-import ProtectedRoute from '../pages/ProtectedRoute';
-import GuestRoute from '../pages/GuestRoute';
+import ProtectedRoute from './ProtectedRoute';
+import GuestRoute from './GuestRoute';
 import Shelves from '../pages/Shelves';
 
 export default function AppRouter() {

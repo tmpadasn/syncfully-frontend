@@ -470,7 +470,6 @@ export default function Shelves() {
       
       // Backend returns an object map of ratings keyed by workId
       const ratingsObject = data?.ratings || data || {};
-      logger.debug('User ratings loaded:', ratingsObject);
       setUserRatings(ratingsObject);
     } catch {
       if (isMountedRef.current) {
@@ -504,8 +503,6 @@ export default function Shelves() {
                 const workData = await getWork(workId);
                 
                 // getWork already handles response extraction, so workData should be the work object directly
-                logger.debug('Loaded work:', { workId, work: workData });
-
                 if (!workData) {
                   return {
                     workId: workId,

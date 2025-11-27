@@ -1,6 +1,6 @@
-import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { getPopularWorks, getAllWorks } from '../api/works';
-import { getAllUsers, getUserRatings, getUserById, getUserFollowers, getUserFollowing } from '../api/users';
+import { getAllUsers, getUserRatings, getUserFollowing } from '../api/users';
 import { testConnection } from '../api/client';
 import { Link } from 'react-router-dom';
 import useNavigationWithClearFilters from '../hooks/useNavigationWithClearFilters';

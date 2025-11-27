@@ -4,6 +4,7 @@ import { getUserById, getUserRatings, getUserFollowers, getUserFollowing, follow
 import useAuth from "../hooks/useAuth";
 import { getAllWorks } from "../api/works";
 import UserRatings from "../components/users/UserRatings";
+import { ProfileSkeleton } from "../components/Skeleton";
 import logger from "../utils/logger";
 import { DEFAULT_AVATAR_URL } from "../config/constants";
 
@@ -85,7 +86,7 @@ export default function Profile() {
     load();
   }, [userId, currentUser]);
 
-  if (loading) return <p style={{ padding: 20 }}>Loading profile…</p>;
+  if (loading) return <ProfileSkeleton />;
   if (!profileUser) return <p style={{ padding: 20 }}>User not found.</p>;
 
   const handleFollow = async () => {

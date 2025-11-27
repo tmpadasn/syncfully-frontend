@@ -1,5 +1,4 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
 import logger from '../utils/logger';
 import { IS_DEVELOPMENT } from '../config/constants';
 

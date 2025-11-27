@@ -1,5 +1,3 @@
-import React from 'react';
-
 /**
  * Base Skeleton component for loading states
  */
@@ -214,6 +212,89 @@ export function SearchResultsSkeleton({ count = 12 }) {
 
       {/* Results grid */}
       <WorkGridSkeleton count={count} columns="repeat(auto-fill, minmax(180px, 1fr))" />
+    </div>
+  );
+}
+
+/**
+ * Skeleton for Profile page
+ */
+export function ProfileSkeleton() {
+  return (
+    <div className="page-container">
+      <div className="page-inner">
+        <main className="page-main">
+          <div style={{ maxWidth: 900, margin: '0 auto' }}>
+            {/* Profile header skeleton */}
+            <div style={{ marginBottom: 48 }}>
+              <div style={{ display: 'flex', gap: 32, alignItems: 'center', marginBottom: 32 }}>
+                {/* Avatar skeleton */}
+                <div>
+                  <Skeleton 
+                    width="140px" 
+                    height="140px" 
+                    borderRadius="50%" 
+                    style={{ flexShrink: 0 }}
+                  />
+                </div>
+
+                {/* User info skeleton */}
+                <div style={{ flex: 1 }}>
+                  <Skeleton width="200px" height="32px" style={{ marginBottom: 12 }} />
+                  <Skeleton width="300px" height="16px" style={{ marginBottom: 20 }} />
+                  <div style={{ display: 'flex', gap: 12 }}>
+                    <Skeleton width="120px" height="40px" borderRadius="8px" />
+                    <Skeleton width="120px" height="40px" borderRadius="8px" />
+                  </div>
+                </div>
+              </div>
+
+              {/* Stats section skeleton */}
+              <div style={{ 
+                display: 'grid', 
+                gridTemplateColumns: '1fr', 
+                gap: 24,
+                marginTop: 36,
+                paddingTop: 32,
+                borderTop: '1px solid #efe5db'
+              }}>
+                <Skeleton width="100px" height="28px" style={{ marginBottom: 8 }} />
+                
+                {/* Rating breakdown skeleton */}
+                <div>
+                  <Skeleton width="150px" height="16px" style={{ marginBottom: 14 }} />
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 12 }}>
+                    {Array.from({ length: 4 }).map((_, i) => (
+                      <Skeleton key={i} width="100%" height="80px" borderRadius="10px" />
+                    ))}
+                  </div>
+                </div>
+
+                {/* Genre stats skeleton */}
+                <div>
+                  <Skeleton width="150px" height="16px" style={{ marginBottom: 14 }} />
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
+                      <Skeleton width="30px" height="28px" borderRadius="6px" />
+                      <Skeleton width="100%" height="28px" borderRadius="6px" />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Rating history skeleton */}
+            <section style={{ marginTop: 48 }}>
+              <Skeleton width="200px" height="28px" style={{ marginBottom: 24 }} />
+              {Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} style={{ marginBottom: 16, padding: 16, background: '#f9f9f9', borderRadius: 8 }}>
+                  <Skeleton width="100%" height="60px" borderRadius="8px" />
+                </div>
+              ))}
+            </section>
+          </div>
+        </main>
+      </div>
     </div>
   );
 }

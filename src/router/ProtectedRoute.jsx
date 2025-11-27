@@ -2,7 +2,7 @@ import { Navigate } from "react-router-dom";
 import useAuth from "../hooks/useAuth";
 
 export default function ProtectedRoute({ children }) {
-  const { user, isGuest, authLoading } = useAuth();
+  const { isGuest, authLoading } = useAuth();
 
   if (authLoading) return <p>Loading...</p>;
 

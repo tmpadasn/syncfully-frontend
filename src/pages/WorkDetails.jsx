@@ -191,7 +191,6 @@ export default function WorkDetails() {
           }
         } catch (error) {
           // Silently fail if recommendations check fails
-          logger.debug('Could not check recommendations:', error);
         }
       }
     } catch (e) {

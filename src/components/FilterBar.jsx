@@ -23,11 +23,8 @@ export default function FilterBar() {
   useEffect(() => {
     const loadFilterOptions = async () => {
       try {
-        logger.debug('🔍 FilterBar: Loading filter options from backend...');
         const worksData = await getAllWorks();
         const works = worksData?.works || worksData?.data || [];
-        
-        logger.debug('🔍', 'FilterBar: Backend works data:', works.length, 'items');
         
         if (works.length > 0) {
           // Extract unique types from backend data
@@ -35,9 +32,6 @@ export default function FilterBar() {
             works.map(work => work.type)
               .filter(Boolean)
           )].sort();
-          
-          logger.debug('🔍', 'FilterBar: Raw backend types:', types);
-          logger.debug('🔍', 'FilterBar: Sample work:', works[0]);
           
           // Generate year range from 1850 to current year
           const currentYear = new Date().getFullYear();
@@ -73,14 +67,6 @@ export default function FilterBar() {
           
           const genres = Array.from(genresSet).sort();
           
-          logger.debug('🔍', 'FilterBar: Raw backend genres:', genres);
-          
-          logger.debug('🔍', 'FilterBar: Extracted from backend:', {
-            types: types.length,
-            years: years.length, 
-            genres: genres.length
-          });
-          
           setFilterOptions({
             types: types,
             years: years,
@@ -88,8 +74,6 @@ export default function FilterBar() {
             genresByType: genresByType,
             ratings: ['5','4','3','2','1'] // Standard rating scale
           });
-          
-          logger.debug('✅ FilterBar: Using backend filter options exclusively');
         } else {
           logger.warn('⚠️ FilterBar: No works found in backend, using empty arrays');
           // Use empty arrays when no backend data
@@ -103,7 +87,6 @@ export default function FilterBar() {
         }
       } catch (error) {
         logger.error('❌ FilterBar: Failed to load filter options from backend:', error);
-        logger.debug('❌ FilterBar: Using empty arrays due to backend error');
         // Use empty arrays on error - no fallback to mock data
         setFilterOptions({
           types: [],
@@ -114,7 +97,6 @@ export default function FilterBar() {
         });
       } finally {
         setOptionsLoaded(true);
-        logger.debug('✅ FilterBar: Filter options loading completed');
       }
     };
     
@@ -122,11 +104,9 @@ export default function FilterBar() {
   }, []);
 
   function updateParam(key, value) {
-    logger.debug(`🔍 FilterBar: Updating ${key} to:`, value);
     if (!value) params.delete(key);
     else params.set(key, value);
 
-    logger.debug(`🔍 FilterBar: New URL params:`, params.toString());
     navigate(
       { pathname: location.pathname, search: params.toString() },
       { replace: true }
