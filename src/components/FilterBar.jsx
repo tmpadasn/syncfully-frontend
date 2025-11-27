@@ -2,6 +2,7 @@ import { useRef, useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { FiChevronDown, FiBook, FiMusic, FiFilm } from 'react-icons/fi';
 import { getAllWorks } from '../api/works';
+import logger from '../utils/logger';
 
 export default function FilterBar() {
   const location = useLocation();
@@ -22,11 +23,11 @@ export default function FilterBar() {
   useEffect(() => {
     const loadFilterOptions = async () => {
       try {
-        console.log('🔍 FilterBar: Loading filter options from backend...');
+        logger.debug('🔍 FilterBar: Loading filter options from backend...');
         const worksData = await getAllWorks();
         const works = worksData?.works || worksData?.data || [];
         
-        console.log('🔍 FilterBar: Backend works data:', works.length, 'items');
+        logger.debug('🔍', 'FilterBar: Backend works data:', works.length, 'items');
         
         if (works.length > 0) {
           // Extract unique types from backend data
@@ -35,8 +36,8 @@ export default function FilterBar() {
               .filter(Boolean)
           )].sort();
           
-          console.log('🔍 FilterBar: Raw backend types:', types);
-          console.log('🔍 FilterBar: Sample work:', works[0]);
+          logger.debug('🔍', 'FilterBar: Raw backend types:', types);
+          logger.debug('🔍', 'FilterBar: Sample work:', works[0]);
           
           // Generate year range from 1850 to current year
           const currentYear = new Date().getFullYear();
@@ -72,9 +73,9 @@ export default function FilterBar() {
           
           const genres = Array.from(genresSet).sort();
           
-          console.log('🔍 FilterBar: Raw backend genres:', genres);
+          logger.debug('🔍', 'FilterBar: Raw backend genres:', genres);
           
-          console.log('🔍 FilterBar: Extracted from backend:', {
+          logger.debug('🔍', 'FilterBar: Extracted from backend:', {
             types: types.length,
             years: years.length, 
             genres: genres.length
@@ -88,9 +89,9 @@ export default function FilterBar() {
             ratings: ['5','4','3','2','1'] // Standard rating scale
           });
           
-          console.log('✅ FilterBar: Using backend filter options exclusively');
+          logger.debug('✅ FilterBar: Using backend filter options exclusively');
         } else {
-          console.warn('⚠️ FilterBar: No works found in backend, using empty arrays');
+          logger.warn('⚠️ FilterBar: No works found in backend, using empty arrays');
           // Use empty arrays when no backend data
           setFilterOptions({
             types: [],
@@ -101,8 +102,8 @@ export default function FilterBar() {
           });
         }
       } catch (error) {
-        console.error('❌ FilterBar: Failed to load filter options from backend:', error);
-        console.log('❌ FilterBar: Using empty arrays due to backend error');
+        logger.error('❌ FilterBar: Failed to load filter options from backend:', error);
+        logger.debug('❌ FilterBar: Using empty arrays due to backend error');
         // Use empty arrays on error - no fallback to mock data
         setFilterOptions({
           types: [],
@@ -113,7 +114,7 @@ export default function FilterBar() {
         });
       } finally {
         setOptionsLoaded(true);
-        console.log('✅ FilterBar: Filter options loading completed');
+        logger.debug('✅ FilterBar: Filter options loading completed');
       }
     };
     
@@ -121,11 +122,11 @@ export default function FilterBar() {
   }, []);
 
   function updateParam(key, value) {
-    console.log(`🔍 FilterBar: Updating ${key} to:`, value);
+    logger.debug(`🔍 FilterBar: Updating ${key} to:`, value);
     if (!value) params.delete(key);
     else params.set(key, value);
 
-    console.log(`🔍 FilterBar: New URL params:`, params.toString());
+    logger.debug(`🔍 FilterBar: New URL params:`, params.toString());
     navigate(
       { pathname: location.pathname, search: params.toString() },
       { replace: true }
@@ -165,6 +166,17 @@ export default function FilterBar() {
   return (
     <div style={outer}>
       <div style={bar}>
+        {!optionsLoaded ? (
+          <div style={{ 
+            ...container, 
+            justifyContent: 'center',
+            color: '#8a6f5f',
+            fontSize: 14,
+            fontStyle: 'italic'
+          }}>
+            Loading filters...
+          </div>
+        ) : (
         <div style={container}>
           <div style={{ flex: 1, display: 'flex', justifyContent: 'center' }}>
             <MenuControl
@@ -240,6 +252,7 @@ export default function FilterBar() {
             />
           </div>
         </div>
+        )}
       </div>
     </div>
   );
@@ -247,7 +260,10 @@ export default function FilterBar() {
 
 function MenuControl({ label, options, onSelect, currentValue = '', disabled = false, showIcons = false }) {
   const [open, setOpen] = useState(false);
+  const [focusedIndex, setFocusedIndex] = useState(-1);
   const ref = useRef(null);
+  const buttonRef = useRef(null);
+  const menuRef = useRef(null);
 
   useEffect(() => {
     function onDoc(e) {
@@ -258,6 +274,60 @@ function MenuControl({ label, options, onSelect, currentValue = '', disabled = f
     document.addEventListener('mousedown', onDoc);
     return () => document.removeEventListener('mousedown', onDoc);
   }, []);
+
+  // Keyboard navigation for dropdown
+  useEffect(() => {
+    if (!open) return;
+
+    const handleKeyDown = (e) => {
+      const flatOptions = !showIcons 
+        ? options 
+        : options; // In case of grouped options, we still navigate through all
+
+      switch (e.key) {
+        case 'Escape':
+          e.preventDefault();
+          setOpen(false);
+          buttonRef.current?.focus();
+          break;
+        case 'ArrowDown':
+          e.preventDefault();
+          setFocusedIndex(prev => (prev < flatOptions.length - 1 ? prev + 1 : 0));
+          break;
+        case 'ArrowUp':
+          e.preventDefault();
+          setFocusedIndex(prev => (prev > 0 ? prev - 1 : flatOptions.length - 1));
+          break;
+        case 'Enter':
+        case ' ':
+          e.preventDefault();
+          if (focusedIndex >= 0 && focusedIndex < flatOptions.length) {
+            onSelect(flatOptions[focusedIndex].value);
+            setOpen(false);
+            buttonRef.current?.focus();
+          }
+          break;
+        case 'Home':
+          e.preventDefault();
+          setFocusedIndex(0);
+          break;
+        case 'End':
+          e.preventDefault();
+          setFocusedIndex(flatOptions.length - 1);
+          break;
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [open, focusedIndex, options, onSelect, showIcons]);
+
+  // Reset focused index when opening
+  useEffect(() => {
+    if (open) {
+      setFocusedIndex(-1);
+    }
+  }, [open]);
 
   // Find the currently selected option to display its label
   const selectedOption = options.find(opt => opt.value === currentValue);
@@ -360,10 +430,14 @@ function MenuControl({ label, options, onSelect, currentValue = '', disabled = f
 
   return (
     <div style={wrapper} ref={ref}>
-      <div 
+      <button
+        ref={buttonRef}
+        type="button"
         style={{
           ...labelStyle,
-          backgroundColor: open ? '#f5f5f5' : 'transparent',
+          backgroundColor: open ? '#f5f5f5' : (isSelected ? '#f8f5f0' : 'transparent'),
+          border: 'none',
+          cursor: disabled ? 'not-allowed' : 'pointer',
         }}
         onClick={() => !disabled && setOpen(s => !s)}
         onMouseEnter={(e) => {
@@ -373,32 +447,49 @@ function MenuControl({ label, options, onSelect, currentValue = '', disabled = f
         }}
         onMouseLeave={(e) => {
           if (!disabled && !open) {
-            e.target.style.backgroundColor = 'transparent';
+            e.target.style.backgroundColor = isSelected ? '#f8f5f0' : 'transparent';
           }
         }}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        aria-label={`${label} filter${isSelected ? `, currently set to ${displayLabel}` : ''}`}
+        disabled={disabled}
       >
         {disabled ? 'LOADING...' : displayLabel}
-        {!disabled && <FiChevronDown style={{ transform: open ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s ease' }} />}
-      </div>
+        {!disabled && <FiChevronDown style={{ transform: open ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s ease' }} aria-hidden="true" />}
+      </button>
       {open && !disabled && (
-        <div style={menuStyle} role="menu">
+        <div 
+          ref={menuRef}
+          style={menuStyle} 
+          role="listbox"
+          aria-label={`${label} options`}
+        >
           {!showIcons ? (
             // Regular options without grouping
-            options.map(opt => (
+            options.map((opt, idx) => (
               <div
                 key={opt.label + opt.value}
-                style={optStyle}
+                style={{
+                  ...optStyle,
+                  backgroundColor: focusedIndex === idx ? '#f5f5f5' : 'transparent',
+                }}
                 onClick={() => {
                   onSelect(opt.value);
                   setOpen(false);
+                  buttonRef.current?.focus();
                 }}
                 onMouseEnter={(e) => {
                   e.target.style.backgroundColor = '#f5f5f5';
+                  setFocusedIndex(idx);
                 }}
                 onMouseLeave={(e) => {
-                  e.target.style.backgroundColor = 'transparent';
+                  if (focusedIndex !== idx) {
+                    e.target.style.backgroundColor = 'transparent';
+                  }
                 }}
-                role="menuitem"
+                role="option"
+                aria-selected={opt.value === currentValue}
               >
                 {opt.label}
               </div>
@@ -407,21 +498,32 @@ function MenuControl({ label, options, onSelect, currentValue = '', disabled = f
             // Grouped options with icons
             <>
               {/* ALL option */}
-              {options.filter(opt => opt.value === '').map(opt => (
+              {options.filter(opt => opt.value === '').map((opt, idx) => (
                 <div
                   key={opt.label + opt.value}
-                  style={{...optStyle, marginBottom: 8, borderBottom: '1px solid #e0e0e0', paddingBottom: 8}}
+                  style={{
+                    ...optStyle, 
+                    marginBottom: 8, 
+                    borderBottom: '1px solid #e0e0e0', 
+                    paddingBottom: 8,
+                    backgroundColor: focusedIndex === idx ? '#f5f5f5' : 'transparent',
+                  }}
                   onClick={() => {
                     onSelect(opt.value);
                     setOpen(false);
+                    buttonRef.current?.focus();
                   }}
                   onMouseEnter={(e) => {
                     e.currentTarget.style.backgroundColor = '#f5f5f5';
+                    setFocusedIndex(idx);
                   }}
                   onMouseLeave={(e) => {
-                    e.currentTarget.style.backgroundColor = 'transparent';
+                    if (focusedIndex !== idx) {
+                      e.currentTarget.style.backgroundColor = 'transparent';
+                    }
                   }}
-                  role="menuitem"
+                  role="option"
+                  aria-selected={opt.value === currentValue}
                 >
                   {opt.label}
                 </div>
@@ -448,6 +550,7 @@ function MenuControl({ label, options, onSelect, currentValue = '', disabled = f
                       onClick={() => {
                         onSelect(opt.value);
                         setOpen(false);
+                        buttonRef.current?.focus();
                       }}
                       onMouseEnter={(e) => {
                         e.currentTarget.style.backgroundColor = '#f5f5f5';
@@ -455,10 +558,11 @@ function MenuControl({ label, options, onSelect, currentValue = '', disabled = f
                       onMouseLeave={(e) => {
                         e.currentTarget.style.backgroundColor = 'transparent';
                       }}
-                      role="menuitem"
+                      role="option"
+                      aria-selected={opt.value === currentValue}
                     >
                       {getIcon('book')}
-                      {opt.label}
+                      <span>{opt.label}</span>
                     </div>
                   ))}
                 </>
@@ -485,6 +589,7 @@ function MenuControl({ label, options, onSelect, currentValue = '', disabled = f
                       onClick={() => {
                         onSelect(opt.value);
                         setOpen(false);
+                        buttonRef.current?.focus();
                       }}
                       onMouseEnter={(e) => {
                         e.currentTarget.style.backgroundColor = '#f5f5f5';
@@ -492,10 +597,11 @@ function MenuControl({ label, options, onSelect, currentValue = '', disabled = f
                       onMouseLeave={(e) => {
                         e.currentTarget.style.backgroundColor = 'transparent';
                       }}
-                      role="menuitem"
+                      role="option"
+                      aria-selected={opt.value === currentValue}
                     >
                       {getIcon('music')}
-                      {opt.label}
+                      <span>{opt.label}</span>
                     </div>
                   ))}
                 </>
@@ -522,6 +628,7 @@ function MenuControl({ label, options, onSelect, currentValue = '', disabled = f
                       onClick={() => {
                         onSelect(opt.value);
                         setOpen(false);
+                        buttonRef.current?.focus();
                       }}
                       onMouseEnter={(e) => {
                         e.currentTarget.style.backgroundColor = '#f5f5f5';
@@ -529,10 +636,11 @@ function MenuControl({ label, options, onSelect, currentValue = '', disabled = f
                       onMouseLeave={(e) => {
                         e.currentTarget.style.backgroundColor = 'transparent';
                       }}
-                      role="menuitem"
+                      role="option"
+                      aria-selected={opt.value === currentValue}
                     >
                       {getIcon('movie')}
-                      {opt.label}
+                      <span>{opt.label}</span>
                     </div>
                   ))}
                 </>
@@ -559,6 +667,7 @@ function MenuControl({ label, options, onSelect, currentValue = '', disabled = f
                       onClick={() => {
                         onSelect(opt.value);
                         setOpen(false);
+                        buttonRef.current?.focus();
                       }}
                       onMouseEnter={(e) => {
                         e.currentTarget.style.backgroundColor = '#f5f5f5';
@@ -566,7 +675,8 @@ function MenuControl({ label, options, onSelect, currentValue = '', disabled = f
                       onMouseLeave={(e) => {
                         e.currentTarget.style.backgroundColor = 'transparent';
                       }}
-                      role="menuitem"
+                      role="option"
+                      aria-selected={opt.value === currentValue}
                     >
                       {opt.label}
                     </div>

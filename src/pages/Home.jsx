@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { getPopularWorks, getAllWorks } from '../api/works';
 import { getAllUsers, getUserRatings, getUserById } from '../api/users';
 import { testConnection } from '../api/client';
@@ -7,26 +7,29 @@ import useNavigationWithClearFilters from '../hooks/useNavigationWithClearFilter
 import useAuth from '../hooks/useAuth';
 import { WorkGridSkeleton, FriendGridSkeleton } from '../components/Skeleton';
 import HomeCarousel from '../components/HomeCarousel';
-
-// Default avatar for users without profile picture
-const defaultAvatarUrl = 'https://upload.wikimedia.org/wikipedia/commons/a/ac/Default_pfp.jpg';
+import logger from '../utils/logger';
+import {
+  extractWorksFromResponse,
+  normalizeWork,
+  normalizeWorks,
+  normalizeRatingsObject,
+  shuffleArray,
+} from '../utils/normalize';
+import { 
+  DEFAULT_AVATAR_URL, 
+  WORK_TYPES, 
+  HOME_CAROUSEL_LIMIT, 
+  STORAGE_KEY_JUST_LOGGED_IN 
+} from '../config/constants';
 
 /* ---------------------- DATA PROCESSING HELPERS ---------------------- */
 
 const processPopularWorks = (data) => {
-  const works = data?.works || [];
-  return works.map(work => ({
-    workId: work.id || work.workId,
-    title: work.title,
-    rating: work.averageRating || work.rating || 0,
-    coverUrl: work.coverUrl || '/album_covers/default.jpg',
-    type: work.type,
-    creator: work.creator,
-    year: work.year
-  }));
+  const works = extractWorksFromResponse(data);
+  return normalizeWorks(works);
 };
 
-const processFriendsData = async (users, allWorks, currentUserId) => {
+const processFriendsData = async (users, allWorks, currentUserId, isMountedRef) => {
   const friendsWithActivity = [];
 
   if (!currentUserId) return []; // If not logged in → no friends
@@ -36,19 +39,19 @@ const processFriendsData = async (users, allWorks, currentUserId) => {
   );
 
   for (const user of eligibleUsers) {
+    if (!isMountedRef.current) break; // Stop if component unmounted
+    
     try {
       const ratingsResponse = await getUserRatings(user.userId);
+      
+      if (!isMountedRef.current) break; // Check again after async call
+      
       const ratingsData = ratingsResponse?.data || ratingsResponse || {};
 
-      const entries = Object.entries(ratingsData);
+      const entries = normalizeRatingsObject(ratingsData);
       if (entries.length === 0) continue;
 
       const mostRecentRating = entries
-        .map(([workId, r]) => ({
-          workId: parseInt(workId),
-          score: r.score,
-          ratedAt: new Date(r.ratedAt)
-        }))
         .sort((a, b) => b.ratedAt - a.ratedAt)[0];
 
       const ratedWork = allWorks.find(w =>
@@ -56,18 +59,21 @@ const processFriendsData = async (users, allWorks, currentUserId) => {
       );
 
       if (ratedWork) {
+        const normalizedWork = normalizeWork(ratedWork);
         friendsWithActivity.push({
           id: user.userId,
           name: user.username,
-          avatar: user.profilePictureUrl || defaultAvatarUrl,
+          avatar: user.profilePictureUrl || DEFAULT_AVATAR_URL,
           likedAlbum: {
-            title: ratedWork.title,
-            coverUrl: ratedWork.coverUrl || '/album_covers/default.jpg',
-            workId: ratedWork.id || ratedWork.workId
+            title: normalizedWork.title,
+            coverUrl: normalizedWork.coverUrl,
+            workId: normalizedWork.workId
           }
         });
       }
-    } catch (_) {}
+    } catch (error) {
+      logger.error('Failed to fetch ratings for user:', user.userId, error);
+    }
   }
 
   return friendsWithActivity;
@@ -78,25 +84,11 @@ const getRandomWorks = (allWorks, type, limit = 10) => {
     // Filter works by type
     const filteredWorks = allWorks.filter(work => work.type === type);
     
-    // Shuffle array using Fisher-Yates algorithm
-    const shuffled = [...filteredWorks];
-    for (let i = shuffled.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-    }
-    
-    // Take first 'limit' items and format them
-    return shuffled.slice(0, limit).map(work => ({
-      workId: work.id || work.workId,
-      title: work.title,
-      rating: work.averageRating || work.rating || 0,
-      coverUrl: work.coverUrl || '/album_covers/default.jpg',
-      type: work.type,
-      creator: work.creator,
-      year: work.year
-    }));
+    // Shuffle and take first 'limit' items
+    const shuffled = shuffleArray(filteredWorks);
+    return shuffled.slice(0, limit).map(normalizeWork).filter(Boolean);
   } catch (error) {
-    console.error('Error getting random works:', error);
+    logger.error('Error getting random works:', error);
     return [];
   }
 };
@@ -193,6 +185,7 @@ export default function Home() {
 
   const { user } = useAuth(); // NOW decides login state
   const currentUserId = user?.userId || null;
+  const isMountedRef = useRef(true);
 
   const [popular, setPopular] = useState([]);
   const [friends, setFriends] = useState([]);
@@ -205,14 +198,26 @@ export default function Home() {
 
   // Check if user just logged in
   useEffect(() => {
-    if (sessionStorage.getItem('justLoggedIn') === 'true') {
+    if (sessionStorage.getItem(STORAGE_KEY_JUST_LOGGED_IN) === 'true') {
       setShowWelcome(true);
-      sessionStorage.removeItem('justLoggedIn');
+      sessionStorage.removeItem(STORAGE_KEY_JUST_LOGGED_IN);
     }
   }, []);
 
-  useEffect(() => {
-    const loadPage = async () => {
+  // Memoized load page function
+  const loadPage = useCallback(async () => {
+    if (!isMountedRef.current) return;
+
+    try {
+      // Reset state immediately to prevent flash of old content
+      setPopular([]);
+      setFriends([]);
+      setRecentMovies([]);
+      setRecentMusic([]);
+      setLoading(true);
+      setFriendsLoading(true);
+      setRecentLoading(true);
+
       await testConnection();
 
       const [popularData, worksData] = await Promise.all([
@@ -220,18 +225,27 @@ export default function Home() {
         getAllWorks()
       ]);
 
+      if (!isMountedRef.current) return;
+
       setPopular(processPopularWorks(popularData));
       const allWorks = worksData?.works || [];
 
       if (currentUserId) {
         // Only fetch friends if logged in
         const usersResponse = await getAllUsers();
+        
+        if (!isMountedRef.current) return;
+        
         const users = usersResponse?.data || usersResponse || [];
         const friendActivity = await processFriendsData(
           users,
           allWorks,
-          currentUserId
+          currentUserId,
+          isMountedRef
         );
+        
+        if (!isMountedRef.current) return;
+        
         setFriends(friendActivity);
       } else {
         setFriends([]); // logged-out users see no friends list
@@ -241,31 +255,236 @@ export default function Home() {
       setFriendsLoading(false);
 
       // Load random movies and music
-      const movies = getRandomWorks(allWorks, 'movie', 10);
-      const music = getRandomWorks(allWorks, 'music', 10);
+      const movies = getRandomWorks(allWorks, WORK_TYPES.MOVIE, HOME_CAROUSEL_LIMIT);
+      const music = getRandomWorks(allWorks, WORK_TYPES.MUSIC, HOME_CAROUSEL_LIMIT);
+      
+      if (!isMountedRef.current) return;
       
       setRecentMovies(movies);
       setRecentMusic(music);
       setRecentLoading(false);
-    };
-
-    loadPage();
+    } catch (error) {
+      logger.error('Error loading home page:', error);
+      if (isMountedRef.current) {
+        setLoading(false);
+        setFriendsLoading(false);
+        setRecentLoading(false);
+      }
+    }
   }, [currentUserId]);
+
+  useEffect(() => {
+    isMountedRef.current = true;
+    loadPage();
+
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, [loadPage]);
 
   return (
     <div className="page-container">
       <div className="page-inner">
         <main className="page-main">
           {/* ------------------ WELCOME MESSAGE ------------------ */}
-          {!user ? (
-            <p className="welcome-text">
-              Welcome to <strong>Syncfully</strong>. Discover the most popular works this week.
-            </p>
-          ) : showWelcome ? (
+          {user && showWelcome && (
             <p className="welcome-text">
               Welcome back <strong style={{ color: '#9a4207', fontSize: '20px' }}>{user.username}</strong>. Here's what others have been discovering...
             </p>
-          ) : null}
+          )}
+
+          {/* ------------------ LOGIN PROMPT BANNER ------------------ */}
+          {!user && (
+            <div style={{
+              marginTop: 40,
+              marginBottom: 60,
+              background: 'linear-gradient(135deg, #9a4207 0%, #c85609 100%)',
+              borderRadius: 16,
+              padding: '48px 32px',
+              textAlign: 'center',
+              boxShadow: '0 10px 40px rgba(154, 66, 7, 0.3)',
+              position: 'relative',
+              overflow: 'hidden'
+            }}>
+              {/* Decorative background elements */}
+              <div style={{
+                position: 'absolute',
+                top: -50,
+                right: -50,
+                width: 200,
+                height: 200,
+                background: 'rgba(255, 255, 255, 0.05)',
+                borderRadius: '50%',
+                pointerEvents: 'none'
+              }} />
+              <div style={{
+                position: 'absolute',
+                bottom: -30,
+                left: -30,
+                width: 150,
+                height: 150,
+                background: 'rgba(255, 255, 255, 0.05)',
+                borderRadius: '50%',
+                pointerEvents: 'none'
+              }} />
+              
+              {/* Content */}
+              <div style={{ position: 'relative', zIndex: 1 }}>
+                <h2 style={{
+                  fontSize: 32,
+                  fontWeight: 700,
+                  marginBottom: 16,
+                  color: '#fff',
+                  textShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                }}>
+                  Unlock Your Personalized Experience
+                </h2>
+                <p style={{
+                  fontSize: 18,
+                  marginBottom: 32,
+                  color: '#fff',
+                  opacity: 0.95,
+                  maxWidth: 600,
+                  margin: '0 auto 32px',
+                  lineHeight: 1.6
+                }}>
+                  Join Syncfully to get personalized recommendations, track what you've watched and listened to, and discover works tailored just for you.
+                </p>
+                <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap' }}>
+                  <Link 
+                    to="/login" 
+                    style={{
+                      display: 'inline-block',
+                      padding: '14px 40px',
+                      background: '#fff',
+                      color: '#9a4207',
+                      fontSize: 16,
+                      fontWeight: 700,
+                      borderRadius: 8,
+                      textDecoration: 'none',
+                      transition: 'all 0.3s ease',
+                      boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.transform = 'translateY(-2px)';
+                      e.currentTarget.style.boxShadow = '0 6px 20px rgba(0,0,0,0.25)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.transform = 'translateY(0)';
+                      e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
+                    }}
+                  >
+                    Sign In
+                  </Link>
+                  <Link 
+                    to="/login?mode=signup" 
+                    style={{
+                      display: 'inline-block',
+                      padding: '14px 40px',
+                      background: 'transparent',
+                      color: '#fff',
+                      fontSize: 16,
+                      fontWeight: 700,
+                      borderRadius: 8,
+                      textDecoration: 'none',
+                      border: '2px solid #fff',
+                      transition: 'all 0.3s ease'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
+                      e.currentTarget.style.transform = 'translateY(-2px)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = 'transparent';
+                      e.currentTarget.style.transform = 'translateY(0)';
+                    }}
+                  >
+                    Create Account
+                  </Link>
+                </div>
+                
+                {/* Feature highlights */}
+                <div style={{
+                  display: 'flex',
+                  gap: 64,
+                  justifyContent: 'center',
+                  marginTop: 40,
+                  flexWrap: 'wrap'
+                }}>
+                  <div style={{ textAlign: 'center', maxWidth: 200 }}>
+                    <div style={{ 
+                      fontSize: 36, 
+                      marginBottom: 12,
+                      width: 60,
+                      height: 60,
+                      margin: '0 auto 12px',
+                      background: 'rgba(255, 255, 255, 0.2)',
+                      borderRadius: '50%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: '#fff'
+                    }}>
+                      <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="currentColor" />
+                      </svg>
+                    </div>
+                    <div style={{ color: '#fff', fontSize: 14, fontWeight: 600 }}>
+                      Personalized Recommendations
+                    </div>
+                  </div>
+                  <div style={{ textAlign: 'center', maxWidth: 200 }}>
+                    <div style={{ 
+                      fontSize: 36, 
+                      marginBottom: 12,
+                      width: 60,
+                      height: 60,
+                      margin: '0 auto 12px',
+                      background: 'rgba(255, 255, 255, 0.2)',
+                      borderRadius: '50%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: '#fff'
+                    }}>
+                      <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+                        <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+                      </svg>
+                    </div>
+                    <div style={{ color: '#fff', fontSize: 14, fontWeight: 600 }}>
+                      Track Your Collection
+                    </div>
+                  </div>
+                  <div style={{ textAlign: 'center', maxWidth: 200 }}>
+                    <div style={{ 
+                      fontSize: 36, 
+                      marginBottom: 12,
+                      width: 60,
+                      height: 60,
+                      margin: '0 auto 12px',
+                      background: 'rgba(255, 255, 255, 0.2)',
+                      borderRadius: '50%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: '#fff'
+                    }}>
+                      <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                        <circle cx="9" cy="7" r="4" />
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                      </svg>
+                    </div>
+                    <div style={{ color: '#fff', fontSize: 14, fontWeight: 600 }}>
+                      See Friends' Favorites
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* ------------------ FRIENDS ACTIVITY ------------------ */}
           {user && (
@@ -305,41 +524,49 @@ export default function Home() {
           )}
 
           {/* ------------------ RECENTLY WATCHED ------------------ */}
-          <h3 className="section-title" style={{ marginTop: 40 }}>
-            RECENTLY WATCHED
-          </h3>
+          {user && (
+            <>
+              <h3 className="section-title" style={{ marginTop: 40 }}>
+                RECENTLY WATCHED
+              </h3>
 
-          {recentLoading ? (
-            <WorkGridSkeleton count={6} columns="repeat(auto-fill, minmax(180px, 1fr))" />
-          ) : recentMovies.length === 0 ? (
-            <p>No recently rated movies yet.</p>
-          ) : (
-            <HomeCarousel scrollChunk={3}>
-              {recentMovies.map(w => (
-                <div key={w.workId} style={{ flexShrink: 0, width: '180px' }}>
-                  <PopularWorkCard work={w} />
-                </div>
-              ))}
-            </HomeCarousel>
+              {recentLoading ? (
+                <WorkGridSkeleton count={6} columns="repeat(auto-fill, minmax(180px, 1fr))" />
+              ) : recentMovies.length === 0 ? (
+                <p>No recently rated movies yet.</p>
+              ) : (
+                <HomeCarousel scrollChunk={3}>
+                  {recentMovies.map(w => (
+                    <div key={w.workId} style={{ flexShrink: 0, width: '180px' }}>
+                      <PopularWorkCard work={w} />
+                    </div>
+                  ))}
+                </HomeCarousel>
+              )}
+            </>
           )}
 
           {/* ------------------ RECENTLY PLAYED ------------------ */}
-          <h3 className="section-title" style={{ marginTop: 40 }}>
-            RECENTLY PLAYED
-          </h3>
+          {user && (
+            <>
+              <h3 className="section-title" style={{ marginTop: 40 }}>
+                RECENTLY PLAYED
+              </h3>
 
-          {recentLoading ? (
-            <WorkGridSkeleton count={6} columns="repeat(auto-fill, minmax(180px, 1fr))" />
-          ) : recentMusic.length === 0 ? (
-            <p>No recently rated music yet.</p>
-          ) : (
-            <HomeCarousel scrollChunk={3}>
-              {recentMusic.map(w => (
-                <div key={w.workId} style={{ flexShrink: 0, width: '180px' }}>
-                  <PopularWorkCard work={w} />
-                </div>
-              ))}
-            </HomeCarousel>
+              {recentLoading ? (
+                <WorkGridSkeleton count={6} columns="repeat(auto-fill, minmax(180px, 1fr))" />
+              ) : recentMusic.length === 0 ? (
+                <p>No recently rated music yet.</p>
+              ) : (
+                <HomeCarousel scrollChunk={3}>
+                  {recentMusic.map(w => (
+                    <div key={w.workId} style={{ flexShrink: 0, width: '180px' }}>
+                      <PopularWorkCard work={w} />
+                    </div>
+                  ))}
+                </HomeCarousel>
+              )}
+            </>
           )}
         </main>
       </div>

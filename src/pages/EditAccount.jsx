@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import useAuth from "../hooks/useAuth";
 import { getUserById, updateUser } from "../api/users";
+import { DEFAULT_AVATAR_URL } from "../config/constants";
 
 export default function EditAccount() {
   const { user, authLoading, setUser } = useAuth();
@@ -238,7 +239,7 @@ export default function EditAccount() {
                 <img
                   src={
                     user.profilePictureUrl ||
-                    "https://upload.wikimedia.org/wikipedia/commons/a/ac/Default_pfp.jpg"
+                    DEFAULT_AVATAR_URL
                   }
                   alt="Profile"
                   style={avatarStyle}

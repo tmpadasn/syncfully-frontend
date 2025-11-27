@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import useAuth from '../hooks/useAuth';
 import useShelves from '../hooks/useShelves';
@@ -8,6 +8,7 @@ import { removeWorkFromShelf } from '../api/shelves';
 import { FiPlus, FiTrash2, FiEdit2, FiX, FiChevronDown, FiHeart } from 'react-icons/fi';
 import WorkCardCarousel from '../components/WorkCardCarousel';
 import { Skeleton } from '../components/Skeleton';
+import logger from '../utils/logger';
 
 const styles = {
   container: {
@@ -416,6 +417,7 @@ export default function Shelves() {
   const { user, isGuest } = useAuth();
   const { shelves, loading, error, createNewShelf, updateExistingShelf, deleteExistingShelf, getOrCreateFavourites } = useShelves(user?.userId);
   const navigate = useNavigate();
+  const isMountedRef = useRef(true);
   
   const [expandedShelves, setExpandedShelves] = useState({});
   const [shelfWorks, setShelfWorks] = useState({});
@@ -432,7 +434,7 @@ export default function Shelves() {
 
   // Auto-create Favourites shelf on first load
   useEffect(() => {
-    if (!loading && !isGuest && shelves.length === 0) {
+    if (!loading && !isGuest && shelves.length === 0 && isMountedRef.current) {
       getOrCreateFavourites().catch(() => {
         // Silently fail
       });
@@ -459,20 +461,32 @@ export default function Shelves() {
     });
 
   // Load user ratings once
-  useEffect(() => {
-    if (user?.userId) {
-      getUserRatings(user.userId)
-        .then(data => {
-          // Backend returns an object map of ratings keyed by workId
-          const ratingsObject = data?.ratings || data || {};
-          console.log('User ratings loaded:', ratingsObject);
-          setUserRatings(ratingsObject);
-        })
-        .catch(() => {
-          setUserRatings({});
-        });
+  const loadUserRatings = useCallback(async () => {
+    if (!user?.userId || !isMountedRef.current) return;
+    
+    try {
+      const data = await getUserRatings(user.userId);
+      if (!isMountedRef.current) return;
+      
+      // Backend returns an object map of ratings keyed by workId
+      const ratingsObject = data?.ratings || data || {};
+      logger.debug('User ratings loaded:', ratingsObject);
+      setUserRatings(ratingsObject);
+    } catch {
+      if (isMountedRef.current) {
+        setUserRatings({});
+      }
     }
   }, [user?.userId]);
+
+  useEffect(() => {
+    isMountedRef.current = true;
+    loadUserRatings();
+
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, [loadUserRatings]);
 
   const toggleShelf = async (shelfId) => {
     const newState = !expandedShelves[shelfId];
@@ -490,7 +504,7 @@ export default function Shelves() {
                 const workData = await getWork(workId);
                 
                 // getWork already handles response extraction, so workData should be the work object directly
-                console.log('Loaded work:', { workId, work: workData });
+                logger.debug('Loaded work:', { workId, work: workData });
 
                 if (!workData) {
                   return {
@@ -512,7 +526,7 @@ export default function Shelves() {
                   averageRating: workData.averageRating || workData.rating || 0
                 };
               } catch (err) {
-                console.error(`Error loading work ${workId}:`, err);
+                logger.error(`Error loading work ${workId}:`, err);
                 return {
                   workId: workId,
                   title: `Work #${workId}`,
@@ -526,7 +540,7 @@ export default function Shelves() {
           setShelfWorks({ ...shelfWorks, [shelfId]: workDetails });
         }
       } catch (err) {
-        console.error('Error loading shelf works:', err);
+        logger.error('Error loading shelf works:', err);
       } finally {
         setLoadingWorks({ ...loadingWorks, [shelfId]: false });
       }

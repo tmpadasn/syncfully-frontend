@@ -1,4 +1,5 @@
 import api from './client';
+import logger from '../utils/logger';
 
 // Get all users
 export const getAllUsers = async () => {
@@ -7,6 +8,7 @@ export const getAllUsers = async () => {
     // Backend returns: {success: true, data: [...], message: "..."}
     return res.data.data || res.data;
   } catch (error) {
+    logger.error('Error fetching all users:', error);
     throw error;
   }
 };
@@ -17,6 +19,7 @@ export const createUser = async (userData) => {
     const res = await api.post('/users', userData);
     return res.data;
   } catch (error) {
+    logger.error('Error creating user:', error);
     throw error;
   }
 };
@@ -28,6 +31,7 @@ export const getUserById = async (userId) => {
     // Backend returns: {success: true, data: {...}, message: "..."}
     return res.data.data || res.data;
   } catch (error) {
+    logger.error('Error fetching user by ID:', error);
     throw error;
   }
 };
@@ -39,6 +43,7 @@ export const updateUser = async (userId, userData) => {
     // Backend returns: {success: true, data: {...}, message: "..."}
     return res.data.data || res.data;
   } catch (error) {
+    logger.error('Error updating user:', error);
     throw error;
   }
 };
@@ -49,6 +54,7 @@ export const deleteUser = async (userId) => {
     const res = await api.delete(`/users/${userId}`);
     return res.data;
   } catch (error) {
+    logger.error('Error deleting user:', error);
     throw error;
   }
 };
@@ -60,6 +66,7 @@ export const getUserRatings = async (userId) => {
     // Backend returns: {success: true, data: {...}, message: "..."}
     return res.data.data || res.data;
   } catch (error) {
+    logger.error('Error fetching user ratings:', error);
     return { ratings: [] };
   }
 };
@@ -70,6 +77,7 @@ export const addUserRating = async (userId, ratingData) => {
     const res = await api.post(`/users/${userId}/ratings`, ratingData);
     return res.data;
   } catch (error) {
+    logger.error('Error adding user rating:', error);
     throw error;
   }
 };
@@ -81,6 +89,7 @@ export const getUserRecommendations = async (userId) => {
     // Backend returns: {success: true, data: {...}, message: "..."}
     return res.data.data || res.data;
   } catch (error) {
+    logger.error('Error fetching user recommendations:', error);
     return { recommendations: [] };
   }
 };

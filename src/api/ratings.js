@@ -1,4 +1,5 @@
 import api from './client';
+import logger from '../utils/logger';
 
 // Get all ratings (admin function)
 export const getAllRatings = async () => {
@@ -6,6 +7,7 @@ export const getAllRatings = async () => {
     const res = await api.get('/ratings');
     return res.data;
   } catch (error) {
+    logger.error('Error fetching all ratings:', error);
     return { ratings: [] };
   }
 };
@@ -16,6 +18,7 @@ export const getRatingById = async (ratingId) => {
     const res = await api.get(`/ratings/${ratingId}`);
     return res.data;
   } catch (error) {
+    logger.error('Error fetching rating by ID:', error);
     throw error;
   }
 };
@@ -26,6 +29,7 @@ export const updateRating = async (ratingId, ratingData) => {
     const res = await api.put(`/ratings/${ratingId}`, ratingData);
     return res.data;
   } catch (error) {
+    logger.error('Error updating rating:', error);
     throw error;
   }
 };
@@ -36,6 +40,7 @@ export const deleteRating = async (ratingId) => {
     const res = await api.delete(`/ratings/${ratingId}`);
     return res.data;
   } catch (error) {
+    logger.error('Error deleting rating:', error);
     throw error;
   }
 };
@@ -50,6 +55,7 @@ export const createRating = async (workId, userId, score, comment = null) => {
     });
     return res.data;
   } catch (error) {
+    logger.error('Error creating rating:', error);
     throw error;
   }
 };
@@ -60,6 +66,7 @@ export const getWorkAverageRating = async (workId) => {
     const res = await api.get(`/works/${workId}/ratings/average`);
     return res.data;
   } catch (error) {
+    logger.error('Error fetching work average rating:', error);
     return { average: 0, count: 0 };
   }
 };

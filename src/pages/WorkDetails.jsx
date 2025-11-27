@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { getWork, getWorkRatings, postWorkRating, getSimilarWorks } from '../api/works';
 import { getUserRecommendations } from '../api/users';
@@ -9,35 +9,34 @@ import useAuth from '../hooks/useAuth';
 import useShelves from '../hooks/useShelves';
 import AddToShelfBtn from '../components/AddToShelfBtn';
 import { WorkDetailsSkeleton } from '../components/Skeleton';
+import logger from '../utils/logger';
+import {
+  extractWorkFromResponse,
+  extractRatingsFromResponse,
+  normalizeWork,
+  normalizeWorks,
+  normalizeGenres,
+} from '../utils/normalize';
 
 // Helper functions for data processing
 const processWorkData = (workResponse) => {
   if (!workResponse) return null;
 
-  let workData = workResponse.data || workResponse;
-
-  let work;
-  if (workData.works && workData.works[0]) {
-    work = workData.works[0];
-  } else if (workData.work) {
-    work = workData.work;
-  } else {
-    work = workData;
-  }
-
+  const work = extractWorkFromResponse(workResponse);
   if (!work) return null;
 
+  const normalized = normalizeWork(work);
+  if (!normalized) return null;
+
   return {
-    ...work,
-    workId: work.id || work.workId,
-    genres: work.genres || [],
-    genre: Array.isArray(work.genres) ? work.genres.join(', ') : work.genre,
-    coverUrl: work.coverUrl || '/album_covers/default.jpg',
-    findAt: work.foundAt
+    ...normalized,
+    genres: normalizeGenres(work.genres),
+    genre: Array.isArray(normalized.genres) ? normalized.genres.join(', ') : '',
+    findAt: work.foundAt || work.foundAt
       ? [
           {
             label: 'External Link',
-            url: work.foundAt,
+            url: work.foundAt || normalized.foundAt,
           },
         ]
       : [],
@@ -45,23 +44,12 @@ const processWorkData = (workResponse) => {
 };
 
 const processRatingsData = (ratingsResponse) => {
-  if (!ratingsResponse) return [];
-  const ratingsData = ratingsResponse.data || ratingsResponse;
-  return ratingsData?.ratings || ratingsData || [];
+  return extractRatingsFromResponse(ratingsResponse);
 };
 
 const processSimilarWorksData = (similarWorksResponse) => {
   if (!similarWorksResponse || !Array.isArray(similarWorksResponse)) return [];
-
-  return similarWorksResponse
-    .map((work) => ({
-      workId: work.id || work.workId,
-      title: work.title,
-      coverUrl: work.coverUrl || '/album_covers/default.jpg',
-      type: work.type,
-      creator: work.creator,
-    }))
-    .filter((work) => work.workId && work.title);
+  return normalizeWorks(similarWorksResponse);
 };
 
 export default function WorkDetails() {
@@ -70,6 +58,7 @@ export default function WorkDetails() {
   const { user, isGuest } = useAuth();
   const { shelves } = useShelves(user?.userId);
   const { workId } = useParams();
+  const isMountedRef = useRef(true);
 
   const loggedUserId = user?.userId || null;
 
@@ -83,56 +72,71 @@ export default function WorkDetails() {
   const [message, setMessage] = useState(null);
   const [messageType, setMessageType] = useState(null); // 'success' or 'error'
 
-  const [comments, setComments] = useState([]);
-  const [newComment, setNewComment] = useState('');
   const [ratingSubmittedMessage, setRatingSubmittedMessage] = useState(false);
   const [showRecommendationToast, setShowRecommendationToast] = useState(false);
   const [recommendationVersion, setRecommendationVersion] = useState(null);
 
-  useEffect(() => {
-    setLoading(true);
-    setScore(0); // Reset score when navigating to a new work
+  // Memoized data loading function
+  const loadWorkData = useCallback(async () => {
+    if (!isMountedRef.current) return;
 
-    Promise.all([
-      getWork(workId),
-      getWorkRatings(workId),
-      getSimilarWorks(workId),
-    ])
-      .then(([workResponse, ratingsResponse, similarWorksResponse]) => {
-        const processedWork = processWorkData(workResponse);
-        setWork(processedWork);
+    try {
+      // Reset all state immediately to prevent flash of old content
+      setWork(null);
+      setRatings([]);
+      setSimilar([]);
+      setRecommended([]);
+      setScore(0);
+      setLoading(true);
 
-        const processedRatings = processRatingsData(ratingsResponse);
-        setRatings(processedRatings);
+      const [workResponse, ratingsResponse, similarWorksResponse] = await Promise.all([
+        getWork(workId),
+        getWorkRatings(workId),
+        getSimilarWorks(workId),
+      ]);
 
-        const comments = processedRatings
-          .filter((rating) => rating.comment)
-          .map((rating, index) => ({
-            id: `r-${index}`,
-            userId: rating.userId,
-            body: rating.comment,
-            at: rating.ratedAt || rating.createdAt,
-          }));
-        setComments(comments);
+      if (!isMountedRef.current) return;
 
-        const processedSimilarWorks = processSimilarWorksData(similarWorksResponse);
-        setSimilar(processedSimilarWorks);
+      const processedWork = processWorkData(workResponse);
+      setWork(processedWork);
 
-        setRecommended(processedSimilarWorks.slice(0, 5));
-      })
-      .finally(() => setLoading(false));
+      const processedRatings = processRatingsData(ratingsResponse);
+      setRatings(processedRatings);
+
+      const processedSimilarWorks = processSimilarWorksData(similarWorksResponse);
+      setSimilar(processedSimilarWorks);
+
+      setRecommended(processedSimilarWorks.slice(0, 5));
+    } catch (error) {
+      logger.error('Error loading work details:', error);
+    } finally {
+      if (isMountedRef.current) {
+        setLoading(false);
+      }
+    }
   }, [workId]);
+
+  useEffect(() => {
+    isMountedRef.current = true;
+    loadWorkData();
+
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, [loadWorkData]);
 
   // Fetch initial recommendation version for logged-in users
   useEffect(() => {
-    if (!isGuest && loggedUserId) {
-      getUserRecommendations(loggedUserId).then((data) => {
-        if (data && data.version) {
-          setRecommendationVersion(data.version);
-        }
-      }).catch(() => {
-        // Silently fail if recommendations not available
-      });
+    if (!isGuest && loggedUserId && isMountedRef.current) {
+      getUserRecommendations(loggedUserId)
+        .then((data) => {
+          if (isMountedRef.current && data && data.version) {
+            setRecommendationVersion(data.version);
+          }
+        })
+        .catch(() => {
+          // Silently fail if recommendations not available
+        });
     }
   }, [isGuest, loggedUserId]);
 
@@ -140,7 +144,7 @@ export default function WorkDetails() {
   useEffect(() => {
     if (!isGuest && ratings.length > 0 && loggedUserId) {
       const userRating = ratings.find((r) => r.userId === loggedUserId);
-      if (userRating) {
+      if (userRating && isMountedRef.current) {
         setScore(Math.round(Number(userRating.score) || 0));
       }
     }
@@ -187,7 +191,7 @@ export default function WorkDetails() {
           }
         } catch (error) {
           // Silently fail if recommendations check fails
-          console.log('Could not check recommendations:', error);
+          logger.debug('Could not check recommendations:', error);
         }
       }
     } catch (e) {
@@ -195,28 +199,6 @@ export default function WorkDetails() {
       setMessage(errorMsg);
       setMessageType('error');
     }
-  };
-
-  // ---------- COMMENT ----------
-  const submitComment = () => {
-    if (isGuest) {
-      navigate('/login', {
-        state: { message: 'You must log in to comment on works.' },
-      });
-      return;
-    }
-
-    if (!newComment.trim()) return;
-
-    const c = {
-      id: `c-${Date.now()}`,
-      userId: loggedUserId,
-      body: newComment.trim(),
-      at: new Date().toISOString(),
-    };
-
-    setComments((prev) => [c, ...prev]);
-    setNewComment('');
   };
 
   // Rating buckets
@@ -348,89 +330,92 @@ export default function WorkDetails() {
             {work.creator} • {work.year}
           </p>
 
-          <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
+          {/* Type and Genres with beautiful theme colors */}
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 16, marginBottom: 24 }}>
             {work.type && (
               <span
                 style={{
-                  padding: '6px 10px',
-                  borderRadius: 16,
-                  fontSize: 12,
+                  padding: '8px 16px',
+                  borderRadius: 20,
+                  fontSize: 13,
                   fontWeight: 700,
-                  background: '#0b6623',
+                  background: '#9a4207',
                   color: '#fff',
+                  letterSpacing: '0.5px',
+                  textTransform: 'uppercase',
                 }}
               >
-                {String(work.type).toUpperCase()}
+                {String(work.type)}
               </span>
             )}
 
-            {work.genre && (
+            {work.genres && Array.isArray(work.genres) && work.genres.map((genre, idx) => (
               <span
+                key={idx}
                 style={{
-                  padding: '6px 10px',
-                  borderRadius: 16,
-                  fontSize: 12,
-                  fontWeight: 700,
-                  background: '#0b6623',
+                  padding: '8px 16px',
+                  borderRadius: 20,
+                  fontSize: 13,
+                  fontWeight: 600,
+                  background: '#b95716',
                   color: '#fff',
+                  letterSpacing: '0.3px',
                 }}
               >
-                {String(work.genre).toUpperCase()}
+                {genre}
               </span>
-            )}
+            ))}
           </div>
 
-          {/* COMMENTS */}
-          <section style={{ marginTop: 20 }}>
-            <h3>COMMENTS</h3>
-            <div style={{ marginBottom: 8 }}>
-              <textarea
-                value={newComment}
-                disabled={isGuest}
-                placeholder={isGuest ? 'Log in to comment' : ''}
-                onChange={(e) => setNewComment(e.target.value)}
-                rows={2}
+          {/* DESCRIPTION - Beautiful section */}
+          <section 
+            style={{ 
+              marginTop: 28,
+              background: 'linear-gradient(to bottom, rgba(154, 66, 7, 0.03), rgba(154, 66, 7, 0.01))',
+              borderLeft: '4px solid #9a4207',
+              borderRadius: 8,
+              padding: '20px 24px',
+              boxShadow: '0 2px 12px rgba(0, 0, 0, 0.04)',
+            }}
+          >
+            <h3 
+              style={{ 
+                marginTop: 0,
+                marginBottom: 16,
+                color: '#9a4207',
+                fontSize: 20,
+                fontWeight: 700,
+                letterSpacing: '0.5px',
+                textTransform: 'uppercase',
+              }}
+            >
+              Description
+            </h3>
+            {work.description ? (
+              <p
                 style={{
-                  width: '100%',
-                  height: 64,
                   fontSize: 15,
-                  padding: 8,
-                  boxSizing: 'border-box',
-                  resize: 'vertical',
-                  opacity: isGuest ? 0.6 : 1,
+                  lineHeight: 1.7,
+                  color: '#333',
+                  margin: 0,
+                  whiteSpace: 'pre-wrap',
+                  textAlign: 'justify',
                 }}
-              />
-              <div style={{ textAlign: 'right', marginTop: 6 }}>
-                <button
-                  disabled={isGuest}
-                  onClick={submitComment}
-                >
-                  Add comment
-                </button>
-              </div>
-            </div>
-
-            {comments.length === 0 ? (
-              <p>No comments yet.</p>
+              >
+                {work.description}
+              </p>
             ) : (
-              <div>
-                {comments.map((c) => (
-                  <div key={c.id} style={{ padding: '10px 0' }}>
-                    <div style={{ fontSize: 13, color: '#666' }}>
-                      User {c.userId} • {new Date(c.at).toLocaleString()}
-                    </div>
-                    <div
-                      style={{
-                        marginTop: 6,
-                        fontSize: 15,
-                        lineHeight: 1.4,
-                      }}
-                    >
-                      {c.body}
-                    </div>
-                  </div>
-                ))}
-              </div>
+              <p
+                style={{
+                  fontSize: 15,
+                  lineHeight: 1.7,
+                  color: '#666',
+                  margin: 0,
+                  fontStyle: 'italic',
+                }}
+              >
+                No description available for this work yet.
+              </p>
             )}
           </section>
 
