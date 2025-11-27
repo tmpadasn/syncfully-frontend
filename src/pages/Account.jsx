@@ -8,7 +8,9 @@ import { DEFAULT_AVATAR_URL } from "../config/constants";
 import { 
   getUserById, 
   deleteUser, 
-  getUserRatings, 
+  getUserRatings,
+  getUserFollowers,
+  getUserFollowing,
 } from "../api/users";
 
 import { getAllWorks } from "../api/works";
@@ -22,6 +24,8 @@ export default function Account() {
   // ratings is stored as an object map { <workId>: { score, ratedAt } }
   const [ratings, setRatings] = useState({});
   const [works, setWorks] = useState([]);
+  const [followers, setFollowers] = useState([]);
+  const [following, setFollowing] = useState([]);
   const [loading, setLoading] = useState(true);
 
   /* ---------------------------------------------------------
@@ -36,12 +40,20 @@ export default function Account() {
       try {
         const userId = user.userId;
 
-        const [u, ratingsResponse, allWorks] = await Promise.all([
+        const [u, ratingsResponse, allWorks, followersResponse, followingResponse] = await Promise.all([
           getUserById(userId),
           getUserRatings(userId),
           getAllWorks().catch(err => {
             logger.error("Failed to fetch works:", err);
             return { works: [] };
+          }),
+          getUserFollowers(userId).catch(err => {
+            logger.error("Failed to fetch followers:", err);
+            return { followers: [] };
+          }),
+          getUserFollowing(userId).catch(err => {
+            logger.error("Failed to fetch following:", err);
+            return { following: [] };
           })
         ]);
 
@@ -62,6 +74,14 @@ export default function Account() {
 
         setRatings(filteredRatings);
         setWorks(validWorks);
+        
+        // Set followers
+        const followersList = followersResponse?.followers || [];
+        setFollowers(followersList);
+        
+        // Set following
+        const followingList = followingResponse?.following || [];
+        setFollowing(followingList);
 
       } catch (err) {
         // Handle errors - set backendUser to the auth user if API fails
@@ -370,6 +390,114 @@ export default function Account() {
                       });
                     })()}
                   </div>
+                </div>
+
+                {/* Followers Section */}
+                <div>
+                  <div style={{ fontSize: 13, fontWeight: 800, textTransform: "uppercase", color: "#8a6f5f", marginBottom: 14, opacity: 0.75, letterSpacing: 0.8 }}>
+                    👥 Followers
+                  </div>
+                  {followers.length === 0 ? (
+                    <div style={{ textAlign: "center", opacity: 0.6, fontSize: 13, padding: "20px" }}>No followers yet</div>
+                  ) : (
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(120px, 1fr))", gap: 12 }}>
+                      {followers.map((follower) => (
+                        <div
+                          key={follower.userId || follower.id}
+                          onClick={() => navigate(`/profile/${follower.userId || follower.id}`)}
+                          style={{
+                            background: "linear-gradient(135deg, #fff9f5 0%, #fef5f0 100%)",
+                            padding: "16px",
+                            borderRadius: 10,
+                            border: "1.5px solid #f0e0d8",
+                            textAlign: "center",
+                            transition: "all 0.2s ease",
+                            cursor: "pointer",
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.transform = "translateY(-4px)";
+                            e.currentTarget.style.boxShadow = "0 8px 16px rgba(154, 66, 7, 0.12)";
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.transform = "none";
+                            e.currentTarget.style.boxShadow = "none";
+                          }}
+                        >
+                          <img
+                            src={follower.profilePictureUrl || DEFAULT_AVATAR_URL}
+                            alt={follower.username}
+                            style={{
+                              width: "60px",
+                              height: "60px",
+                              borderRadius: "50%",
+                              objectFit: "cover",
+                              border: "2px solid #e8dccf",
+                              marginBottom: "8px",
+                              display: "block",
+                              margin: "0 auto 8px",
+                            }}
+                          />
+                          <div style={{ fontSize: 12, fontWeight: 600, color: "#3b2e2e", marginTop: 6 }}>
+                            {follower.username}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Following Section */}
+                <div>
+                  <div style={{ fontSize: 13, fontWeight: 800, textTransform: "uppercase", color: "#8a6f5f", marginBottom: 14, opacity: 0.75, letterSpacing: 0.8 }}>
+                    👫 Following
+                  </div>
+                  {following.length === 0 ? (
+                    <div style={{ textAlign: "center", opacity: 0.6, fontSize: 13, padding: "20px" }}>Not following anyone yet</div>
+                  ) : (
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(120px, 1fr))", gap: 12 }}>
+                      {following.map((user) => (
+                        <div
+                          key={user.userId || user.id}
+                          onClick={() => navigate(`/profile/${user.userId || user.id}`)}
+                          style={{
+                            background: "linear-gradient(135deg, #fff9f5 0%, #fef5f0 100%)",
+                            padding: "16px",
+                            borderRadius: 10,
+                            border: "1.5px solid #f0e0d8",
+                            textAlign: "center",
+                            transition: "all 0.2s ease",
+                            cursor: "pointer",
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.transform = "translateY(-4px)";
+                            e.currentTarget.style.boxShadow = "0 8px 16px rgba(154, 66, 7, 0.12)";
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.transform = "none";
+                            e.currentTarget.style.boxShadow = "none";
+                          }}
+                        >
+                          <img
+                            src={user.profilePictureUrl || DEFAULT_AVATAR_URL}
+                            alt={user.username}
+                            style={{
+                              width: "60px",
+                              height: "60px",
+                              borderRadius: "50%",
+                              objectFit: "cover",
+                              border: "2px solid #e8dccf",
+                              marginBottom: "8px",
+                              display: "block",
+                              margin: "0 auto 8px",
+                            }}
+                          />
+                          <div style={{ fontSize: 12, fontWeight: 600, color: "#3b2e2e", marginTop: 6 }}>
+                            {user.username}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
 

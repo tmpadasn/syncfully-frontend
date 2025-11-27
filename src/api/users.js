@@ -93,3 +93,49 @@ export const getUserRecommendations = async (userId) => {
     return { recommendations: [] };
   }
 };
+
+// Get user followers
+export const getUserFollowers = async (userId) => {
+  try {
+    const res = await api.get(`/users/${userId}/followers`);
+    // Backend returns: {success: true, data: {followers: [...]}, message: "..."}
+    return res.data.data || res.data;
+  } catch (error) {
+    logger.error('Error fetching user followers:', error);
+    return { followers: [] };
+  }
+};
+
+// Get users that user is following
+export const getUserFollowing = async (userId) => {
+  try {
+    const res = await api.get(`/users/${userId}/following`);
+    // Backend returns: {success: true, data: {following: [...]}, message: "..."}
+    return res.data.data || res.data;
+  } catch (error) {
+    logger.error('Error fetching user following:', error);
+    return { following: [] };
+  }
+};
+
+// Follow a user
+export const followUser = async (userId, targetUserId) => {
+  try {
+    const res = await api.post(`/users/${userId}/following/${targetUserId}`);
+    return res.data;
+  } catch (error) {
+    logger.error('Error following user:', error);
+    throw error;
+  }
+};
+
+// Unfollow a user
+export const unfollowUser = async (userId, targetUserId) => {
+  try {
+    const res = await api.delete(`/users/${userId}/following/${targetUserId}`);
+    return res.data;
+  } catch (error) {
+    logger.error('Error unfollowing user:', error);
+    throw error;
+  }
+};
