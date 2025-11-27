@@ -1,105 +1,242 @@
-## SyncFully Frontend (Concise Guide)
+# SyncFully Frontend
 
-Minimal instructions to run and understand the project.
+> Discover works across entertainment mediums - movies, books, music, series, and graphic novels.
 
-### 1. What It Is
-React app for discovering works (movies, books, music, series, graphic novels) with search + filters (type, year, genre, rating) and user/work toggle.
+A React-based web application for discovering, rating, and organizing entertainment content with personalized recommendations and social features.
 
-### 2. Prerequisites
-- Node.js (v16+)
-- Backend running (port 3000) in `syncfully-backend`
+## 📋 Table of Contents
 
-### 3. Run Backend
-```bash
-cd syncfully-backend
-npm install
-npm run dev   # or: npm start
-# Backend API at http://localhost:3000/api
-```
+- [Features](#features)
+- [Tech Stack](#tech-stack)
+- [Getting Started](#getting-started)
+- [Project Structure](#project-structure)
+- [Available Routes](#available-routes)
+- [Search & Filtering](#search--filtering)
+- [Environment Variables](#environment-variables)
+- [Building for Production](#building-for-production)
 
-### 4. Run Frontend
-```bash
-cd syncfully-frontend
-npm install
-npm start
-# Frontend at http://localhost:3001
-```
+## ✨ Features
 
-### 5. Optional .env (frontend)
-Create `.env` if backend not on default port:
-```
-REACT_APP_API_URL=http://localhost:3000/api
-REACT_APP_DEFAULT_USER_ID=1
-```
+- **Multi-Media Discovery** - Browse movies, books, music, series, and graphic novels
+- **Advanced Search & Filtering** - Filter by type, year, genre, and rating with dynamic options from backend
+- **User Authentication** - Login, account management, and profile editing
+- **Personal Shelves** - Create and manage custom shelves with favorites support
+- **Recommendations** - Get personalized suggestions based on your ratings
+- **Social Features** - View other users' profiles, ratings, and follow activity
 
-### 6. Key Pages
-| Path | Purpose |
-|------|---------|
-| `/` | Popular works overview |
-| `/search` | Search + filters (works/users) |
-| `/works/:id` | Work details + ratings |
+## 🛠 Tech Stack
 
-### 7. Search & Filters (URL params)
-`q`, `type`, `year`, `genre`, `rating`, `itemType` → all optional. Empty selection removes the param. Leaving `/search` clears them automatically.
+- **React** 18.2 - UI library
+- **React Router** 6.12 - Client-side routing
+- **Axios** 1.4 - HTTP client
+- **React Icons** 5.5 - Icon library
+- **Create React App** 5.0 - Build tooling
 
-### 8. Common Issues
-| Problem | Fix |
-|---------|-----|
-| Search does nothing | Press Enter or click icon; backend must be running |
-| Filters empty | Backend returned no works → seed data/mockWorks |
-| Ratings all 0 | Mock ratings limited → extend `mockRatings.js` |
+## 🚀 Getting Started
 
-### 9. Modify Filters Quickly
-Add backend support → expose field → extend `FilterBar.jsx` → parse in `SearchResults.jsx` → test URL.
+### Prerequisites
 
-### 10. Build For Production
-```bash
-cd syncfully-frontend
-npm run build
-```
-Outputs static assets in `build/`.
+- Node.js (v16 or higher)
+- npm 
+- Backend server running (see backend setup below)
 
-### 11. Tech Stack (Short)
-React 18, React Router 6, Axios, react-icons, CRA.
+### Backend Setup (Required First)
 
-### 12. Folder Snapshot
-`src/api` (requests) · `src/pages` (screens) · `src/components` (UI) · `src/hooks` (utilities).
+The frontend requires the backend API to be running:
 
-### 12.a Detailed Structure (Condensed)
+1. **Navigate to backend directory**
+   ```bash
+   cd syncfully-backend
+   ```
+
+2. **Install backend dependencies**
+   ```bash
+   npm install
+   ```
+
+3. **Set up backend environment variables**
+   ```bash
+   cp .env.example .env
+   ```
+   
+   Edit `.env`:
+   ```env
+   PORT=3000
+   NODE_ENV=production
+   # MONGODB_URI=your-mongodb-connection-string  # For future database implementation
+   ```
+
+4. **Start the backend server**
+   ```bash
+   # Development mode with auto-reload
+   npm run dev
+   
+   # OR production mode
+   npm start
+   ```
+
+   The backend API will be available at `http://localhost:3000/api`
+
+5. **Verify backend is running**
+   ```bash
+   curl http://localhost:3000/health
+   ```
+
+### Frontend Installation
+
+1. **Navigate to frontend directory**
+   ```bash
+   cd syncfully-frontend
+   ```
+
+2. **Install dependencies**
+   ```bash
+   npm install
+   ```
+
+3. **Set up environment variables (optional)**
+   ```bash
+   cp .env.example .env
+   ```
+   
+   Edit `.env` if needed:
+   ```env
+   # API Configuration
+   REACT_APP_API_URL=http://localhost:3000/api
+   
+   # Default Profile Images
+   REACT_APP_DEFAULT_PROFILE_URL=http://localhost:3000/uploads/profiles/profile_picture.jpg
+   REACT_APP_DEFAULT_AVATAR_URL=https://upload.wikimedia.org/wikipedia/commons/a/ac/Default_pfp.jpg
+   ```
+
+4. **Start the development server**
+   ```bash
+   npm start
+   ```
+   
+   The app will open at `http://localhost:3000` (or 3001 if port 3000 is taken by backend)
+
+## 📁 Project Structure
+
 ```
 src/
-	api/            # client.js (axios), works.js, users.js, search.js
-	components/     # Header, FilterBar, WorkCard
-	pages/          # Home, SearchResults, WorkDetails, Recommendations
-	hooks/          # useAuth, useNavigationWithClearFilters
-	context/        # AuthContext (default user)
-	router/         # AppRouter (declares routes)
-	styles/         # global.css
+├── api/                    # API client and service modules
+│   ├── client.js          # Axios instance and base configuration
+│   ├── auth.js            # Authentication endpoints
+│   ├── works.js           # Works/content endpoints
+│   ├── users.js           # User management endpoints
+│   ├── shelves.js         # Shelf management endpoints
+│   ├── ratings.js         # Rating endpoints
+│   └── search.js          # Search functionality
+├── components/            # Reusable UI components
+│   ├── Header.jsx         # Main navigation header
+│   ├── FilterBar.jsx      # Dynamic filtering component
+│   ├── WorkCard.jsx       # Work display card
+│   ├── WorkCardCarousel.jsx
+│   ├── HomeCarousel.jsx
+│   ├── AddToShelfBtn.jsx
+│   ├── Toast.jsx          # Notification system
+│   ├── Skeleton.jsx       # Loading skeletons
+│   ├── ErrorBoundary.jsx
+│   ├── PageErrorBoundary.jsx
+│   └── users/             # User-specific components
+│       ├── UserForm.jsx
+│       ├── UserRatings.jsx
+│       └── UserRecommendations.jsx
+├── pages/                 # Route page components
+│   ├── Home.jsx           # Landing page with popular works
+│   ├── SearchResults.jsx  # Search with filters
+│   ├── WorkDetails.jsx    # Individual work details
+│   ├── Recommendations.jsx # Personalized recommendations
+│   ├── Profile.jsx        # User profiles
+│   ├── Account.jsx        # Current user account
+│   ├── EditAccount.jsx    # Account editing
+│   ├── Login.jsx          # Authentication page
+│   ├── Shelves.jsx        # User shelves management
+│   ├── ProtectedRoute.jsx # Auth-required wrapper
+│   └── GuestRoute.jsx     # Guest-only wrapper
+├── hooks/                 # Custom React hooks
+│   ├── useAuth.js         # Authentication state
+│   ├── useShelves.js      # Shelf management
+│   └── useNavigationWithClearFilters.js
+├── context/               # React context providers
+│   └── AuthContext.jsx    # Global auth state
+├── router/                # Routing configuration
+│   └── AppRouter.jsx      # Route definitions
+├── utils/                 # Utility functions
+│   ├── logger.js          # Debug logging
+│   ├── normalize.js       # Data normalization
+│   └── helpers.js
+├── config/                # Configuration constants
+│   └── constants.js       # App-wide constants
+└── styles/                # Global styles
+    └── global.css
 ```
 
-### 13. Available Filter Options
-Source: dynamically derived from backend `/works` response.
+## 🗺 Available Routes
 
-| Filter | Param | Example | Notes |
-|--------|-------|---------|-------|
-| Type   | `type` | `?type=movie` | Uses the `type` field directly |
-| Year   | `year` | `?year=1999` | Numeric equality match |
-| Genre  | `genre`| `?genre=Action` | Single genre; derived from genre/genres array |
-| Rating | `rating`| `?rating=4` | Minimum rating threshold (>=) |
-| Item Type | `itemType` | `?itemType=user` | Limits search domain (work/user) |
-| Query  | `q`    | `?q=matrix` | Text search (title, description, creator) |
+| Route | Access | Description |
+|-------|--------|-------------|
+| `/` | Public | Home page with popular works and carousels |
+| `/search` | Public | Search results with dynamic filters |
+| `/works/:workId` | Public | Individual work details and ratings |
+| `/recommendations` | Public | Personalized recommendations |
+| `/profile/:userId` | Public | User profile and ratings |
+| `/login` | Guest Only | Authentication page |
+| `/account` | Protected | Current user account overview |
+| `/account/edit` | Protected | Edit account settings |
+| `/shelves` | Protected | Manage personal shelves |
 
-Empty/"ALL" removes the parameter for clean URLs.
+**Protected Routes** require authentication. **Guest Routes** redirect authenticated users to home.
 
-### 14. Extending Options Quickly
-1. Add field in backend (e.g. `language`).
-2. Return it in works payload.
-3. In `FilterBar.jsx`: collect unique values → add a `MenuControl`.
-4. Parse it in `SearchResults.jsx` like other filters.
-5. Pass to API as part of `filters` object.
+## 🔍 Search & Filtering
 
-### 13. Quick Reset
-If navigation behaves oddly, hard refresh or clear URL params manually.
+### URL Parameters
+
+All filters are reflected in URL query parameters for bookmarking and sharing:
+
+| Parameter | Type | Example | Description |
+|-----------|------|---------|-------------|
+| `q` | string | `?q=inception` | Search query (title, description, creator) |
+| `type` | string | `?type=movie` | Work type filter |
+| `year` | string | `?year=2010` | Release year filter |
+| `genre` | string | `?genre=Action` | Genre filter |
+| `rating` | string | `?rating=4` | Minimum rating threshold (>=) |
+| `addToShelf` | string | `?addToShelf=123` | Context for adding works to specific shelf |
+| `shelfName` | string | `?shelfName=Favorites` | Display name for shelf context |
+
+### Dynamic Filter Options
+
+Filter options are **dynamically loaded from the backend** on component mount:
+
+- **Types**: Extracted from all works in the database
+- **Years**: Generated range from 1850 to current year
+- **Genres**: Collected from all works' genre fields
+- **Ratings**: Fixed scale (5, 4, 3, 2, 1)
+
+Empty/"ALL" selection removes the parameter from URL for clean navigation.
+
+### Filter Behavior
+
+- Filters automatically clear when navigating away from `/search`
+- Multiple filters can be applied simultaneously
+- Backend performs the actual filtering logic
+- Frontend applies client-side post-filtering for refined results
+
+## 🔧 Environment Variables
+
+All environment variables are optional with sensible defaults:
+
+```env
+# API Configuration
+REACT_APP_API_URL=http://localhost:3000/api
+
+# Default Profile Images
+REACT_APP_DEFAULT_PROFILE_URL=http://localhost:3000/uploads/profiles/profile_picture.jpg
+REACT_APP_DEFAULT_AVATAR_URL=https://upload.wikimedia.org/wikipedia/commons/a/ac/Default_pfp.jpg
+```
 
 ---
+
+**Questions or issues?** Check the backend README at `syncfully-backend/README.md` for API documentation.
 
