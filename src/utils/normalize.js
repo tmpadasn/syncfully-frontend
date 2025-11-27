@@ -433,8 +433,5 @@ export const applyWorkFilters = (works, filters) => {
  * @param {*} output - Output data
  */
 export const logNormalization = (context, input, output) => {
-  logger.debug('🔄', `Normalization [${context}]:`, {
-    input: input,
-    output: output,
-  });
+  // Debug logging disabled for production
 };

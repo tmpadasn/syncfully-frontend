@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate, useLocation, useSearchParams } from "react-router-dom";
 import useAuth from "../hooks/useAuth";
 import { STORAGE_KEY_JUST_LOGGED_IN } from "../config/constants";
