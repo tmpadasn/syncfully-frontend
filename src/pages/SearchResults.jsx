@@ -705,7 +705,23 @@ export default function SearchResults() {
                                 </div>
                               </div>
                               <div style={{ flex: 1, padding: '8px 0', display: 'flex', flexDirection: 'column', gap: 4 }}>
-                                <h3 style={{ margin: 0, fontSize: 16, fontWeight: 600 }}>{entity.title}</h3>
+                                <h3 
+                                  onClick={() => navigateAndClearFilters(`/works/${entity.entityId}`)}
+                                  style={{ 
+                                    margin: 0, 
+                                    fontSize: 16, 
+                                    fontWeight: 600,
+                                    cursor: 'pointer',
+                                    display: 'inline-block',
+                                    width: 'fit-content'
+                                  }}
+                                  onMouseEnter={(e) => {
+                                    e.currentTarget.style.textDecoration = 'underline';
+                                  }}
+                                  onMouseLeave={(e) => {
+                                    e.currentTarget.style.textDecoration = 'none';
+                                  }}
+                                >{entity.title}</h3>
                                 <div style={{ display: 'flex', gap: 16, alignItems: 'baseline' }}>
                                   <p style={{ margin: 0, color: '#666', fontSize: 14 }}>{entity.subtitle}</p>
                                   <span style={{ margin: 0, color: '#888', fontSize: 12 }}>★ {entity.rating.toFixed(1)}</span>
@@ -753,34 +769,52 @@ export default function SearchResults() {
                                 onClick={() => navigate(`/profile/${entity.entityId}`, { state: { prevSearch: search } })}
                                 style={{ 
                                   flexShrink: 0, 
-                                  cursor: 'pointer',
-                                  transition: 'transform 0.2s ease, box-shadow 0.2s ease'
-                                }}
-                                onMouseEnter={(e) => {
-                                  e.currentTarget.style.transform = 'translateY(-4px)';
-                                  e.currentTarget.style.boxShadow = '0 6px 16px rgba(0,0,0,0.15)';
-                                }}
-                                onMouseLeave={(e) => {
-                                  e.currentTarget.style.transform = 'translateY(0)';
-                                  e.currentTarget.style.boxShadow = 'none';
+                                  cursor: 'pointer'
                                 }}
                               >
-                                <div style={{ 
-                                  width: 96, 
-                                  height: 96, 
-                                  overflow: 'hidden', 
-                                  borderRadius: '50%', 
-                                  cursor: 'pointer',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'center',
-                                  background: '#f2f2f2'
-                                }}>
+                                <div 
+                                  style={{ 
+                                    width: 96, 
+                                    height: 96, 
+                                    overflow: 'hidden', 
+                                    borderRadius: '50%', 
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    background: '#f2f2f2',
+                                    transition: 'transform 0.2s ease, box-shadow 0.2s ease'
+                                  }}
+                                  onMouseEnter={(e) => {
+                                    e.currentTarget.style.transform = 'translateY(-4px)';
+                                    e.currentTarget.style.boxShadow = '0 6px 16px rgba(0,0,0,0.15)';
+                                  }}
+                                  onMouseLeave={(e) => {
+                                    e.currentTarget.style.transform = 'translateY(0)';
+                                    e.currentTarget.style.boxShadow = 'none';
+                                  }}
+                                >
                                   <img src={entity.coverUrl} alt={entity.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                                 </div>
                               </div>
                               <div style={{ flex: 1, padding: '8px 0', display: 'flex', flexDirection: 'column', gap: 4 }}>
-                                <h3 style={{ margin: 0, fontSize: 16, fontWeight: 600 }}>{entity.title}</h3>
+                                <h3 
+                                  onClick={() => navigate(`/profile/${entity.entityId}`, { state: { prevSearch: search } })}
+                                  style={{ 
+                                    margin: 0, 
+                                    fontSize: 16, 
+                                    fontWeight: 600,
+                                    cursor: 'pointer',
+                                    display: 'inline-block',
+                                    width: 'fit-content'
+                                  }}
+                                  onMouseEnter={(e) => {
+                                    e.currentTarget.style.textDecoration = 'underline';
+                                  }}
+                                  onMouseLeave={(e) => {
+                                    e.currentTarget.style.textDecoration = 'none';
+                                  }}
+                                >{entity.title}</h3>
                                 <div style={{ display: 'flex', gap: 16, alignItems: 'baseline' }}>
                                   <p style={{ margin: 0, color: '#666', fontSize: 14 }}>{entity.subtitle}</p>
                                   <span style={{ margin: 0, color: '#888', fontSize: 12 }}>{entity.meta}</span>

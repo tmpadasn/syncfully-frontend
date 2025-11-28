@@ -103,7 +103,7 @@ export default function Header() {
         }}
         aria-label="SyncFully home page"
       >
-        <img src="/syncFully_logo.png" alt="SyncFully" style={{ width: 40, height: 40 }} />
+        <img src="/syncFully_logo.png" alt="SyncFully" style={{ width: 48, height: 48 }} />
         <span style={{ marginLeft: 10, fontSize: 28 }}>
           <span style={{ fontWeight: 'bold' }}>Sync</span>
           <span style={{ fontStyle: 'italic' }}>Fully</span>
