@@ -4,7 +4,6 @@
  */
 
 import { DEFAULT_AVATAR_URL } from '../config/constants';
-import logger from './logger';
 
 /* ===================== WORK NORMALIZATION ===================== */
 

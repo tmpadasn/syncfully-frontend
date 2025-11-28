@@ -138,10 +138,12 @@ src/
 │   ├── Toast.jsx          # Notification system
 │   ├── Skeleton.jsx       # Loading skeletons
 │   ├── ErrorBoundary.jsx
+│   ├── ErrorBoundaryTester.jsx
 │   ├── PageErrorBoundary.jsx
 │   └── users/             # User-specific components
 │       ├── UserForm.jsx
 │       ├── UserRatings.jsx
+│       ├── UserDeleteButton.jsx
 │       └── UserRecommendations.jsx
 ├── pages/                 # Route page components
 │   ├── Home.jsx           # Landing page with popular works
@@ -153,8 +155,7 @@ src/
 │   ├── EditAccount.jsx    # Account editing
 │   ├── Login.jsx          # Authentication page
 │   ├── Shelves.jsx        # User shelves management
-│   ├── ProtectedRoute.jsx # Auth-required wrapper
-│   └── GuestRoute.jsx     # Guest-only wrapper
+|
 ├── hooks/                 # Custom React hooks
 │   ├── useAuth.js         # Authentication state
 │   ├── useShelves.js      # Shelf management
@@ -162,11 +163,12 @@ src/
 ├── context/               # React context providers
 │   └── AuthContext.jsx    # Global auth state
 ├── router/                # Routing configuration
-│   └── AppRouter.jsx      # Route definitions
+│   ├── AppRouter.jsx      # Route definitions
+│   ├── ProtectedRoute.jsx # Auth-required wrapper
+│   └── GuestRoute.jsx     # Guest-only wrapper
 ├── utils/                 # Utility functions
 │   ├── logger.js          # Debug logging
 │   ├── normalize.js       # Data normalization
-│   └── helpers.js
 ├── config/                # Configuration constants
 │   └── constants.js       # App-wide constants
 └── styles/                # Global styles

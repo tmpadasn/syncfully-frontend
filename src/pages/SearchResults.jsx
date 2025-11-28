@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useLocation, useNavigate} from 'react-router-dom';
 import { getAllWorks } from '../api/works';
 import { searchItems } from '../api/search';

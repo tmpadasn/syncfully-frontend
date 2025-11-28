@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback, useRef } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { getWork, getWorkRatings, postWorkRating, getSimilarWorks } from '../api/works';
 import { getUserRecommendations } from '../api/users';

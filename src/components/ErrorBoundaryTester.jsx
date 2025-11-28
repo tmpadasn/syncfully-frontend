@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 
 /**
  * ErrorBoundaryTester - A component for testing error boundaries
