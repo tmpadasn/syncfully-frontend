@@ -6,8 +6,8 @@ import logger from '../utils/logger';
  */
 export const getUserShelves = async (userId) => {
   try {
-    const response = await api.get(`/users/${userId}/shelves`);
-    return response.data;
+    const res = await api.get(`/users/${userId}/shelves`);
+    return res.data;
   } catch (error) {
     logger.error('Error fetching user shelves:', error);
     return { shelves: [] };
@@ -19,8 +19,8 @@ export const getUserShelves = async (userId) => {
  */
 export const getShelfById = async (shelfId) => {
   try {
-    const response = await api.get(`/shelves/${shelfId}`);
-    return response.data;
+    const res = await api.get(`/shelves/${shelfId}`);
+    return res.data;
   } catch (error) {
     logger.error('Error fetching shelf:', error);
     throw error;
@@ -32,8 +32,8 @@ export const getShelfById = async (shelfId) => {
  */
 export const createShelf = async (userId, shelfData) => {
   try {
-    const response = await api.post(`/users/${userId}/shelves`, shelfData);
-    return response.data;
+    const res = await api.post(`/users/${userId}/shelves`, shelfData);
+    return res.data;
   } catch (error) {
     logger.error('Error creating shelf:', error);
     throw error;
@@ -45,8 +45,8 @@ export const createShelf = async (userId, shelfData) => {
  */
 export const updateShelf = async (shelfId, shelfData) => {
   try {
-    const response = await api.put(`/shelves/${shelfId}`, shelfData);
-    return response.data;
+    const res = await api.put(`/shelves/${shelfId}`, shelfData);
+    return res.data;
   } catch (error) {
     logger.error('Error updating shelf:', error);
     throw error;
@@ -58,8 +58,8 @@ export const updateShelf = async (shelfId, shelfData) => {
  */
 export const deleteShelf = async (shelfId) => {
   try {
-    const response = await api.delete(`/shelves/${shelfId}`);
-    return response.data;
+    const res = await api.delete(`/shelves/${shelfId}`);
+    return res.data;
   } catch (error) {
     logger.error('Error deleting shelf:', error);
     throw error;
@@ -72,17 +72,18 @@ export const deleteShelf = async (shelfId) => {
 export const getShelfWorks = async (shelfId, filters = {}) => {
   try {
     const params = new URLSearchParams();
-    if (filters.workType) params.append('work-type', filters.workType);
-    if (filters.genre) params.append('genre', filters.genre);
-    if (filters.year) params.append('year', filters.year);
-    if (filters.rating) params.append('rating', filters.rating);
+    const filterMap = { workType: 'work-type', genre: 'genre', year: 'year', rating: 'rating' };
+    
+    Object.entries(filterMap).forEach(([key, param]) => {
+      if (filters[key]) params.append(param, filters[key]);
+    });
 
     const url = params.toString() 
-      ? `/shelves/${shelfId}/works?${params.toString()}`
+      ? `/shelves/${shelfId}/works?${params}`
       : `/shelves/${shelfId}/works`;
 
-    const response = await api.get(url);
-    return response.data;
+    const res = await api.get(url);
+    return res.data;
   } catch (error) {
     logger.error('Error fetching shelf works:', error);
     return { works: [] };
@@ -94,8 +95,8 @@ export const getShelfWorks = async (shelfId, filters = {}) => {
  */
 export const addWorkToShelf = async (shelfId, workId) => {
   try {
-    const response = await api.post(`/shelves/${shelfId}/works/${workId}`);
-    return response.data;
+    const res = await api.post(`/shelves/${shelfId}/works/${workId}`);
+    return res.data;
   } catch (error) {
     logger.error('Error adding work to shelf:', error);
     throw error;
@@ -107,8 +108,8 @@ export const addWorkToShelf = async (shelfId, workId) => {
  */
 export const removeWorkFromShelf = async (shelfId, workId) => {
   try {
-    const response = await api.delete(`/shelves/${shelfId}/works/${workId}`);
-    return response.data;
+    const res = await api.delete(`/shelves/${shelfId}/works/${workId}`);
+    return res.data;
   } catch (error) {
     logger.error('Error removing work from shelf:', error);
     throw error;
@@ -119,24 +120,18 @@ export const removeWorkFromShelf = async (shelfId, workId) => {
  * Get or create the default "Favourites" shelf for a user
  */
 export const getOrCreateFavouritesShelf = async (userId, userShelves) => {
-  // Check if Favourites shelf already exists
   const favouritesShelf = userShelves?.find(
     shelf => shelf.name?.toLowerCase() === 'favourites'
   );
 
-  if (favouritesShelf) {
-    return favouritesShelf;
-  }
+  if (favouritesShelf) return favouritesShelf;
 
-  // Create Favourites shelf if it doesn't exist
   try {
-    const response = await createShelf(userId, {
+    const res = await createShelf(userId, {
       name: 'Favourites',
       description: 'My favorite works'
     });
-    // Extract the shelf from response: {success: true, data: <shelf>, message: 'Success'}
-    const newShelf = response.data || response;
-    return newShelf;
+    return res.data || res;
   } catch (error) {
     logger.error('Error creating Favourites shelf:', error);
     throw error;

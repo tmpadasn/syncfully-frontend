@@ -1,43 +1,43 @@
-import api from './client';
+import api, { extractResponseData } from './client';
 import logger from '../utils/logger';
 
-// Search for items (works, users, etc.)
+// Backend parameter mapping for search API
+const FILTER_PARAM_MAP = {
+  type: 'work-type',
+  itemType: 'item-type',
+  genre: 'genre',
+  year: 'year',
+  rating: 'rating'
+};
+
+/**
+ * Build query string from filters
+ */
+const buildFilterParams = (filters) => {
+  const params = new URLSearchParams();
+  Object.entries(filters).forEach(([key, value]) => {
+    if (value && value !== '' && value !== 'Any') {
+      const backendParam = FILTER_PARAM_MAP[key] || key;
+      params.append(backendParam, value);
+    }
+  });
+  return params;
+};
+
+/**
+ * Search for items (works, users, etc.)
+ */
 export const searchItems = async (query, filters = {}) => {
   try {
-    const params = new URLSearchParams();
+    const params = buildFilterParams(filters);
     if (query) params.append('query', query);
     
-    // Map frontend filter names to backend search API parameter names
-    const paramMapping = {
-      'type': 'work-type',
-      'itemType': 'item-type',
-      'genre': 'genre',
-      'year': 'year',
-      'rating': 'rating'
-    };
-    
-    // Add filters with correct parameter names for search API
-    Object.keys(filters).forEach(key => {
-      if (filters[key] && filters[key] !== '' && filters[key] !== 'Any') {
-        const backendParam = paramMapping[key] || key;
-        params.append(backendParam, filters[key]);
-      }
-    });
-    
-    const queryString = params.toString();
-    const url = queryString ? `/search?${queryString}` : '/search';
-    
-    logger.api('GET', url);
-    
+    const url = params.toString() ? `/search?${params}` : '/search';
     const res = await api.get(url);
-    if (!res || !res.data) {
-      return { results: [] };
-    }
+    const data = extractResponseData(res);
     
-    // Backend now returns standardized format: { success: true, data: { works: [], users: [], totalWorks: 0, totalUsers: 0 }, message: "..." }
-    const responseData = res.data.data || res.data;
-    const works = responseData.works || [];
-    const users = responseData.users || [];
+    const works = data?.works || [];
+    const users = data?.users || [];
     const results = [...works, ...users];
     
     return { results };
@@ -47,22 +47,24 @@ export const searchItems = async (query, filters = {}) => {
   }
 };
 
-// Search specifically for works
+/**
+ * Search specifically for works
+ */
 export const searchWorks = async (query, filters = {}) => {
   try {
-    const searchFilters = { ...filters, itemType: 'work' };
-    return await searchItems(query, searchFilters);
+    return await searchItems(query, { ...filters, itemType: 'work' });
   } catch (error) {
     logger.error('Error searching works:', error);
     return { results: [] };
   }
 };
 
-// Search specifically for users
+/**
+ * Search specifically for users
+ */
 export const searchUsers = async (query, filters = {}) => {
   try {
-    const searchFilters = { ...filters, itemType: 'user' };
-    return await searchItems(query, searchFilters);
+    return await searchItems(query, { ...filters, itemType: 'user' });
   } catch (error) {
     logger.error('Error searching users:', error);
     return { results: [] };

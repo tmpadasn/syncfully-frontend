@@ -2,10 +2,196 @@ import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import ErrorBoundary from './ErrorBoundary';
 
-/**
- * Generic, reusable horizontal scroller that renders the rich work-card UI
- * used in both Account (rating history) and Shelves pages.
- */
+/* ===================== UI STYLES ===================== */
+const styles = {
+  /* ===================== CAROUSEL WRAPPER ===================== */
+  carouselWrapper: {
+    position: 'relative',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '12px',
+  },
+
+  /* ===================== SCROLL BUTTON ===================== */
+  scrollButton: (isEnabled) => ({
+    flexShrink: 0,
+    background: isEnabled ? 'rgba(70, 40, 20, 0.9)' : 'rgba(70, 40, 20, 0.3)',
+    color: 'white',
+    border: '2px solid rgba(255, 255, 255, 0.2)',
+    borderRadius: '50%',
+    width: '48px',
+    height: '48px',
+    cursor: isEnabled ? 'pointer' : 'not-allowed',
+    fontSize: '24px',
+    fontWeight: 'bold',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    transition: 'all 0.3s ease',
+    boxShadow: isEnabled ? '0 4px 12px rgba(0, 0, 0, 0.2)' : 'none',
+    opacity: isEnabled ? 1 : 0.5,
+  }),
+
+  /* ===================== SCROLL CONTAINER ===================== */
+  scrollContainer: {
+    display: 'flex',
+    gap: 16,
+    overflowX: 'auto',
+    scrollbarWidth: 'none',
+    msOverflowStyle: 'none',
+    padding: '16px 0',
+    flex: 1,
+    scrollBehavior: 'smooth',
+  },
+
+  /* ===================== EMPTY STATE ===================== */
+  emptyState: {
+    textAlign: 'center',
+    padding: '60px 20px',
+    color: '#666',
+    fontSize: '16px',
+  },
+
+  /* ===================== CARD WRAPPER ===================== */
+  cardWrapper: {
+    position: 'relative',
+    flexShrink: 0,
+  },
+
+  /* ===================== CARD LINK ===================== */
+  cardLink: {
+    textDecoration: 'none',
+    flexShrink: 0,
+    display: 'block',
+    position: 'relative',
+  },
+
+  /* ===================== CARD CONTAINER ===================== */
+  cardContainer: {
+    background: '#9a4207c8',
+    padding: 14,
+    borderRadius: 12,
+    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+    boxShadow: '0 4px 12px rgba(0,0,0,0.25)',
+    height: '340px',
+    width: '180px',
+    display: 'flex',
+    flexDirection: 'column',
+    position: 'relative',
+    overflow: 'hidden',
+  },
+
+  /* ===================== COVER IMAGE SECTION ===================== */
+  coverSection: {
+    position: 'relative',
+    borderRadius: 8,
+    overflow: 'hidden',
+    boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
+  },
+
+  /* ===================== COVER IMAGE ===================== */
+  coverImage: {
+    width: '100%',
+    height: '230px',
+    objectFit: 'cover',
+    display: 'block',
+  },
+
+  /* ===================== AVERAGE RATING BADGE ===================== */
+  ratingBadge: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    background: '#392c2c',
+    color: '#d4b895',
+    padding: '4px 10px',
+    borderRadius: 16,
+    fontSize: 14,
+    fontWeight: 'bold',
+    display: 'flex',
+    alignItems: 'center',
+    gap: 2,
+  },
+
+  /* ===================== CARD INFO SECTION ===================== */
+  infoSection: {
+    marginTop: 10,
+    color: '#392c2cff',
+    flex: 1,
+    display: 'flex',
+    flexDirection: 'column',
+    justifyContent: 'space-between',
+  },
+
+  /* ===================== CARD TITLE ===================== */
+  cardTitle: {
+    display: 'block',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
+    fontSize: 15,
+    marginBottom: 4,
+    textShadow: '0 1px 2px rgba(0,0,0,0.1)',
+  },
+
+  /* ===================== USER RATING ===================== */
+  userRating: {
+    fontSize: 12,
+    color: 'rgba(57, 44, 44, 0.9)',
+    marginBottom: 2,
+  },
+
+  /* ===================== RATED DATE ===================== */
+  ratedDate: {
+    fontSize: 11,
+    color: 'rgba(57, 44, 44, 0.7)',
+    marginBottom: 4,
+  },
+
+  /* ===================== META PRIMARY ===================== */
+  metaPrimary: {
+    fontSize: 12,
+    color: 'rgba(57, 44, 44, 0.9)',
+    marginBottom: 4,
+  },
+
+  /* ===================== META SECONDARY ===================== */
+  metaSecondary: {
+    fontSize: 11,
+    color: 'rgba(57, 44, 44, 0.7)',
+  },
+
+  /* ===================== ERROR FALLBACK ===================== */
+  errorFallback: {
+    padding: '40px 20px',
+    textAlign: 'center',
+    background: '#fff3cd',
+    borderRadius: '8px',
+    border: '1px solid #ffc107',
+  },
+
+  /* ===================== ERROR MESSAGE ===================== */
+  errorMessage: {
+    color: '#856404',
+    marginBottom: '12px',
+  },
+
+  /* ===================== RELOAD BUTTON ===================== */
+  reloadButton: {
+    padding: '8px 16px',
+    background: '#9a4207',
+    color: 'white',
+    border: 'none',
+    borderRadius: '6px',
+    cursor: 'pointer',
+    fontSize: '14px',
+  },
+};
+
+/* ===================== ANIMATIONS ===================== */
+const hideScrollbarCSS = `
+  div::-webkit-scrollbar { display: none; }
+`;
 function WorkCardCarouselInner({
   cards = [],
   emptyMessage = 'No items yet.',
@@ -53,41 +239,19 @@ function WorkCardCarouselInner({
 
   if (!cards || cards.length === 0) {
     return (
-      <div style={{
-        textAlign: 'center',
-        padding: '60px 20px',
-        color: '#666',
-        fontSize: '16px'
-      }}>
+      <div style={styles.emptyState}>
         <p>{emptyMessage}</p>
       </div>
     );
   }
 
   return (
-    <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: '12px' }}>
+    <div style={styles.carouselWrapper}>
       <button
         onClick={() => scroll('left')}
         disabled={!canScrollLeft}
         aria-label="Scroll left"
-        style={{
-          flexShrink: 0,
-          background: canScrollLeft ? 'rgba(70, 40, 20, 0.9)' : 'rgba(70, 40, 20, 0.3)',
-          color: 'white',
-          border: '2px solid rgba(255, 255, 255, 0.2)',
-          borderRadius: '50%',
-          width: '48px',
-          height: '48px',
-          cursor: canScrollLeft ? 'pointer' : 'not-allowed',
-          fontSize: '24px',
-          fontWeight: 'bold',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          transition: 'all 0.3s ease',
-          boxShadow: canScrollLeft ? '0 4px 12px rgba(0, 0, 0, 0.2)' : 'none',
-          opacity: canScrollLeft ? 1 : 0.5
-        }}
+        style={styles.scrollButton(canScrollLeft)}
         onMouseEnter={(e) => {
           if (canScrollLeft) {
             e.currentTarget.style.background = 'rgba(70, 40, 20, 1)';
@@ -104,22 +268,8 @@ function WorkCardCarouselInner({
         ‹
       </button>
 
-      <div
-        ref={scrollContainerRef}
-        style={{
-          display: 'flex',
-          gap: 16,
-          overflowX: 'auto',
-          scrollbarWidth: 'none',
-          msOverflowStyle: 'none',
-          padding: '16px 0',
-          flex: 1,
-          scrollBehavior: 'smooth'
-        }}
-      >
-        <style>{`
-          div::-webkit-scrollbar { display: none; }
-        `}</style>
+      <div ref={scrollContainerRef} style={styles.scrollContainer}>
+        <style>{hideScrollbarCSS}</style>
         {cards.map((card) => {
           if (!card) return null;
           const Wrapper = card.link ? Link : 'div';
@@ -131,26 +281,12 @@ function WorkCardCarouselInner({
           const extras = renderCardExtras ? renderCardExtras(card, { isHovered }) : card.extras;
 
           return (
-            <div key={cardId} style={{ position: 'relative', flexShrink: 0 }}>
-              <Wrapper
-                {...wrapperProps}
-                style={{ textDecoration: 'none', flexShrink: 0, display: 'block', position: 'relative' }}
-                onClick={card.onCardClick}
-              >
+            <div key={cardId} style={styles.cardWrapper}>
+              <Wrapper {...wrapperProps} style={styles.cardLink} onClick={card.onCardClick}>
                 <div
                   style={{
-                    background: '#9a4207c8',
-                    padding: 14,
-                    borderRadius: 12,
+                    ...styles.cardContainer,
                     cursor: card.onCardClick || card.link ? 'pointer' : 'default',
-                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                    boxShadow: '0 4px 12px rgba(0,0,0,0.25)',
-                    height: '340px',
-                    width: '180px',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    position: 'relative',
-                    overflow: 'hidden'
                   }}
                   onMouseEnter={(e) => {
                     e.currentTarget.style.transform = 'translateY(-8px) scale(1.02)';
@@ -167,87 +303,42 @@ function WorkCardCarouselInner({
                   }}
                 >
                   {extras}
-                  <div
-                    style={{
-                      position: 'relative',
-                      borderRadius: 8,
-                      overflow: 'hidden',
-                      boxShadow: '0 2px 8px rgba(0,0,0,0.2)'
-                    }}
-                  >
+                  <div style={styles.coverSection}>
                     <img
                       src={card.coverUrl || '/album_covers/default.jpg'}
                       alt={title}
-                      style={{ width: '100%', height: '230px', objectFit: 'cover', display: 'block' }}
+                      style={styles.coverImage}
                       onError={(e) => {
                         e.target.src = '/album_covers/default.jpg';
                       }}
                     />
-                    {/* Average rating - always displayed in top right */}
                     {card.averageRating !== undefined && card.averageRating !== null && (
-                      <div
-                        style={{
-                          position: 'absolute',
-                          top: 8,
-                          right: 8,
-                          background: '#392c2c',
-                          color: '#d4b895',
-                          padding: '4px 10px',
-                          borderRadius: 16,
-                          fontSize: 14,
-                          fontWeight: 'bold',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 2
-                        }}
-                      >
+                      <div style={styles.ratingBadge}>
                         ★ {typeof card.averageRating === 'number' ? card.averageRating.toFixed(1) : card.averageRating}
                       </div>
                     )}
                   </div>
-                  <div
-                    style={{
-                      marginTop: 10,
-                      color: '#392c2cff',
-                      flex: 1,
-                      display: 'flex',
-                      flexDirection: 'column',
-                      justifyContent: 'space-between'
-                    }}
-                  >
-                    <strong
-                      style={{
-                        display: 'block',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        whiteSpace: 'nowrap',
-                        fontSize: 15,
-                        marginBottom: 4,
-                        textShadow: '0 1px 2px rgba(0,0,0,0.1)'
-                      }}
-                      title={title}
-                    >
+                  <div style={styles.infoSection}>
+                    <strong style={styles.cardTitle} title={title}>
                       {title}
                     </strong>
-                    {/* Your Rating */}
                     {card.userRating !== undefined && (
-                      <div style={{ fontSize: 12, color: 'rgba(57, 44, 44, 0.9)', marginBottom: 2 }}>
+                      <div style={styles.userRating}>
                         <strong>Your Rating:</strong> {card.userRating !== null ? `${card.userRating}★` : 'Not rated'}
                       </div>
                     )}
-                    {/* Rated on date */}
                     {card.ratedAt && (
-                      <div style={{ fontSize: 11, color: 'rgba(57, 44, 44, 0.7)', marginBottom: 4 }}>
+                      <div style={styles.ratedDate}>
                         <strong>Rated on:</strong> {new Date(card.ratedAt).toLocaleDateString()}
                       </div>
                     )}
                     {card.metaPrimary && (
-                      <div style={{ fontSize: 12, color: 'rgba(57, 44, 44, 0.9)', marginBottom: 4 }}>
+                      <div style={styles.metaPrimary}>
                         {card.metaPrimary}
                       </div>
                     )}
                     {card.metaSecondary && (
-                      <div style={{ fontSize: 11, color: 'rgba(57, 44, 44, 0.7)' }}>
+                      <div style={styles.metaSecondary}>
                         {card.metaSecondary}
                       </div>
                     )}
@@ -263,24 +354,7 @@ function WorkCardCarouselInner({
         onClick={() => scroll('right')}
         disabled={!canScrollRight}
         aria-label="Scroll right"
-        style={{
-          flexShrink: 0,
-          background: canScrollRight ? 'rgba(70, 40, 20, 0.9)' : 'rgba(70, 40, 20, 0.3)',
-          color: 'white',
-          border: '2px solid rgba(255, 255, 255, 0.2)',
-          borderRadius: '50%',
-          width: '48px',
-          height: '48px',
-          cursor: canScrollRight ? 'pointer' : 'not-allowed',
-          fontSize: '24px',
-          fontWeight: 'bold',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          transition: 'all 0.3s ease',
-          boxShadow: canScrollRight ? '0 4px 12px rgba(0, 0, 0, 0.2)' : 'none',
-          opacity: canScrollRight ? 1 : 0.5
-        }}
+        style={styles.scrollButton(canScrollRight)}
         onMouseEnter={(e) => {
           if (canScrollRight) {
             e.currentTarget.style.background = 'rgba(70, 40, 20, 1)';
@@ -305,27 +379,13 @@ export default function WorkCardCarousel(props) {
   return (
     <ErrorBoundary
       fallback={
-        <div style={{
-          padding: '40px 20px',
-          textAlign: 'center',
-          background: '#fff3cd',
-          borderRadius: '8px',
-          border: '1px solid #ffc107'
-        }}>
-          <p style={{ color: '#856404', marginBottom: '12px' }}>
+        <div style={styles.errorFallback}>
+          <p style={styles.errorMessage}>
             Unable to load carousel content
           </p>
           <button
             onClick={() => window.location.reload()}
-            style={{
-              padding: '8px 16px',
-              background: '#9a4207',
-              color: 'white',
-              border: 'none',
-              borderRadius: '6px',
-              cursor: 'pointer',
-              fontSize: '14px'
-            }}
+            style={styles.reloadButton}
           >
             Reload Page
           </button>
