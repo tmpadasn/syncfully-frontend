@@ -68,10 +68,7 @@ The frontend requires the backend API to be running:
 
 4. **Start the backend server**
    ```bash
-   # Development mode with auto-reload
-   npm run dev
-   
-   # OR production mode
+   # production mode
    npm start
    ```
 
