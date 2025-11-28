@@ -1,344 +1,793 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { getPopularWorks, getAllWorks } from '../api/works';
-import { getAllUsers, getUserRatings, getUserById } from '../api/users';
+import { getAllUsers, getUserRatings, getUserFollowing } from '../api/users';
 import { testConnection } from '../api/client';
 import { Link } from 'react-router-dom';
 import useNavigationWithClearFilters from '../hooks/useNavigationWithClearFilters';
+import useAuth from '../hooks/useAuth';
+import { WorkGridSkeleton, FriendGridSkeleton } from '../components/Skeleton';
+import HomeCarousel from '../components/HomeCarousel';
+import logger from '../utils/logger';
+import {
+  extractWorksFromResponse,
+  normalizeWork,
+  normalizeWorks,
+  normalizeRatingsObject,
+  shuffleArray,
+} from '../utils/normalize';
+import { 
+  DEFAULT_AVATAR_URL, 
+  WORK_TYPES, 
+  HOME_CAROUSEL_LIMIT, 
+  STORAGE_KEY_JUST_LOGGED_IN 
+} from '../config/constants';
 
-// Current user ID configuration
-const CURRENT_USER_ID = 1;
-const defaultAvatarUrl = 'https://upload.wikimedia.org/wikipedia/commons/a/ac/Default_pfp.jpg';
 
-// Helper function to process popular works data
+/* ===================== DATA PROCESSING FUNCTION ===================== */
+
 const processPopularWorks = (data) => {
-  const works = data?.works || [];
-  return works.map(work => ({
-    workId: work.id || work.workId,
-    title: work.title,
-    rating: work.averageRating || work.rating || 0,
-    coverUrl: work.coverUrl || '/album_covers/default.jpg',
-    type: work.type,
-    creator: work.creator,
-    year: work.year
-  }));
+  const works = extractWorksFromResponse(data);
+  return normalizeWorks(works);
 };
 
-// Helper function to process user data and extract friends with activity
-const processFriendsData = async (users, allWorks) => {
+const processFriendsData = async (users, allWorks, currentUserId, isMountedRef) => {
   const friendsWithActivity = [];
-  
-  // Filter out current user and users without ratings upfront
-  const eligibleUsers = users.filter(user => 
-    user.userId !== CURRENT_USER_ID && 
-    user.ratedWorks && 
-    user.ratedWorks > 0
+
+  if (!currentUserId) return []; // If not logged in → no friends
+
+  const eligibleUsers = users.filter(
+    user => user.userId !== currentUserId && user.ratedWorks > 0
   );
-  
+
   for (const user of eligibleUsers) {
+    if (!isMountedRef.current) break; // Stop if component unmounted
+    
     try {
       const ratingsResponse = await getUserRatings(user.userId);
+      
+      if (!isMountedRef.current) break; // Check again after async call
+      
       const ratingsData = ratingsResponse?.data || ratingsResponse || {};
-      
-      // Convert ratings to array and get most recent
-      const ratingsEntries = Object.entries(ratingsData);
-      if (ratingsEntries.length === 0) continue;
-      
-      const mostRecentRating = ratingsEntries
-        .map(([workId, rating]) => ({
-          workId: parseInt(workId),
-          score: rating.score,
-          ratedAt: new Date(rating.ratedAt)
-        }))
+
+      const entries = normalizeRatingsObject(ratingsData);
+      if (entries.length === 0) continue;
+
+      const mostRecentRating = entries
         .sort((a, b) => b.ratedAt - a.ratedAt)[0];
-      
-      // Find the corresponding work
-      const ratedWork = allWorks.find(work => 
-        (work.id || work.workId) === mostRecentRating.workId
+
+      const ratedWork = allWorks.find(w =>
+        (w.id || w.workId) === mostRecentRating.workId
       );
-      
+
       if (ratedWork) {
+        const normalizedWork = normalizeWork(ratedWork);
         friendsWithActivity.push({
           id: user.userId,
           name: user.username,
-          avatar: user.profilePictureUrl || defaultAvatarUrl,
+          avatar: user.profilePictureUrl || DEFAULT_AVATAR_URL,
           likedAlbum: {
-            title: ratedWork.title,
-            coverUrl: ratedWork.coverUrl || '/album_covers/default.jpg',
-            workId: ratedWork.id || ratedWork.workId
+            title: normalizedWork.title,
+            coverUrl: normalizedWork.coverUrl,
+            workId: normalizedWork.workId
           }
         });
       }
     } catch (error) {
-      // Silently continue on error - user just won't appear in friends list
-      console.warn(`Could not fetch ratings for user ${user.username}`);
+      logger.error('Failed to fetch ratings for user:', user.userId, error);
     }
   }
-  
+
   return friendsWithActivity;
 };
 
-// FriendCard component with AlbumCard for image and description at bottom
+const processFollowingData = async (following, allWorks, isMountedRef) => {
+  const followingWithActivity = [];
+
+  if (!following || following.length === 0) return [];
+
+  // First, fetch all ratings for each user being followed
+  const followingRatings = [];
+  
+  for (const followedUser of following) {
+    if (!isMountedRef.current) break;
+    
+    try {
+      const ratingsResponse = await getUserRatings(followedUser.userId || followedUser.id);
+      
+      if (!isMountedRef.current) break;
+      
+      const ratingsData = ratingsResponse?.data || ratingsResponse || {};
+      const entries = normalizeRatingsObject(ratingsData);
+      if (entries.length === 0) continue;
+
+      // Get all ratings sorted by most recent
+      const sortedRatings = entries.sort((a, b) => b.ratedAt - a.ratedAt);
+      
+      // Get up to 5 most recent ratings per followed user
+      const userWorks = [];
+      for (let i = 0; i < Math.min(5, sortedRatings.length); i++) {
+        const rating = sortedRatings[i];
+        const ratedWork = allWorks.find(w =>
+          (w.id || w.workId) === rating.workId
+        );
+
+        if (ratedWork) {
+          const normalizedWork = normalizeWork(ratedWork);
+          userWorks.push({
+            id: `${followedUser.userId || followedUser.id}-${i}`,
+            followerId: followedUser.userId || followedUser.id,
+            name: followedUser.username,
+            avatar: followedUser.profilePictureUrl || DEFAULT_AVATAR_URL,
+            likedAlbum: {
+              title: normalizedWork.title,
+              coverUrl: normalizedWork.coverUrl,
+              workId: normalizedWork.workId
+            }
+          });
+        }
+      }
+      
+      if (userWorks.length > 0) {
+        followingRatings.push(userWorks);
+      }
+    } catch (error) {
+      logger.error('Failed to fetch ratings for followed user:', followedUser.userId || followedUser.id, error);
+    }
+  }
+
+  // Alternate between followed users - take one work from each in round-robin fashion
+  let maxWorks = Math.max(...followingRatings.map(f => f.length));
+  for (let i = 0; i < maxWorks; i++) {
+    for (let j = 0; j < followingRatings.length; j++) {
+      if (i < followingRatings[j].length) {
+        followingWithActivity.push(followingRatings[j][i]);
+      }
+    }
+  }
+
+  return followingWithActivity;
+};
+
+const getRandomWorks = (allWorks, type, limit = 10) => {
+  try {
+    // Filter works by type
+    const filteredWorks = allWorks.filter(work => work.type === type);
+    
+    // Shuffle and take first 'limit' items
+    const shuffled = shuffleArray(filteredWorks);
+    return shuffled.slice(0, limit).map(normalizeWork).filter(Boolean);
+  } catch (error) {
+    logger.error('Error getting random works:', error);
+    return [];
+  }
+};
+
+/* ---------------------- CARD COMPONENTS ---------------------- */
+
+/**
+ * FriendCard component - Displays friend's recently liked work
+ * Uses .friend-card-home CSS class for consistent Home page styling
+ * 
+ * @param {Object} props - Component props
+ * @param {Object} props.friend - Friend data with name, avatar, and liked album info
+ * @returns {React.ReactNode} Card showing friend's profile, avatar, and liked album cover
+ */
 const FriendCard = ({ friend }) => (
-  <div style={{ 
-    background: '#9a4207c8',
-    borderRadius: '8px',
-    overflow: 'hidden',
-    boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-    transition: 'transform 0.2s ease, box-shadow 0.2s ease',
-    height: '280px',
-    display: 'flex',
-    flexDirection: 'column'
-  }}
-  onMouseEnter={(e) => {
-    e.currentTarget.style.transform = 'translateY(-2px)';
-    e.currentTarget.style.boxShadow = '0 4px 16px rgba(0,0,0,0.15)';
-  }}
-  onMouseLeave={(e) => {
-    e.currentTarget.style.transform = 'translateY(0)';
-    e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)';
-  }}>
-    {/* Album Cover using AlbumCard styling */}
-    <Link to={`/works/${friend.likedAlbum.workId}`} style={{ flex: 1, textDecoration: 'none' }}>
+  <div className="friend-card-home">
+    {/* Album cover image with link to work details */}
+    <Link to={`/works/${friend.likedAlbum.workId}`} style={{ flex: 1 }}>
       <div style={{ height: '200px', overflow: 'hidden' }}>
-        <img 
-          src={friend.likedAlbum.coverUrl} 
-          alt={friend.likedAlbum.title} 
-          style={{
-            width: '100%',
-            height: '100%',
-            objectFit: 'cover',
-            display: 'block',
-            cursor: 'pointer',
-            transition: 'transform 0.2s ease'
-          }}
-          onMouseEnter={(e) => e.target.style.transform = 'scale(1.05)'}
-          onMouseLeave={(e) => e.target.style.transform = 'scale(1)'}
+        <img
+          src={friend.likedAlbum.coverUrl}
+          alt={friend.likedAlbum.title}
+          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
         />
       </div>
     </Link>
-    
-    {/* Friend description at bottom */}
-    <div style={{
-      padding: '12px',
-      textAlign: 'left',
-      height: '68px',
-      display: 'flex',
-      flexDirection: 'column',
-      justifyContent: 'center'
-    }}>
-      <div style={{ 
-        display: 'flex', 
-        alignItems: 'center', 
-        gap: '8px', 
-        marginBottom: '6px' 
-      }}>
-        <img 
-          src={friend.avatar} 
-          alt={friend.name} 
-          style={{
-            width: '20px',
-            height: '20px',
-            borderRadius: '50%',
-            border: '1px solid #ddd'
-          }}
+
+    {/* Friend info section with avatar and name */}
+    <div style={{ padding: '12px' }}>
+      <div style={{ display: 'flex', gap: 8, marginBottom: 6 }}>
+        <img
+          src={friend.avatar}
+          style={{ width: 20, height: 20, borderRadius: '50%' }}
         />
-        <span style={{
-          fontWeight: 600,
-          color: '#392c2cff',
-          fontSize: '13px'
-        }}>
-          {friend.name}
-        </span>
+        <span style={{ fontWeight: 600, fontSize: 13 }}>{friend.name}</span>
       </div>
-      <div style={{
-        color: '#392c2cff',
-        fontSize: '12px',
-        lineHeight: '1.3'
-      }}>
+
+      {/* Album title text */}
+      <div style={{ fontSize: 12 }}>
         liked <strong>{friend.likedAlbum.title}</strong>
       </div>
     </div>
   </div>
 );
 
-// PopularWorkCard component for better code organization
+/**
+ * PopularWorkCard component - Displays work cover with hover effects
+ * Uses .popular-work-card CSS class for consistent styling across carousels
+ * 
+ * @param {Object} props - Component props
+ * @param {Object} props.work - Work data with cover URL and ID
+ * @returns {React.ReactNode} Clickable card linking to work details with cover image
+ */
 const PopularWorkCard = ({ work }) => (
-  <Link to={`/works/${work.workId}`} style={{ textDecoration: 'none', color: 'inherit' }}>
-    <div 
-      style={{
-        transition: 'transform 0.2s ease',
-        cursor: 'pointer',
-        height: '280px'
-      }}
-      onMouseEnter={(e) => {
-        e.currentTarget.style.transform = 'translateY(-4px)';
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.transform = 'translateY(0)';
-      }}
-    >
-      <div style={{
-        borderRadius: '8px',
-        overflow: 'hidden',
-        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
-        transition: 'box-shadow 0.2s ease',
-        height: '100%'
-      }}>
-        <img 
-          src={work.coverUrl} 
-          alt={work.title} 
-          style={{
-            width: '100%',
-            height: '100%',
-            objectFit: 'cover',
-            display: 'block'
-          }}
-        />
-      </div>
+  <Link to={`/works/${work.workId}`} style={{ textDecoration: 'none' }}>
+    <div className="popular-work-card">
+      {/* Work cover image - fills entire card container */}
+      <img
+        src={work.coverUrl}
+        alt={work.title}
+      />
     </div>
   </Link>
 );
 
-/*------------------- Home page component -------------- */
+/* ===================== HOME PAGE FUNCTION ===================== */
+
 export default function Home() {
-  // Auto-clear search parameters if they exist on non-search pages
   useNavigationWithClearFilters();
-  
+
+  const { user } = useAuth(); // NOW decides login state
+  const currentUserId = user?.userId || null;
+  const isMountedRef = useRef(true);
+
   const [popular, setPopular] = useState([]);
   const [friends, setFriends] = useState([]);
+  const [following, setFollowing] = useState([]);
+  const [recentMovies, setRecentMovies] = useState([]);
+  const [recentMusic, setRecentMusic] = useState([]);
   const [loading, setLoading] = useState(true);
   const [friendsLoading, setFriendsLoading] = useState(true);
-  const [currentUser, setCurrentUser] = useState(null);
-  const [userLoading, setUserLoading] = useState(true);
+  const [followingLoading, setFollowingLoading] = useState(true);
+  const [recentLoading, setRecentLoading] = useState(true);
+  const [showWelcome, setShowWelcome] = useState(false);
 
+  /* ===================== UI STYLES ===================== */
+  const styles = {
+    /* ===================== PAGE LAYOUT ===================== */
+    pageContainer: {
+      display: 'flex',
+      flexDirection: 'column',
+      minHeight: '100vh',
+    },
+    pageInner: {
+      flex: 1,
+    },
+    pageMain: {
+      width: '100%',
+    },
+
+    /* ===================== HERO SECTION ===================== */
+    heroContainer: {
+      position: 'relative',
+      minHeight: '600px',
+      background: 'linear-gradient(135deg, #9a4207 0%, #6d2f04 100%)',
+      color: '#fff',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      overflow: 'hidden',
+      padding: '60px 20px',
+    },
+    heroBackground: {
+      position: 'absolute',
+      width: '200px',
+      height: '200px',
+      borderRadius: '50%',
+      top: '-50px',
+      left: '-50px',
+      background: 'rgba(255, 255, 255, 0.05)',
+      pointerEvents: 'none',
+    },
+    heroContent: {
+      position: 'relative',
+      zIndex: 1,
+    },
+    heroTitle: {
+      fontSize: 32,
+      fontWeight: 700,
+      marginBottom: 16,
+      color: '#fff',
+      textShadow: '0 2px 4px rgba(0,0,0,0.2)',
+    },
+    heroText: {
+      fontSize: 18,
+      marginBottom: 32,
+      color: '#fff',
+      opacity: 0.95,
+      maxWidth: 600,
+      margin: '0 auto 32px',
+      lineHeight: 1.6,
+    },
+    buttonContainer: {
+      display: 'flex',
+      gap: 16,
+      justifyContent: 'center',
+      flexWrap: 'wrap',
+    },
+    signInButton: {
+      display: 'inline-block',
+      padding: '14px 40px',
+      background: '#fff',
+      color: '#9a4207',
+      fontSize: 16,
+      fontWeight: 700,
+      borderRadius: 8,
+      textDecoration: 'none',
+      transition: 'all 0.3s ease',
+      boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+    },
+    signUpButton: {
+      display: 'inline-block',
+      padding: '14px 40px',
+      background: 'transparent',
+      color: '#fff',
+      fontSize: 16,
+      fontWeight: 700,
+      borderRadius: 8,
+      textDecoration: 'none',
+      border: '2px solid #fff',
+      transition: 'all 0.3s ease',
+    },
+
+    /* ===================== FEATURES SECTION ===================== */
+    featuresContainer: {
+      display: 'flex',
+      gap: 64,
+      justifyContent: 'center',
+      marginTop: 40,
+      flexWrap: 'wrap',
+    },
+    featureCard: {
+      textAlign: 'center',
+      maxWidth: 200,
+    },
+    featureIcon: {
+      fontSize: 36,
+      marginBottom: 12,
+      width: 60,
+      height: 60,
+      margin: '0 auto 12px',
+      background: 'rgba(255, 255, 255, 0.2)',
+      borderRadius: '50%',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      color: '#fff',
+    },
+    featureTitle: {
+      fontSize: 16,
+      fontWeight: 700,
+      marginBottom: 6,
+      color: '#fff',
+    },
+    featureText: {
+      fontSize: 14,
+      color: 'rgba(255, 255, 255, 0.85)',
+      lineHeight: 1.4,
+    },
+
+    /* ===================== CONTENT SECTIONS ===================== */
+    sectionContainer: {
+      maxWidth: '1200px',
+      margin: '0 auto',
+      padding: '40px 20px',
+      width: '100%',
+    },
+    sectionTitle: {
+      fontSize: 28,
+      fontWeight: 800,
+      marginBottom: 24,
+      color: '#392c2c',
+    },
+
+    /* ===================== LOADING STATE ===================== */
+    loadingContainer: {
+      marginTop: 24,
+    },
+  };
+
+  // Check if user just logged in
   useEffect(() => {
-    const initializeData = async () => {
-      // Test backend connection
-      const isBackendRunning = await testConnection();
-      
-      if (!isBackendRunning) {
-        console.error('Backend server is not running');
-        setFriendsLoading(false);
-        setLoading(false);
-        setUserLoading(false);
-        return;
-      }
-      
-      // Fetch current user from backend
-      const fetchCurrentUser = async () => {
-        setUserLoading(true);
-        try {
-          const userData = await getUserById(CURRENT_USER_ID);
-          setCurrentUser({
-            id: userData.userId || userData.id,
-            name: userData.username || userData.name || 'User',
-            avatar: userData.profilePictureUrl || defaultAvatarUrl
-          });
-        } catch (error) {
-          console.error('Failed to fetch current user:', error);
-          // Fallback user data
-          setCurrentUser({
-            id: CURRENT_USER_ID,
-            name: 'User',
-            avatar: defaultAvatarUrl
-          });
-        } finally {
-          setUserLoading(false);
-        }
-      };
-      
-      // Fetch popular works and friends data in parallel
-      const fetchPopularWorks = async () => {
-        setLoading(true);
-        try {
-          const popularWorksData = await getPopularWorks();
-          const processedWorks = processPopularWorks(popularWorksData);
-          setPopular(processedWorks);
-        } catch (error) {
-          console.error('Failed to fetch popular works:', error);
-          setPopular([]);
-        } finally {
-          setLoading(false);
-        }
-      };
-      
-      // Execute all data fetching operations in parallel
-      await Promise.all([
-        fetchPopularWorks(),
-        fetchFriendsData(),
-        fetchCurrentUser()
-      ]);
-    };
-
-    const fetchFriendsData = async () => {
-      setFriendsLoading(true);
-      
-      try {
-        // Fetch users and works data in parallel
-        const [usersResponse, worksData] = await Promise.all([
-          getAllUsers(),
-          getAllWorks()
-        ]);
-        
-        // Extract and validate data
-        const users = usersResponse?.data || usersResponse || [];
-        const allWorks = worksData?.works || [];
-        
-        // Validate data format
-        if (!Array.isArray(users) || !Array.isArray(allWorks)) {
-          throw new Error('Invalid data format received from backend');
-        }
-        
-        // Process friends data
-        const friendsWithActivity = await processFriendsData(users, allWorks);
-        setFriends(friendsWithActivity);
-        
-      } catch (error) {
-        console.error('Failed to load friends data:', error);
-      } finally {
-        setFriendsLoading(false);
-      }
-    };
-    
-    initializeData();
+    if (sessionStorage.getItem(STORAGE_KEY_JUST_LOGGED_IN) === 'true') {
+      setShowWelcome(true);
+      sessionStorage.removeItem(STORAGE_KEY_JUST_LOGGED_IN);
+    }
   }, []);
 
+  // Memoized load page function
+  const loadPage = useCallback(async () => {
+    if (!isMountedRef.current) return;
+
+    try {
+      // Reset state immediately to prevent flash of old content
+      setPopular([]);
+      setFriends([]);
+      setFollowing([]);
+      setRecentMovies([]);
+      setRecentMusic([]);
+      setLoading(true);
+      setFriendsLoading(true);
+      setFollowingLoading(true);
+      setRecentLoading(true);
+
+      await testConnection();
+
+      const [popularData, worksData] = await Promise.all([
+        getPopularWorks(),
+        getAllWorks()
+      ]);
+
+      if (!isMountedRef.current) return;
+
+      setPopular(processPopularWorks(popularData));
+      const allWorks = worksData?.works || [];
+
+      if (currentUserId) {
+        // Only fetch friends if logged in
+        const usersResponse = await getAllUsers();
+        
+        if (!isMountedRef.current) return;
+        
+        const users = usersResponse?.data || usersResponse || [];
+        const friendActivity = await processFriendsData(
+          users,
+          allWorks,
+          currentUserId,
+          isMountedRef
+        );
+        
+        if (!isMountedRef.current) return;
+        
+        setFriends(friendActivity);
+
+        // Fetch following data
+        try {
+          const followingResponse = await getUserFollowing(currentUserId);
+          const followingList = followingResponse?.following || [];
+          
+          if (!isMountedRef.current) return;
+          
+          const followingActivity = await processFollowingData(
+            followingList,
+            allWorks,
+            isMountedRef
+          );
+          
+          if (!isMountedRef.current) return;
+          
+          setFollowing(followingActivity);
+        } catch (error) {
+          logger.error('Failed to fetch following:', error);
+          setFollowing([]);
+        }
+      } else {
+        setFriends([]); // logged-out users see no friends list
+        setFollowing([]);
+      }
+
+      setLoading(false);
+      setFriendsLoading(false);
+      setFollowingLoading(false);
+
+      // Load random movies and music
+      const movies = getRandomWorks(allWorks, WORK_TYPES.MOVIE, HOME_CAROUSEL_LIMIT);
+      const music = getRandomWorks(allWorks, WORK_TYPES.MUSIC, HOME_CAROUSEL_LIMIT);
+      
+      if (!isMountedRef.current) return;
+      
+      setRecentMovies(movies);
+      setRecentMusic(music);
+      setRecentLoading(false);
+    } catch (error) {
+      logger.error('Error loading home page:', error);
+      if (isMountedRef.current) {
+        setLoading(false);
+        setFriendsLoading(false);
+        setFollowingLoading(false);
+        setRecentLoading(false);
+      }
+    }
+  }, [currentUserId]);
+
+  useEffect(() => {
+    isMountedRef.current = true;
+    loadPage();
+
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, [loadPage]);
+
+  // RETURN HOME PAGE LAYOUT
   return (
     <div className="page-container">
       <div className="page-inner">
         <main className="page-main">
-          {userLoading ? (
-            <p className="welcome-text">Loading...</p>
-          ) : (
+          {/* Welcome Message */}
+          {user && showWelcome && (
             <p className="welcome-text">
-              Welcome back <em>{currentUser?.name || 'User'}</em>. Here's what others have been discovering...
+              Welcome back <strong style={{ color: '#9a4207', fontSize: '20px' }}>{user.username}</strong>. Here's what others have been discovering...
             </p>
           )}
 
-          <h3 className="section-title">NEW FROM FRIENDS</h3>
-          {friendsLoading ? (
-            <p style={{ color: '#392c2cff' }}>Loading friends activity...</p>
-          ) : friends.length === 0 ? (
-            <p style={{ color: '#392c2cff' }}>No recent activity from friends.</p>
-          ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '16px', marginBottom: '40px' }}>
-              {friends.map(friend => (
-                <FriendCard key={friend.id} friend={friend} />
-              ))}
+          {/* Login Prompt Banner */}
+          {!user && (
+            <div style={{
+              marginTop: 40,
+              marginBottom: 60,
+              background: 'linear-gradient(135deg, #9a4207 0%, #c85609 100%)',
+              borderRadius: 16,
+              padding: '48px 32px',
+              textAlign: 'center',
+              boxShadow: '0 10px 40px rgba(154, 66, 7, 0.3)',
+              position: 'relative',
+              overflow: 'hidden'
+            }}>
+              {/* Decorative background elements */}
+              <div style={{
+                position: 'absolute',
+                top: -50,
+                right: -50,
+                width: 200,
+                height: 200,
+                background: 'rgba(255, 255, 255, 0.05)',
+                borderRadius: '50%',
+                pointerEvents: 'none'
+              }} />
+              <div style={{
+                position: 'absolute',
+                bottom: -30,
+                left: -30,
+                width: 150,
+                height: 150,
+                background: 'rgba(255, 255, 255, 0.05)',
+                borderRadius: '50%',
+                pointerEvents: 'none'
+              }} />
+              
+              {/* Content */}
+              <div style={{ position: 'relative', zIndex: 1 }}>
+                <h2 style={{
+                  fontSize: 32,
+                  fontWeight: 700,
+                  marginBottom: 16,
+                  color: '#fff',
+                  textShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                }}>
+                  Unlock Your Personalized Experience
+                </h2>
+                <p style={{
+                  fontSize: 18,
+                  marginBottom: 32,
+                  color: '#fff',
+                  opacity: 0.95,
+                  maxWidth: 600,
+                  margin: '0 auto 32px',
+                  lineHeight: 1.6
+                }}>
+                  Join Syncfully to get personalized recommendations, track what you've watched and listened to, and discover works tailored just for you.
+                </p>
+                <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap' }}>
+                  <Link 
+                    to="/login" 
+                    style={{
+                      display: 'inline-block',
+                      padding: '14px 40px',
+                      background: '#fff',
+                      color: '#9a4207',
+                      fontSize: 16,
+                      fontWeight: 700,
+                      borderRadius: 8,
+                      textDecoration: 'none',
+                      transition: 'all 0.3s ease',
+                      boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.transform = 'translateY(-2px)';
+                      e.currentTarget.style.boxShadow = '0 6px 20px rgba(0,0,0,0.25)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.transform = 'translateY(0)';
+                      e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
+                    }}
+                  >
+                    Sign In
+                  </Link>
+                  <Link 
+                    to="/login?mode=signup" 
+                    style={{
+                      display: 'inline-block',
+                      padding: '14px 40px',
+                      background: 'transparent',
+                      color: '#fff',
+                      fontSize: 16,
+                      fontWeight: 700,
+                      borderRadius: 8,
+                      textDecoration: 'none',
+                      border: '2px solid #fff',
+                      transition: 'all 0.3s ease'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
+                      e.currentTarget.style.transform = 'translateY(-2px)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = 'transparent';
+                      e.currentTarget.style.transform = 'translateY(0)';
+                    }}
+                  >
+                    Create Account
+                  </Link>
+                </div>
+                
+                {/* Feature highlights */}
+                <div style={{
+                  display: 'flex',
+                  gap: 64,
+                  justifyContent: 'center',
+                  marginTop: 40,
+                  flexWrap: 'wrap'
+                }}>
+                  <div style={{ textAlign: 'center', maxWidth: 200 }}>
+                    <div style={{ 
+                      fontSize: 36, 
+                      marginBottom: 12,
+                      width: 60,
+                      height: 60,
+                      margin: '0 auto 12px',
+                      background: 'rgba(255, 255, 255, 0.2)',
+                      borderRadius: '50%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: '#fff'
+                    }}>
+                      <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="currentColor" />
+                      </svg>
+                    </div>
+                    <div style={{ color: '#fff', fontSize: 14, fontWeight: 600 }}>
+                      Personalized Recommendations
+                    </div>
+                  </div>
+                  <div style={{ textAlign: 'center', maxWidth: 200 }}>
+                    <div style={{ 
+                      fontSize: 36, 
+                      marginBottom: 12,
+                      width: 60,
+                      height: 60,
+                      margin: '0 auto 12px',
+                      background: 'rgba(255, 255, 255, 0.2)',
+                      borderRadius: '50%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: '#fff'
+                    }}>
+                      <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+                        <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+                      </svg>
+                    </div>
+                    <div style={{ color: '#fff', fontSize: 14, fontWeight: 600 }}>
+                      Track Your Collection
+                    </div>
+                  </div>
+                  <div style={{ textAlign: 'center', maxWidth: 200 }}>
+                    <div style={{ 
+                      fontSize: 36, 
+                      marginBottom: 12,
+                      width: 60,
+                      height: 60,
+                      margin: '0 auto 12px',
+                      background: 'rgba(255, 255, 255, 0.2)',
+                      borderRadius: '50%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: '#fff'
+                    }}>
+                      <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                        <circle cx="9" cy="7" r="4" />
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                      </svg>
+                    </div>
+                    <div style={{ color: '#fff', fontSize: 14, fontWeight: 600 }}>
+                      See Friends' Favorites
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           )}
 
-          <h3 className="section-title" style={{marginTop: 20}}>THIS WEEK'S MOST POPULAR</h3>
+          {/* Friends' Favourites Section */}
+          {user && (
+            <>
+              <h3 className="section-title" style={{ marginTop: 40 }}>
+                FRIENDS' FAVOURITES 
+              </h3>
+              {followingLoading ? (
+                <FriendGridSkeleton count={4} />
+              ) : following.length === 0 ? (
+                <p>You are not following anyone yet, or they haven't rated any works.</p>
+              ) : (
+                <HomeCarousel scrollChunk={3}>
+                  {following.map(f => (
+                    <div key={f.id} style={{ flexShrink: 0, width: '180px' }}>
+                      <FriendCard friend={f} />
+                    </div>
+                  ))}
+                </HomeCarousel>
+              )}
+            </>
+          )}
+
+          {/* Popular Works */}
+          <h3 className="section-title" style={{ marginTop: 20 }}>
+            WEEK'S TOP 10
+          </h3>
+
           {loading ? (
-            <p style={{ color: '#392c2cff' }}>Loading popular works...</p>
-          ) : popular.length === 0 ? (
-            <p style={{ color: '#392c2cff' }}>No popular works available.</p>
+            <WorkGridSkeleton count={6} columns="repeat(auto-fill, minmax(180px, 1fr))" />
           ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '16px' }}>
-              {popular.map(work => (
-                <PopularWorkCard key={work.workId} work={work} />
+            <HomeCarousel scrollChunk={3}>
+              {popular.map(w => (
+                <div key={w.workId} style={{ flexShrink: 0, width: '180px' }}>
+                  <PopularWorkCard work={w} />
+                </div>
               ))}
-            </div>
+            </HomeCarousel>
+          )}
+
+          {/* Recently Watched */}
+          {user && (
+            <>
+              <h3 className="section-title" style={{ marginTop: 40 }}>
+                RECENTLY WATCHED
+              </h3>
+
+              {recentLoading ? (
+                <WorkGridSkeleton count={6} columns="repeat(auto-fill, minmax(180px, 1fr))" />
+              ) : recentMovies.length === 0 ? (
+                <p>No recently rated movies yet.</p>
+              ) : (
+                <HomeCarousel scrollChunk={3}>
+                  {recentMovies.map(w => (
+                    <div key={w.workId} style={{ flexShrink: 0, width: '180px' }}>
+                      <PopularWorkCard work={w} />
+                    </div>
+                  ))}
+                </HomeCarousel>
+              )}
+            </>
+          )}
+
+          {/* Recently Played */}
+          {user && (
+            <>
+              <h3 className="section-title" style={{ marginTop: 40 }}>
+                RECENTLY PLAYED
+              </h3>
+
+              {recentLoading ? (
+                <WorkGridSkeleton count={6} columns="repeat(auto-fill, minmax(180px, 1fr))" />
+              ) : recentMusic.length === 0 ? (
+                <p>No recently rated music yet.</p>
+              ) : (
+                <HomeCarousel scrollChunk={3}>
+                  {recentMusic.map(w => (
+                    <div key={w.workId} style={{ flexShrink: 0, width: '180px' }}>
+                      <PopularWorkCard work={w} />
+                    </div>
+                  ))}
+                </HomeCarousel>
+              )}
+            </>
           )}
         </main>
       </div>

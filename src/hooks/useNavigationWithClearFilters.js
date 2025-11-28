@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import logger from '../utils/logger';
 
 /**
  * Custom hook that provides navigation with automatic filter clearing
@@ -20,7 +21,7 @@ export const useNavigationWithClearFilters = () => {
                            location.search.includes('itemType=');
     
     if (!isSearchPage && hasSearchParams) {
-      console.log('🔍 Navigation: Auto-clearing search parameters on non-search page');
+      logger.nav('Auto-clearing search parameters on non-search page');
       // Clear search parameters by navigating to the same path without them
       navigate(location.pathname, { replace: true });
     }
@@ -31,7 +32,7 @@ export const useNavigationWithClearFilters = () => {
     const isLeavingSearchPage = location.pathname.includes('/search') && !path.includes('/search');
     
     if (isLeavingSearchPage) {
-      console.log('🔍 Navigation: Clearing search filters when leaving search page to:', path);
+      logger.nav('Clearing search filters when leaving search page to:', path);
       // Navigate without preserving search parameters
       navigate(path, { replace: true, ...options });
     } else {
