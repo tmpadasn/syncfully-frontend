@@ -1,14 +1,48 @@
 import { useState } from 'react';
 
-/**
- * ErrorBoundaryTester - A component for testing error boundaries
- * 
- * To use this component:
- * 1. Import it in any page: import ErrorBoundaryTester from '../components/ErrorBoundaryTester';
- * 2. Add it to the page: <ErrorBoundaryTester />
- * 3. Click "Trigger Error" to test the error boundary
- * 4. Remove it when done testing
- */
+/* ===================== UI STYLES ===================== */
+const styles = {
+  /* ===================== TESTER CONTAINER ===================== */
+  container: {
+    position: 'fixed',
+    bottom: '20px',
+    right: '20px',
+    background: '#ff4444',
+    color: 'white',
+    padding: '15px 20px',
+    borderRadius: '8px',
+    boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+    zIndex: 10000,
+    border: '2px solid white',
+  },
+
+  /* ===================== TESTER HEADER ===================== */
+  header: {
+    marginBottom: '8px',
+    fontWeight: 'bold',
+    fontSize: '12px',
+  },
+
+  /* ===================== TRIGGER BUTTON ===================== */
+  button: {
+    background: 'white',
+    color: '#ff4444',
+    border: 'none',
+    padding: '8px 16px',
+    borderRadius: '6px',
+    cursor: 'pointer',
+    fontWeight: 'bold',
+    fontSize: '13px',
+    width: '100%',
+  },
+
+  /* ===================== FOOTER TEXT ===================== */
+  footer: {
+    fontSize: '10px',
+    marginTop: '8px',
+    opacity: 0.9,
+  },
+};
 
 // This component will throw an error when triggered
 function BrokenComponent() {
@@ -23,40 +57,19 @@ export default function ErrorBoundaryTester() {
   }
 
   return (
-    <div style={{
-      position: 'fixed',
-      bottom: '20px',
-      right: '20px',
-      background: '#ff4444',
-      color: 'white',
-      padding: '15px 20px',
-      borderRadius: '8px',
-      boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
-      zIndex: 10000,
-      border: '2px solid white'
-    }}>
-      <div style={{ marginBottom: '8px', fontWeight: 'bold', fontSize: '12px' }}>
+    <div style={styles.container}>
+      <div style={styles.header}>
         🧪 ERROR BOUNDARY TESTER
       </div>
       <button
         onClick={() => setShouldError(true)}
-        style={{
-          background: 'white',
-          color: '#ff4444',
-          border: 'none',
-          padding: '8px 16px',
-          borderRadius: '6px',
-          cursor: 'pointer',
-          fontWeight: 'bold',
-          fontSize: '13px',
-          width: '100%'
-        }}
+        style={styles.button}
         onMouseEnter={(e) => e.currentTarget.style.background = '#f0f0f0'}
         onMouseLeave={(e) => e.currentTarget.style.background = 'white'}
       >
         💥 Trigger Error
       </button>
-      <div style={{ fontSize: '10px', marginTop: '8px', opacity: 0.9 }}>
+      <div style={styles.footer}>
         Click to test error boundary
       </div>
     </div>

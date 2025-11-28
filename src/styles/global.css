@@ -6,15 +6,15 @@ header a{color:inherit}
 .work-info h3{margin:0 0 6px 0}
 
 /* Interactive album hover/cursor styles */
-.work-card, .friend-card, .album-compact {
+.work-card {
 	cursor: pointer;
 	transition: transform 120ms ease, box-shadow 120ms ease;
 }
-.work-card:hover, .friend-card:hover, .album-compact:hover {
+.work-card:hover {
 	transform: translateY(-4px);
 	box-shadow: 0 6px 18px rgba(0,0,0,0.12);
 }
-.friend-card img, .album-compact img, .work-cover { cursor: pointer; }
+.work-cover { cursor: pointer; }
 
 /* Home page layout classes */
 .page-container{display:flex;justify-content:center}
@@ -23,16 +23,39 @@ header a{color:inherit}
 .welcome-text{color:#392c2cff;font-size:18px;margin-top:40px}
 .section-title{margin-top:22px;color:#392c2cff;display:block;width:100%;border-bottom:2px solid #9a420776;padding-bottom:6px}
 
-.friend-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:20px;margin-top:8px}
-.friend-card{height:100%;background:#9a4207c8;padding:10px;border-radius:12px;display:flex;gap:8px;align-items:center;box-shadow:0 1px 4px rgba(0,0,0,0.04)}
-.friend-inner{display:flex;flex-direction:column;align-items:center;width:100%}
-.friend-cover{width:120px;max-width:160px;height:160px;object-fit:cover;object-position:center;display:block;border-radius:10px}
-.friend-meta{display:flex;align-items:center;gap:6px;margin-top:8px;width:100%}
-.friend-avatar{width:28px;height:28px;border-radius:14px;object-fit:cover}
-.friend-name{font-weight:600;color:#392c2cff}
-.friend-album-title{color:#666;font-size:13px}
+/* Home page card components */
+.friend-card-home {
+	background: #9a4207c8;
+	border-radius: 8px;
+	overflow: hidden;
+	height: 280px;
+	display: flex;
+	flex-direction: column;
+	transition: transform 0.2s ease, box-shadow 0.2s ease;
+	box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+	cursor: pointer;
+}
 
-.works-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:20px}
-.album-compact{background:#9a4207c8;padding:10px;border-radius:12px;display:flex;gap:12px;align-items:center;box-shadow:0 1px 4px rgba(0,0,0,0.04)}
-.album-cover-frame{width:190px;height:230px;overflow:hidden;border-radius:20px;display:flex;align-items:center;justify-content:center}
-.album-cover-img{min-width:100%;min-height:100%;object-fit:cover;object-position:center;display:block}
+.friend-card-home:hover {
+	transform: translateY(-6px);
+	box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+}
+
+.popular-work-card {
+	transition: transform 0.2s ease, box-shadow 0.2s ease;
+	height: 280px;
+	cursor: pointer;
+}
+
+.popular-work-card:hover {
+	transform: translateY(-6px);
+	box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+}
+
+.popular-work-card img {
+	border-radius: 8px;
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+}
+

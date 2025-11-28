@@ -1,6 +1,20 @@
 import { Link } from 'react-router-dom';
 import ErrorBoundary from './ErrorBoundary';
 
+/* ===================== UI STYLES ===================== */
+const styles = {
+  /* ===================== ERROR FALLBACK ===================== */
+  errorFallback: {
+    padding: '20px',
+    background: '#f8d7da',
+    borderRadius: '8px',
+    border: '1px solid #f5c6cb',
+    textAlign: 'center',
+    fontSize: '12px',
+    color: '#721c24',
+  },
+};
+
 function WorkCardInner({ work, flat = false, coverStyle, hideInfo = false }) {
   if (!work) return null;
   const outerStyle = flat ? { background: 'transparent', boxShadow: 'none' } : undefined;
@@ -23,15 +37,7 @@ export default function WorkCard(props) {
   return (
     <ErrorBoundary
       fallback={
-        <div style={{
-          padding: '20px',
-          background: '#f8d7da',
-          borderRadius: '8px',
-          border: '1px solid #f5c6cb',
-          textAlign: 'center',
-          fontSize: '12px',
-          color: '#721c24'
-        }}>
+        <div style={styles.errorFallback}>
           Card error
         </div>
       }

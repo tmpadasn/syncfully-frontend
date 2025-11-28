@@ -22,7 +22,8 @@ import {
   STORAGE_KEY_JUST_LOGGED_IN 
 } from '../config/constants';
 
-/* ---------------------- DATA PROCESSING HELPERS ---------------------- */
+
+/* ===================== DATA PROCESSING FUNCTION ===================== */
 
 const processPopularWorks = (data) => {
   const works = extractWorksFromResponse(data);
@@ -134,7 +135,7 @@ const processFollowingData = async (following, allWorks, isMountedRef) => {
     }
   }
 
-  // Now alternate between followed users - take one work from each in round-robin fashion
+  // Alternate between followed users - take one work from each in round-robin fashion
   let maxWorks = Math.max(...followingRatings.map(f => f.length));
   for (let i = 0; i < maxWorks; i++) {
     for (let j = 0; j < followingRatings.length; j++) {
@@ -163,28 +164,17 @@ const getRandomWorks = (allWorks, type, limit = 10) => {
 
 /* ---------------------- CARD COMPONENTS ---------------------- */
 
+/**
+ * FriendCard component - Displays friend's recently liked work
+ * Uses .friend-card-home CSS class for consistent Home page styling
+ * 
+ * @param {Object} props - Component props
+ * @param {Object} props.friend - Friend data with name, avatar, and liked album info
+ * @returns {React.ReactNode} Card showing friend's profile, avatar, and liked album cover
+ */
 const FriendCard = ({ friend }) => (
-  <div
-    style={{
-      background: '#9a4207c8',
-      borderRadius: '8px',
-      overflow: 'hidden',
-      height: '280px',
-      display: 'flex',
-      flexDirection: 'column',
-      transition: 'transform 0.2s ease, box-shadow 0.2s ease',
-      boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-      cursor: 'pointer'
-    }}
-    onMouseEnter={(e) => {
-      e.currentTarget.style.transform = 'translateY(-6px)';
-      e.currentTarget.style.boxShadow = '0 8px 20px rgba(0,0,0,0.15)';
-    }}
-    onMouseLeave={(e) => {
-      e.currentTarget.style.transform = 'translateY(0)';
-      e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)';
-    }}
-  >
+  <div className="friend-card-home">
+    {/* Album cover image with link to work details */}
     <Link to={`/works/${friend.likedAlbum.workId}`} style={{ flex: 1 }}>
       <div style={{ height: '200px', overflow: 'hidden' }}>
         <img
@@ -195,6 +185,7 @@ const FriendCard = ({ friend }) => (
       </div>
     </Link>
 
+    {/* Friend info section with avatar and name */}
     <div style={{ padding: '12px' }}>
       <div style={{ display: 'flex', gap: 8, marginBottom: 6 }}>
         <img
@@ -204,6 +195,7 @@ const FriendCard = ({ friend }) => (
         <span style={{ fontWeight: 600, fontSize: 13 }}>{friend.name}</span>
       </div>
 
+      {/* Album title text */}
       <div style={{ fontSize: 12 }}>
         liked <strong>{friend.likedAlbum.title}</strong>
       </div>
@@ -211,42 +203,27 @@ const FriendCard = ({ friend }) => (
   </div>
 );
 
+/**
+ * PopularWorkCard component - Displays work cover with hover effects
+ * Uses .popular-work-card CSS class for consistent styling across carousels
+ * 
+ * @param {Object} props - Component props
+ * @param {Object} props.work - Work data with cover URL and ID
+ * @returns {React.ReactNode} Clickable card linking to work details with cover image
+ */
 const PopularWorkCard = ({ work }) => (
   <Link to={`/works/${work.workId}`} style={{ textDecoration: 'none' }}>
-    <div
-      style={{
-        transition: 'transform 0.2s ease, box-shadow 0.2s ease',
-        height: '280px',
-        cursor: 'pointer'
-      }}
-      onMouseEnter={(e) => {
-        e.currentTarget.style.transform = 'translateY(-6px)';
-        e.currentTarget.querySelector('div').style.boxShadow = '0 8px 20px rgba(0,0,0,0.15)';
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.transform = 'translateY(0)';
-        e.currentTarget.querySelector('div').style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)';
-      }}
-    >
-      <div
-        style={{
-          borderRadius: 8,
-          overflow: 'hidden',
-          height: '100%',
-          boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
-        }}
-      >
-        <img
-          src={work.coverUrl}
-          alt={work.title}
-          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-        />
-      </div>
+    <div className="popular-work-card">
+      {/* Work cover image - fills entire card container */}
+      <img
+        src={work.coverUrl}
+        alt={work.title}
+      />
     </div>
   </Link>
 );
 
-/* ---------------------- HOME PAGE ---------------------- */
+/* ===================== HOME PAGE FUNCTION ===================== */
 
 export default function Home() {
   useNavigationWithClearFilters();
@@ -265,6 +242,151 @@ export default function Home() {
   const [followingLoading, setFollowingLoading] = useState(true);
   const [recentLoading, setRecentLoading] = useState(true);
   const [showWelcome, setShowWelcome] = useState(false);
+
+  /* ===================== UI STYLES ===================== */
+  const styles = {
+    /* ===================== PAGE LAYOUT ===================== */
+    pageContainer: {
+      display: 'flex',
+      flexDirection: 'column',
+      minHeight: '100vh',
+    },
+    pageInner: {
+      flex: 1,
+    },
+    pageMain: {
+      width: '100%',
+    },
+
+    /* ===================== HERO SECTION ===================== */
+    heroContainer: {
+      position: 'relative',
+      minHeight: '600px',
+      background: 'linear-gradient(135deg, #9a4207 0%, #6d2f04 100%)',
+      color: '#fff',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      overflow: 'hidden',
+      padding: '60px 20px',
+    },
+    heroBackground: {
+      position: 'absolute',
+      width: '200px',
+      height: '200px',
+      borderRadius: '50%',
+      top: '-50px',
+      left: '-50px',
+      background: 'rgba(255, 255, 255, 0.05)',
+      pointerEvents: 'none',
+    },
+    heroContent: {
+      position: 'relative',
+      zIndex: 1,
+    },
+    heroTitle: {
+      fontSize: 32,
+      fontWeight: 700,
+      marginBottom: 16,
+      color: '#fff',
+      textShadow: '0 2px 4px rgba(0,0,0,0.2)',
+    },
+    heroText: {
+      fontSize: 18,
+      marginBottom: 32,
+      color: '#fff',
+      opacity: 0.95,
+      maxWidth: 600,
+      margin: '0 auto 32px',
+      lineHeight: 1.6,
+    },
+    buttonContainer: {
+      display: 'flex',
+      gap: 16,
+      justifyContent: 'center',
+      flexWrap: 'wrap',
+    },
+    signInButton: {
+      display: 'inline-block',
+      padding: '14px 40px',
+      background: '#fff',
+      color: '#9a4207',
+      fontSize: 16,
+      fontWeight: 700,
+      borderRadius: 8,
+      textDecoration: 'none',
+      transition: 'all 0.3s ease',
+      boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+    },
+    signUpButton: {
+      display: 'inline-block',
+      padding: '14px 40px',
+      background: 'transparent',
+      color: '#fff',
+      fontSize: 16,
+      fontWeight: 700,
+      borderRadius: 8,
+      textDecoration: 'none',
+      border: '2px solid #fff',
+      transition: 'all 0.3s ease',
+    },
+
+    /* ===================== FEATURES SECTION ===================== */
+    featuresContainer: {
+      display: 'flex',
+      gap: 64,
+      justifyContent: 'center',
+      marginTop: 40,
+      flexWrap: 'wrap',
+    },
+    featureCard: {
+      textAlign: 'center',
+      maxWidth: 200,
+    },
+    featureIcon: {
+      fontSize: 36,
+      marginBottom: 12,
+      width: 60,
+      height: 60,
+      margin: '0 auto 12px',
+      background: 'rgba(255, 255, 255, 0.2)',
+      borderRadius: '50%',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      color: '#fff',
+    },
+    featureTitle: {
+      fontSize: 16,
+      fontWeight: 700,
+      marginBottom: 6,
+      color: '#fff',
+    },
+    featureText: {
+      fontSize: 14,
+      color: 'rgba(255, 255, 255, 0.85)',
+      lineHeight: 1.4,
+    },
+
+    /* ===================== CONTENT SECTIONS ===================== */
+    sectionContainer: {
+      maxWidth: '1200px',
+      margin: '0 auto',
+      padding: '40px 20px',
+      width: '100%',
+    },
+    sectionTitle: {
+      fontSize: 28,
+      fontWeight: 800,
+      marginBottom: 24,
+      color: '#392c2c',
+    },
+
+    /* ===================== LOADING STATE ===================== */
+    loadingContainer: {
+      marginTop: 24,
+    },
+  };
 
   // Check if user just logged in
   useEffect(() => {
@@ -378,18 +500,19 @@ export default function Home() {
     };
   }, [loadPage]);
 
+  // RETURN HOME PAGE LAYOUT
   return (
     <div className="page-container">
       <div className="page-inner">
         <main className="page-main">
-          {/* ------------------ WELCOME MESSAGE ------------------ */}
+          {/* Welcome Message */}
           {user && showWelcome && (
             <p className="welcome-text">
               Welcome back <strong style={{ color: '#9a4207', fontSize: '20px' }}>{user.username}</strong>. Here's what others have been discovering...
             </p>
           )}
 
-          {/* ------------------ LOGIN PROMPT BANNER ------------------ */}
+          {/* Login Prompt Banner */}
           {!user && (
             <div style={{
               marginTop: 40,
@@ -582,7 +705,7 @@ export default function Home() {
             </div>
           )}
 
-          {/* ------------------ FOLLOWING ACTIVITY (FRIENDS' FAVOURITES SECTION) ------------------ */}
+          {/* Friends' Favourites Section */}
           {user && (
             <>
               <h3 className="section-title" style={{ marginTop: 40 }}>
@@ -604,7 +727,7 @@ export default function Home() {
             </>
           )}
 
-          {/* ------------------ POPULAR WORKS ------------------ */}
+          {/* Popular Works */}
           <h3 className="section-title" style={{ marginTop: 20 }}>
             WEEK'S TOP 10
           </h3>
@@ -621,7 +744,7 @@ export default function Home() {
             </HomeCarousel>
           )}
 
-          {/* ------------------ RECENTLY WATCHED ------------------ */}
+          {/* Recently Watched */}
           {user && (
             <>
               <h3 className="section-title" style={{ marginTop: 40 }}>
@@ -644,7 +767,7 @@ export default function Home() {
             </>
           )}
 
-          {/* ------------------ RECENTLY PLAYED ------------------ */}
+          {/* Recently Played */}
           {user && (
             <>
               <h3 className="section-title" style={{ marginTop: 40 }}>

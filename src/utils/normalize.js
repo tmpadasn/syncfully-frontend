@@ -12,6 +12,7 @@ import { DEFAULT_AVATAR_URL } from '../config/constants';
  * @param {Object} work - Raw work data from API
  * @returns {Object|null} Normalized work object
  */
+
 export const normalizeWork = (work) => {
   if (!work) return null;
 
@@ -37,6 +38,7 @@ export const normalizeWork = (work) => {
  * @param {Array} works - Array of raw work data
  * @returns {Array} Array of normalized works
  */
+
 export const normalizeWorks = (works) => {
   if (!Array.isArray(works)) return [];
   return works.map(normalizeWork).filter(Boolean);
@@ -47,6 +49,7 @@ export const normalizeWorks = (works) => {
  * @param {Object} work - Raw work data
  * @returns {Object|null} Work with formatted metadata
  */
+
 export const normalizeWorkWithMeta = (work) => {
   const normalized = normalizeWork(work);
   if (!normalized) return null;
@@ -68,6 +71,7 @@ export const normalizeWorkWithMeta = (work) => {
  * @param {Object} item - Raw work data
  * @returns {Object|null} Normalized work entity
  */
+
 export const normalizeWorkEntity = (item) => {
   if (!item) return null;
 
@@ -102,6 +106,7 @@ export const normalizeWorkEntity = (item) => {
  * @param {Array|string} genres - Genres as array or comma-separated string
  * @returns {Array} Array of genre strings
  */
+
 export const normalizeGenres = (genres) => {
   if (Array.isArray(genres)) {
     return genres.filter(Boolean);
@@ -119,6 +124,7 @@ export const normalizeGenres = (genres) => {
  * @param {Object|Array} response - API response
  * @returns {Array} Array of raw works
  */
+
 export const extractWorksFromResponse = (response) => {
   if (!response) return [];
   
@@ -140,6 +146,7 @@ export const extractWorksFromResponse = (response) => {
  * @param {Object|Array} response - API response
  * @returns {Array} Array of ratings
  */
+
 export const extractRatingsFromResponse = (response) => {
   if (!response) return [];
   
@@ -158,6 +165,7 @@ export const extractRatingsFromResponse = (response) => {
  * @param {Object|Array} response - API response
  * @returns {Array} Array of shelves
  */
+
 export const extractShelvesFromResponse = (response) => {
   if (!response) return [];
   
@@ -176,6 +184,7 @@ export const extractShelvesFromResponse = (response) => {
  * @param {Object} response - API response
  * @returns {Object|null} Single work object
  */
+
 export const extractWorkFromResponse = (response) => {
   if (!response) return null;
 
@@ -204,6 +213,7 @@ export const extractWorkFromResponse = (response) => {
  * @param {Object} user - Raw user data
  * @returns {Object|null} Normalized user object
  */
+
 export const normalizeUser = (user) => {
   if (!user) return null;
 
@@ -225,6 +235,7 @@ export const normalizeUser = (user) => {
  * @param {Array} users - Array of raw user data
  * @returns {Array} Array of normalized users
  */
+
 export const normalizeUsers = (users) => {
   if (!Array.isArray(users)) return [];
   return users.map(normalizeUser).filter(Boolean);
@@ -237,6 +248,7 @@ export const normalizeUsers = (users) => {
  * @param {Object} rating - Raw rating data
  * @returns {Object|null} Normalized rating
  */
+
 export const normalizeRating = (rating) => {
   if (!rating) return null;
 
@@ -255,6 +267,7 @@ export const normalizeRating = (rating) => {
  * @param {Object} ratingsData - Ratings object with workId as keys
  * @returns {Array} Array of normalized ratings
  */
+
 export const normalizeRatingsObject = (ratingsData) => {
   if (!ratingsData || typeof ratingsData !== 'object') return [];
 
@@ -273,6 +286,7 @@ export const normalizeRatingsObject = (ratingsData) => {
  * @param {Object} shelf - Raw shelf data
  * @returns {Object|null} Normalized shelf object
  */
+
 export const normalizeShelf = (shelf) => {
   if (!shelf) return null;
 
@@ -297,6 +311,7 @@ export const normalizeShelf = (shelf) => {
  * @param {Array} works - Array of works or IDs
  * @returns {Set} Set of work IDs as strings
  */
+
 export const extractWorkIdsFromShelf = (works) => {
   if (!Array.isArray(works)) return new Set();
 
@@ -325,6 +340,7 @@ export const extractWorkIdsFromShelf = (works) => {
  * @param {Array} secondary - Secondary array of works
  * @returns {Array} Merged array with unique works
  */
+
 export const mergeUniqueWorks = (primary, secondary) => {
   const seen = new Set(primary.map(work => work.entityId || work.workId || work.id));
   const merged = [...primary];
@@ -345,6 +361,7 @@ export const mergeUniqueWorks = (primary, secondary) => {
  * @param {Array} array - Array to shuffle
  * @returns {Array} Shuffled array
  */
+
 export const shuffleArray = (array) => {
   const shuffled = [...array];
   for (let i = shuffled.length - 1; i > 0; i--) {
@@ -360,6 +377,7 @@ export const shuffleArray = (array) => {
  * @param {number} count - Number of items to get
  * @returns {Array} Random items
  */
+
 export const getRandomItems = (array, count) => {
   if (!Array.isArray(array) || array.length === 0) return [];
   const shuffled = shuffleArray(array);
@@ -374,6 +392,7 @@ export const getRandomItems = (array, count) => {
  * @param {Object} filters - Filter criteria
  * @returns {Array} Filtered works
  */
+
 export const applyWorkFilters = (works, filters) => {
   if (!Array.isArray(works)) return [];
 
@@ -431,6 +450,7 @@ export const applyWorkFilters = (works, filters) => {
  * @param {*} input - Input data
  * @param {*} output - Output data
  */
+
 export const logNormalization = (context, input, output) => {
   // Debug logging disabled for production
 };

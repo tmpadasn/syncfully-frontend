@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { FiHeart, FiX } from 'react-icons/fi';
 import { addWorkToShelf, getOrCreateFavouritesShelf } from '../api/shelves';
 
+/* ===================== UI STYLES ===================== */
 const styles = {
   addToShelfBtn: {
     display: 'flex',

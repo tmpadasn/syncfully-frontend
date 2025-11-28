@@ -4,6 +4,152 @@ import { FiChevronDown, FiBook, FiMusic, FiFilm } from 'react-icons/fi';
 import { getAllWorks } from '../api/works';
 import logger from '../utils/logger';
 
+/* ===================== UI STYLES ===================== */
+const styles = {
+  /* ===================== FILTERBAR OUTER CONTAINER ===================== */
+  outer: {
+    display: 'flex',
+    justifyContent: 'center',
+    padding: '12px 0',
+    background: 'var(--bg)',
+    width: '100%',
+    boxSizing: 'border-box',
+  },
+
+  /* ===================== FILTERBAR INNER CONTAINER ===================== */
+  bar: {
+    width: '100%',
+    maxWidth: '1100px',
+    boxSizing: 'border-box',
+    margin: '0 auto',
+    padding: '12px 20px',
+    borderTop: '2px solid #bfaea0',
+    borderBottom: '2px solid #bfaea0',
+    backgroundColor: '#fff',
+    borderRadius: '8px',
+    boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+  },
+
+  /* ===================== FILTER CONTROLS CONTAINER ===================== */
+  container: {
+    display: 'flex',
+    gap: 24,
+    alignItems: 'center',
+    width: '100%',
+    justifyContent: 'center',
+  },
+
+  /* ===================== LOADING STATE ===================== */
+  loading: {
+    color: '#8a6f5f',
+    fontSize: 14,
+    fontStyle: 'italic',
+  },
+
+  /* ===================== FILTER ITEM WRAPPER ===================== */
+  filterItem: {
+    flex: 1,
+    display: 'flex',
+    justifyContent: 'center',
+  },
+
+  /* ===================== MENU WRAPPER ===================== */
+  menuWrapper: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: 6,
+    position: 'relative',
+  },
+
+  /* ===================== LABEL/BUTTON STYLES ===================== */
+  labelBase: {
+    fontSize: 14,
+    fontWeight: 600,
+    textTransform: 'uppercase',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    padding: '8px 16px',
+    textAlign: 'center',
+    letterSpacing: 0.5,
+    minWidth: '80px',
+    borderRadius: '6px',
+    transition: 'all 0.2s ease',
+  },
+
+  labelButton: (isSelected, disabled, open) => ({
+    cursor: disabled ? 'not-allowed' : 'pointer',
+    opacity: disabled ? 0.6 : 1,
+    color: isSelected ? '#d4b895' : '#392c2cff',
+    border: isSelected ? '1px solid #d4b895' : '1px solid transparent',
+    backgroundColor: open ? '#f5f5f5' : (isSelected ? '#f8f5f0' : 'transparent'),
+  }),
+
+  /* ===================== MENU DROPDOWN ===================== */
+  menu: {
+    position: 'absolute',
+    top: 44,
+    left: '50%',
+    transform: 'translateX(-50%)',
+    background: '#fff',
+    boxShadow: '0 6px 20px rgba(0,0,0,0.12)',
+    borderRadius: 8,
+    padding: 8,
+    zIndex: 40,
+    minWidth: 160,
+    border: '1px solid #bfaea0',
+    maxHeight: '400px',
+    overflowY: 'auto',
+  },
+
+  /* ===================== MENU OPTION ===================== */
+  option: {
+    padding: '8px 12px',
+    cursor: 'pointer',
+    borderRadius: 6,
+    fontSize: 13,
+    fontWeight: 400,
+    textTransform: 'uppercase',
+    color: '#392c2cff',
+    transition: 'background-color 0.2s ease',
+  },
+
+  /* ===================== MENU OPTION SEPARATOR ===================== */
+  optionSeparator: {
+    marginBottom: 8,
+    borderBottom: '1px solid #e0e0e0',
+    paddingBottom: 8,
+  },
+
+  /* ===================== MENU GROUP HEADER ===================== */
+  groupHeader: {
+    padding: '4px 12px',
+    fontSize: 11,
+    fontWeight: 600,
+    color: '#999',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginTop: 8,
+  },
+
+  /* ===================== GROUPED OPTION ===================== */
+  groupedOption: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 8,
+  },
+
+  /* ===================== ICON STYLES ===================== */
+  icon: {
+    opacity: 0.6,
+    flexShrink: 0,
+    width: '14px',
+    height: '14px',
+  },
+};
+
 export default function FilterBar() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -113,67 +259,29 @@ export default function FilterBar() {
     );
   }
 
-  const outer = {
-    display: 'flex',
-    justifyContent: 'center',
-    padding: '12px 0',
-    background: 'var(--bg)', // Match page background
-    width: '100%',
-    boxSizing: 'border-box',
-  };
-
-  const bar = {
-    width: '100%',
-    maxWidth: '1100px', // Match page max-width
-    boxSizing: 'border-box',
-    margin: '0 auto',
-    padding: '12px 20px',
-    borderTop: '2px solid #bfaea0', // Match section-title border color
-    borderBottom: '2px solid #bfaea0',
-    backgroundColor: '#fff', // Match card background
-    borderRadius: '8px',
-    boxShadow: '0 2px 8px rgba(0,0,0,0.06)', // Match work-card shadow
-  };
-
-  const container = {
-    display: 'flex',
-    gap: 24, // Better spacing between filter options
-    alignItems: 'center',
-    width: '100%',
-    justifyContent: 'center',
-  };
-
   return (
-    <div style={outer}>
-      <div style={bar}>
+    <div style={styles.outer}>
+      <div style={styles.bar}>
         {!optionsLoaded ? (
-          <div style={{ 
-            ...container, 
-            justifyContent: 'center',
-            color: '#8a6f5f',
-            fontSize: 14,
-            fontStyle: 'italic'
-          }}>
+          <div style={{ ...styles.container, justifyContent: 'center', ...styles.loading }}>
             Loading filters...
           </div>
         ) : (
-        <div style={container}>
-          <div style={{ flex: 1, display: 'flex', justifyContent: 'center' }}>
+        <div style={styles.container}>
+          <div style={styles.filterItem}>
             <MenuControl
               label="TYPE"
               currentValue={params.get('type') || ''}
               options={[
                 { label: 'ALL', value: '' },
-                { label: 'USERS', value: 'user' }, // Add Users as a special type
+                { label: 'USERS', value: 'user' },
                 ...filterOptions.types.map(t => {
                   let displayLabel = t.toUpperCase();
-                  // Pluralize labels for better readability
                   if (t === 'book') displayLabel = 'BOOKS';
                   else if (t === 'movie') displayLabel = 'MOVIES';
-                  // music stays as MUSIC
                   return { 
                     label: displayLabel, 
-                    value: t // Keep original backend value (movie, book, etc.)
+                    value: t 
                   };
                 }),
               ]}
@@ -182,7 +290,7 @@ export default function FilterBar() {
             />
           </div>
 
-          <div style={{ flex: 1, display: 'flex', justifyContent: 'center' }}>
+          <div style={styles.filterItem}>
             <MenuControl
               label="YEAR"
               currentValue={params.get('year') || ''}
@@ -198,7 +306,7 @@ export default function FilterBar() {
             />
           </div>
 
-          <div style={{ flex: 1, display: 'flex', justifyContent: 'center' }}>
+          <div style={styles.filterItem}>
             <MenuControl
               label="GENRE"
               currentValue={params.get('genre') || ''}
@@ -206,17 +314,17 @@ export default function FilterBar() {
                 { label: 'ALL', value: '' },
                 ...filterOptions.genres.map(g => ({ 
                   label: g.toUpperCase(), 
-                  value: g, // Keep original backend value
-                  type: filterOptions.genresByType[g] // Add type for icon
+                  value: g,
+                  type: filterOptions.genresByType[g]
                 })),
               ]}
               onSelect={v => updateParam('genre', v)}
               disabled={!optionsLoaded}
-              showIcons={true} // Enable icons for genre
+              showIcons={true}
             />
           </div>
 
-          <div style={{ flex: 1, display: 'flex', justifyContent: 'center' }}>
+          <div style={styles.filterItem}>
             <MenuControl
               label="RATING"
               currentValue={params.get('rating') || ''}
@@ -350,74 +458,18 @@ function MenuControl({ label, options, onSelect, currentValue = '', disabled = f
   })() : null;
 
   const labelStyle = {
-    fontSize: 14,
-    fontWeight: 600,
-    textTransform: 'uppercase',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    padding: '8px 16px',
-    textAlign: 'center',
-    cursor: disabled ? 'default' : 'pointer',
-    letterSpacing: 0.5,
-    opacity: disabled ? 0.6 : 1,
-    color: isSelected ? '#d4b895' : '#392c2cff', // Highlight selected filters
-    borderRadius: '6px',
-    transition: 'all 0.2s ease',
-    minWidth: '80px',
-    backgroundColor: isSelected ? '#f8f5f0' : 'transparent', // Background for selected
-    border: isSelected ? '1px solid #d4b895' : '1px solid transparent', // Border for selected
-  };
-
-  const menuStyle = {
-    position: 'absolute',
-    top: 44, // Adjust for new label height
-    left: '50%',
-    transform: 'translateX(-50%)',
-    background: '#fff',
-    boxShadow: '0 6px 20px rgba(0,0,0,0.12)', // Match hover shadow
-    borderRadius: 8,
-    padding: 8,
-    zIndex: 40,
-    minWidth: 160,
-    border: '1px solid #bfaea0', // Match accent color
-    maxHeight: '400px', // Limit height for scrolling
-    overflowY: 'auto', // Enable vertical scrolling
-  };
-
-  const optStyle = {
-    padding: '8px 12px',
-    cursor: 'pointer',
-    borderRadius: 6,
-    fontSize: 13,
-    fontWeight: 400,
-    textTransform: 'uppercase',
-    color: '#392c2cff', // Match text color
-    transition: 'background-color 0.2s ease',
-    '&:hover': {
-      backgroundColor: '#f5f5f5',
-    },
-  };
-
-  const wrapper = {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    gap: 6,
-    position: 'relative',
+    ...styles.labelBase,
+    ...styles.labelButton(isSelected, disabled, open),
   };
 
   return (
-    <div style={wrapper} ref={ref}>
+    <div style={styles.menuWrapper} ref={ref}>
       <button
         ref={buttonRef}
         type="button"
         style={{
           ...labelStyle,
-          backgroundColor: open ? '#f5f5f5' : (isSelected ? '#f8f5f0' : 'transparent'),
           border: 'none',
-          cursor: disabled ? 'not-allowed' : 'pointer',
         }}
         onClick={() => !disabled && setOpen(s => !s)}
         onMouseEnter={(e) => {
@@ -441,7 +493,7 @@ function MenuControl({ label, options, onSelect, currentValue = '', disabled = f
       {open && !disabled && (
         <div 
           ref={menuRef}
-          style={menuStyle} 
+          style={styles.menu} 
           role="listbox"
           aria-label={`${label} options`}
         >
@@ -451,7 +503,7 @@ function MenuControl({ label, options, onSelect, currentValue = '', disabled = f
               <div
                 key={opt.label + opt.value}
                 style={{
-                  ...optStyle,
+                  ...styles.option,
                   backgroundColor: focusedIndex === idx ? '#f5f5f5' : 'transparent',
                 }}
                 onClick={() => {
@@ -482,10 +534,8 @@ function MenuControl({ label, options, onSelect, currentValue = '', disabled = f
                 <div
                   key={opt.label + opt.value}
                   style={{
-                    ...optStyle, 
-                    marginBottom: 8, 
-                    borderBottom: '1px solid #e0e0e0', 
-                    paddingBottom: 8,
+                    ...styles.option, 
+                    ...styles.optionSeparator,
                     backgroundColor: focusedIndex === idx ? '#f5f5f5' : 'transparent',
                   }}
                   onClick={() => {
@@ -512,21 +562,13 @@ function MenuControl({ label, options, onSelect, currentValue = '', disabled = f
               {/* Book genres */}
               {groupedOptions.book.length > 0 && (
                 <>
-                  <div style={{ 
-                    padding: '4px 12px', 
-                    fontSize: 11, 
-                    fontWeight: 600, 
-                    color: '#999',
-                    textTransform: 'uppercase',
-                    letterSpacing: 0.5,
-                    marginTop: 4
-                  }}>
+                  <div style={{ ...styles.groupHeader }}>
                     Books
                   </div>
                   {groupedOptions.book.map(opt => (
                     <div
                       key={opt.label + opt.value}
-                      style={{...optStyle, display: 'flex', alignItems: 'center', gap: 8}}
+                      style={{...styles.option, ...styles.groupedOption}}
                       onClick={() => {
                         onSelect(opt.value);
                         setOpen(false);
@@ -551,21 +593,13 @@ function MenuControl({ label, options, onSelect, currentValue = '', disabled = f
               {/* Music genres */}
               {groupedOptions.music.length > 0 && (
                 <>
-                  <div style={{ 
-                    padding: '4px 12px', 
-                    fontSize: 11, 
-                    fontWeight: 600, 
-                    color: '#999',
-                    textTransform: 'uppercase',
-                    letterSpacing: 0.5,
-                    marginTop: 8
-                  }}>
+                  <div style={{ ...styles.groupHeader }}>
                     Music
                   </div>
                   {groupedOptions.music.map(opt => (
                     <div
                       key={opt.label + opt.value}
-                      style={{...optStyle, display: 'flex', alignItems: 'center', gap: 8}}
+                      style={{...styles.option, ...styles.groupedOption}}
                       onClick={() => {
                         onSelect(opt.value);
                         setOpen(false);
@@ -590,21 +624,13 @@ function MenuControl({ label, options, onSelect, currentValue = '', disabled = f
               {/* Movie genres */}
               {groupedOptions.movie.length > 0 && (
                 <>
-                  <div style={{ 
-                    padding: '4px 12px', 
-                    fontSize: 11, 
-                    fontWeight: 600, 
-                    color: '#999',
-                    textTransform: 'uppercase',
-                    letterSpacing: 0.5,
-                    marginTop: 8
-                  }}>
+                  <div style={{ ...styles.groupHeader }}>
                     Movies
                   </div>
                   {groupedOptions.movie.map(opt => (
                     <div
                       key={opt.label + opt.value}
-                      style={{...optStyle, display: 'flex', alignItems: 'center', gap: 8}}
+                      style={{...styles.option, ...styles.groupedOption}}
                       onClick={() => {
                         onSelect(opt.value);
                         setOpen(false);
@@ -629,21 +655,13 @@ function MenuControl({ label, options, onSelect, currentValue = '', disabled = f
               {/* Other genres (if any) */}
               {groupedOptions.other.length > 0 && (
                 <>
-                  <div style={{ 
-                    padding: '4px 12px', 
-                    fontSize: 11, 
-                    fontWeight: 600, 
-                    color: '#999',
-                    textTransform: 'uppercase',
-                    letterSpacing: 0.5,
-                    marginTop: 8
-                  }}>
+                  <div style={{ ...styles.groupHeader }}>
                     Other
                   </div>
                   {groupedOptions.other.map(opt => (
                     <div
                       key={opt.label + opt.value}
-                      style={optStyle}
+                      style={styles.option}
                       onClick={() => {
                         onSelect(opt.value);
                         setOpen(false);

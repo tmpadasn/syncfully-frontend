@@ -4,6 +4,8 @@ import useAuth from "../hooks/useAuth";
 import { getUserById, updateUser } from "../api/users";
 import { DEFAULT_AVATAR_URL } from "../config/constants";
 
+/* ===================== EDIT ACCOUNT PAGE FUNCTION ===================== */
+
 export default function EditAccount() {
   const { user, authLoading, setUser } = useAuth();
   const navigate = useNavigate();
@@ -19,9 +21,7 @@ export default function EditAccount() {
   const [messageType, setMessageType] = useState(null); // 'success' or 'error'
   const [isSaving, setIsSaving] = useState(false);
 
-  /* ---------------------------------------------------------
-     Load user
-  --------------------------------------------------------- */
+  // Load user
   useEffect(() => {
     if (authLoading || !user) return;
 
@@ -36,9 +36,7 @@ export default function EditAccount() {
     })();
   }, [authLoading, user]);
 
-  /* ---------------------------------------------------------
-     Handlers
-  --------------------------------------------------------- */
+  // Handlers
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
@@ -84,183 +82,204 @@ export default function EditAccount() {
 
   if (authLoading || loading) return <p>Loading…</p>;
 
-  /* ---------------------------------------------------------
-     UI Styles
-  --------------------------------------------------------- */
-  const container = {
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "center",
-    minHeight: "100vh",
-    padding: "40px 20px",
-    background: "linear-gradient(135deg, #faf8f5 0%, #f5f0ea 100%)",
+  /* ===================== UI STYLES ===================== */
+  const styles = {
+    // Page layout
+    container: {
+      display: "flex",
+      justifyContent: "center",
+      alignItems: "center",
+      minHeight: "100vh",
+      padding: "40px 20px",
+      background: "linear-gradient(135deg, #faf8f5 0%, #f5f0ea 100%)",
+    },
+    cardWrapper: {
+      width: "100%",
+      maxWidth: "600px",
+    },
+    card: {
+      width: "100%",
+      background: "#ffffff",
+      padding: "50px 80px",
+      borderRadius: 20,
+      boxShadow: "0 24px 48px rgba(0,0,0,0.1)",
+      border: "1px solid rgba(154, 66, 7, 0.1)",
+      boxSizing: "border-box",
+    },
+
+    // Headings and sections
+    pageTitle: {
+      textAlign: "center",
+      marginBottom: 32,
+      fontSize: 36,
+      fontWeight: 900,
+      color: "#392c2c",
+      letterSpacing: "-0.5px"
+    },
+    sectionHeader: {
+      fontSize: 18,
+      fontWeight: 800,
+      color: "#392c2c",
+      marginBottom: 20,
+      marginTop: 28,
+      paddingBottom: 10,
+      borderBottom: "2px solid #9a420740",
+      textTransform: "uppercase",
+      letterSpacing: 0.8,
+    },
+
+    // Form elements
+    fieldGroup: {
+      marginBottom: 24,
+    },
+    label: {
+      display: "block",
+      fontSize: 13,
+      fontWeight: 700,
+      marginBottom: 8,
+      color: "#6b5b4f",
+      textTransform: "uppercase",
+      letterSpacing: 0.6,
+    },
+    input: {
+      width: "100%",
+      padding: "14px 16px",
+      borderRadius: 10,
+      border: "2px solid #e0d5cc",
+      fontSize: 15,
+      background: "#fdfbf8",
+      transition: "all 0.2s ease",
+      fontFamily: "inherit",
+      boxSizing: "border-box",
+    },
+    inputFocus: {
+      borderColor: "#9a4207",
+      background: "#fff",
+      boxShadow: "0 0 0 3px rgba(154, 66, 7, 0.1)",
+    },
+    inputPlaceholder: {
+      fontSize: 12,
+      color: "#9a8371",
+      marginTop: 6,
+      fontStyle: "italic"
+    },
+
+    // Avatar section
+    avatarContainer: {
+      textAlign: "center",
+      marginBottom: 36,
+      paddingBottom: 32,
+      borderBottom: "2px solid #f0e8dc",
+    },
+    avatar: {
+      width: 140,
+      height: 140,
+      borderRadius: "50%",
+      objectFit: "cover",
+      border: "5px solid #9a4207",
+      boxShadow: "0 8px 20px rgba(0,0,0,0.15)",
+    },
+    usernameTag: {
+      marginTop: 16,
+      fontSize: 14,
+      color: "#8b7355",
+      fontWeight: 600
+    },
+
+    // Buttons
+    buttonContainer: {
+      marginTop: 36
+    },
+    button: (bg) => ({
+      width: "100%",
+      padding: "16px 20px",
+      borderRadius: 10,
+      border: "none",
+      cursor: "pointer",
+      fontWeight: 800,
+      letterSpacing: ".5px",
+      fontSize: 16,
+      color: "#fff",
+      background: bg,
+      boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+      transition: "all 0.2s ease",
+      boxSizing: "border-box",
+    }),
+    buttonPrimary: {
+      background: "#9a4207",
+    },
+    buttonSecondary: {
+      background: "#6b6b6b",
+      marginTop: 12,
+    },
+    buttonDisabled: {
+      opacity: 0.6,
+    },
+    buttonHover: {
+      transform: "translateY(-2px)",
+      boxShadow: "0 6px 16px rgba(0, 0, 0, 0.2)"
+    },
+
+    // Messages
+    messageBox: (type) => ({
+      padding: "16px 20px",
+      marginBottom: 24,
+      borderRadius: 12,
+      fontSize: 15,
+      fontWeight: 600,
+      display: "flex",
+      alignItems: "center",
+      gap: 10,
+      ...(type === 'success' ? {
+        border: "2px solid #66bb6a",
+        background: "linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%)",
+        color: "#1b5e20"
+      } : {
+        border: "2px solid #ef5350",
+        background: "linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%)",
+        color: "#b71c1c"
+      })
+    }),
   };
 
-  const cardWrapper = {
-    width: "100%",
-    maxWidth: "600px",
-  };
-
-  const card = {
-    width: "100%",
-    background: "#ffffff",
-    padding: "50px 80px",
-    borderRadius: 20,
-    boxShadow: "0 24px 48px rgba(0,0,0,0.1)",
-    border: "1px solid rgba(154, 66, 7, 0.1)",
-    boxSizing: "border-box",
-  };
-
-  const sectionHeader = {
-    fontSize: 18,
-    fontWeight: 800,
-    color: "#392c2c",
-    marginBottom: 20,
-    marginTop: 28,
-    paddingBottom: 10,
-    borderBottom: "2px solid #9a420740",
-    textTransform: "uppercase",
-    letterSpacing: 0.8,
-  };
-
-  const fieldGroup = {
-    marginBottom: 24,
-  };
-
-  const label = {
-    display: "block",
-    fontSize: 13,
-    fontWeight: 700,
-    marginBottom: 8,
-    color: "#6b5b4f",
-    textTransform: "uppercase",
-    letterSpacing: 0.6,
-  };
-
-  const input = {
-    width: "100%",
-    padding: "14px 16px",
-    borderRadius: 10,
-    border: "2px solid #e0d5cc",
-    fontSize: 15,
-    background: "#fdfbf8",
-    transition: "all 0.2s ease",
-    fontFamily: "inherit",
-    boxSizing: "border-box",
-  };
-
-  const inputFocus = {
-    borderColor: "#9a4207",
-    background: "#fff",
-    boxShadow: "0 0 0 3px rgba(154, 66, 7, 0.1)",
-  };
-
-  const button = (bg, hoverBg) => ({
-    width: "100%",
-    padding: "16px 20px",
-    borderRadius: 10,
-    border: "none",
-    cursor: "pointer",
-    fontWeight: 800,
-    letterSpacing: ".5px",
-    fontSize: 16,
-    color: "#fff",
-    background: bg,
-    boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
-    transition: "all 0.2s ease",
-    boxSizing: "border-box",
-  });
-
-  const avatarContainer = {
-    textAlign: "center",
-    marginBottom: 36,
-    paddingBottom: 32,
-    borderBottom: "2px solid #f0e8dc",
-  };
-
-  const avatarStyle = {
-    width: 140,
-    height: 140,
-    borderRadius: "50%",
-    objectFit: "cover",
-    border: "5px solid #9a4207",
-    boxShadow: "0 8px 20px rgba(0,0,0,0.15)",
-  };
-
-  const messageBox = (type) => ({
-    padding: "16px 20px",
-    marginBottom: 24,
-    borderRadius: 12,
-    fontSize: 15,
-    fontWeight: 600,
-    display: "flex",
-    alignItems: "center",
-    gap: 10,
-    ...(type === 'success' ? {
-      border: "2px solid #66bb6a",
-      background: "linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%)",
-      color: "#1b5e20"
-    } : {
-      border: "2px solid #ef5350",
-      background: "linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%)",
-      color: "#b71c1c"
-    })
-  });
-
-  /* ---------------------------------------------------------
-     RENDER
-  --------------------------------------------------------- */
+  // RETURN EDIT ACCOUNT PAGE LAYOUT
   return (
-    <div style={container}>
-      <div style={cardWrapper}>
-        <h1 
-          style={{ 
-            textAlign: "center", 
-            marginBottom: 32, 
-            fontSize: 36, 
-            fontWeight: 900,
-            color: "#392c2c",
-            letterSpacing: "-0.5px"
-          }}
-        >
+    <div style={styles.container}>
+      <div style={styles.cardWrapper}>
+        <h1 style={styles.pageTitle}>
           Edit Profile
         </h1>
 
         {message && (
-          <div style={{ ...messageBox(messageType), marginBottom: 24 }}>
+          <div style={styles.messageBox(messageType)}>
             {messageType === 'success' ? '✓' : '✕'} {message}
           </div>
         )}
 
-        <div style={card}>
+        <div style={styles.card}>
 
               {/* Avatar Section */}
-              <div style={avatarContainer}>
+              <div style={styles.avatarContainer}>
                 <img
                   src={
                     user.profilePictureUrl ||
                     DEFAULT_AVATAR_URL
                   }
                   alt="Profile"
-                  style={avatarStyle}
+                  style={styles.avatar}
                 />
-                <p style={{ 
-                  marginTop: 16, 
-                  fontSize: 14, 
-                  color: "#8b7355",
-                  fontWeight: 600 
-                }}>
+                <p style={styles.usernameTag}>
                   @{form.username}
                 </p>
               </div>
 
               {/* Profile Information Section */}
-              <div style={sectionHeader}>
+              <div style={styles.sectionHeader}>
                 Profile Information
               </div>
 
-              <div style={fieldGroup}>
-                <label style={label}>Username</label>
+              <div style={styles.fieldGroup}>
+                <label style={styles.label}>Username</label>
                 <input
                   name="username"
                   value={form.username}
@@ -268,15 +287,15 @@ export default function EditAccount() {
                   onFocus={() => setFocusedInput('username')}
                   onBlur={() => setFocusedInput(null)}
                   style={{
-                    ...input,
-                    ...(focusedInput === 'username' ? inputFocus : {})
+                    ...styles.input,
+                    ...(focusedInput === 'username' ? styles.inputFocus : {})
                   }}
                   type="text"
                 />
               </div>
 
-              <div style={fieldGroup}>
-                <label style={label}>Email Address</label>
+              <div style={styles.fieldGroup}>
+                <label style={styles.label}>Email Address</label>
                 <input
                   name="email"
                   value={form.email}
@@ -284,15 +303,15 @@ export default function EditAccount() {
                   onFocus={() => setFocusedInput('email')}
                   onBlur={() => setFocusedInput(null)}
                   style={{
-                    ...input,
-                    ...(focusedInput === 'email' ? inputFocus : {})
+                    ...styles.input,
+                    ...(focusedInput === 'email' ? styles.inputFocus : {})
                   }}
                   type="email"
                 />
               </div>
 
-              <div style={fieldGroup}>
-                <label style={label}>New Password</label>
+              <div style={styles.fieldGroup}>
+                <label style={styles.label}>New Password</label>
                 <input
                   name="password"
                   value={form.password}
@@ -300,32 +319,27 @@ export default function EditAccount() {
                   onFocus={() => setFocusedInput('password')}
                   onBlur={() => setFocusedInput(null)}
                   style={{
-                    ...input,
-                    ...(focusedInput === 'password' ? inputFocus : {})
+                    ...styles.input,
+                    ...(focusedInput === 'password' ? styles.inputFocus : {})
                   }}
                   type="password"
                   placeholder="Leave blank to keep current password"
                 />
-                <p style={{
-                  fontSize: 12,
-                  color: "#9a8371",
-                  marginTop: 6,
-                  fontStyle: "italic"
-                }}>
+                <p style={styles.inputPlaceholder}>
                   Only fill this if you want to change your password
                 </p>
               </div>
 
               {/* Action Buttons */}
-              <div style={{ marginTop: 36 }}>
+              <div style={styles.buttonContainer}>
                 <button
                   onClick={handleSave}
                   disabled={isSaving}
                   onMouseEnter={() => setSaveHover(true)}
                   onMouseLeave={() => setSaveHover(false)}
                   style={{
-                    ...button("#9a4207", "#7a3205"),
-                    opacity: isSaving ? 0.6 : 1,
+                    ...styles.button("#9a4207"),
+                    ...(isSaving ? styles.buttonDisabled : {}),
                     ...(saveHover && !isSaving ? { 
                       transform: "translateY(-2px)", 
                       boxShadow: "0 6px 16px rgba(154, 66, 7, 0.3)" 
@@ -341,9 +355,9 @@ export default function EditAccount() {
                   onMouseEnter={() => setCancelHover(true)}
                   onMouseLeave={() => setCancelHover(false)}
                   style={{
-                    ...button("#6b6b6b", "#5b5b5b"),
+                    ...styles.button("#6b6b6b"),
                     marginTop: 12,
-                    opacity: isSaving ? 0.6 : 1,
+                    ...(isSaving ? styles.buttonDisabled : {}),
                     ...(cancelHover && !isSaving ? { 
                       transform: "translateY(-2px)", 
                       boxShadow: "0 6px 16px rgba(0, 0, 0, 0.2)" 

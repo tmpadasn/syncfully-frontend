@@ -1,7 +1,9 @@
 import api from './client';
 import logger from '../utils/logger';
 
-// Get all ratings (admin function)
+/**
+ * Get all ratings (admin function)
+ */
 export const getAllRatings = async () => {
   try {
     const res = await api.get('/ratings');
@@ -12,7 +14,9 @@ export const getAllRatings = async () => {
   }
 };
 
-// Get rating by ID
+/**
+ * Get rating by ID
+ */
 export const getRatingById = async (ratingId) => {
   try {
     const res = await api.get(`/ratings/${ratingId}`);
@@ -23,7 +27,9 @@ export const getRatingById = async (ratingId) => {
   }
 };
 
-// Update a rating
+/**
+ * Update a rating
+ */
 export const updateRating = async (ratingId, ratingData) => {
   try {
     const res = await api.put(`/ratings/${ratingId}`, ratingData);
@@ -34,7 +40,9 @@ export const updateRating = async (ratingId, ratingData) => {
   }
 };
 
-// Delete a rating
+/**
+ * Delete a rating
+ */
 export const deleteRating = async (ratingId) => {
   try {
     const res = await api.delete(`/ratings/${ratingId}`);
@@ -45,7 +53,9 @@ export const deleteRating = async (ratingId) => {
   }
 };
 
-// Create a work rating (alternative endpoint)
+/**
+ * Create a work rating (alternative endpoint)
+ */
 export const createRating = async (workId, userId, score, comment = null) => {
   try {
     const res = await api.post(`/works/${workId}/ratings`, {
@@ -60,7 +70,9 @@ export const createRating = async (workId, userId, score, comment = null) => {
   }
 };
 
-// Get work average rating
+/**
+ * Get work average rating
+ */
 export const getWorkAverageRating = async (workId) => {
   try {
     const res = await api.get(`/works/${workId}/ratings/average`);

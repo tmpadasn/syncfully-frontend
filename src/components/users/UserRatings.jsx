@@ -1,6 +1,23 @@
 import WorkCardCarousel from '../WorkCardCarousel';
 import ErrorBoundary from '../ErrorBoundary';
 
+/* ===================== UI STYLES ===================== */
+const styles = {
+  /* ===================== ERROR FALLBACK ===================== */
+  errorFallback: {
+    padding: '30px',
+    textAlign: 'center',
+    background: '#fff3cd',
+    borderRadius: '8px',
+    border: '1px solid #ffc107',
+  },
+
+  /* ===================== ERROR TEXT ===================== */
+  errorText: {
+    color: '#856404',
+  },
+};
+
 function UserRatingsInner({ ratings = {}, works = [] }) {
   const entries = Object.entries(ratings);
 
@@ -40,14 +57,8 @@ export default function UserRatings(props) {
   return (
     <ErrorBoundary
       fallback={
-        <div style={{
-          padding: '30px',
-          textAlign: 'center',
-          background: '#fff3cd',
-          borderRadius: '8px',
-          border: '1px solid #ffc107'
-        }}>
-          <p style={{ color: '#856404' }}>Unable to load user ratings</p>
+        <div style={styles.errorFallback}>
+          <p style={styles.errorText}>Unable to load user ratings</p>
         </div>
       }
     >

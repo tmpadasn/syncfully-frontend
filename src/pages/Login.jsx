@@ -3,7 +3,9 @@ import { useNavigate, useLocation, useSearchParams } from "react-router-dom";
 import useAuth from "../hooks/useAuth";
 import { STORAGE_KEY_JUST_LOGGED_IN } from "../config/constants";
 
+/* ===================== UI STYLES ===================== */
 const styles = {
+  // Page layout
   pageContainer: {
     display: "flex",
     justifyContent: "center",
@@ -28,6 +30,8 @@ const styles = {
     border: "1px solid rgba(0,0,0,0.03)",
     boxSizing: "border-box",
   },
+
+  // Headings
   title: {
     fontSize: 32,
     fontWeight: 800,
@@ -44,6 +48,8 @@ const styles = {
     lineHeight: 1.6,
     textAlign: "center",
   },
+
+  // Form elements
   form: {
     width: "100%",
   },
@@ -75,6 +81,16 @@ const styles = {
     borderColor: "#e5534b",
     background: "#fff5f5",
   },
+  inputFocus: {
+    boxShadow: "0 0 0 3px rgba(154, 66, 7, 0.1)",
+  },
+  errorMessage: {
+    fontSize: 12,
+    color: "#a43939",
+    marginTop: 6,
+  },
+
+  // Alert boxes
   errorBox: {
     padding: "16px 18px",
     marginBottom: 20,
@@ -99,6 +115,8 @@ const styles = {
     lineHeight: 1.5,
     textAlign: "center",
   },
+
+  // Buttons
   button: {
     marginTop: 12,
     width: "100%",
@@ -120,6 +138,8 @@ const styles = {
     boxShadow: "none",
     transform: "none",
   },
+
+  // Toggle/Links
   toggleWrapper: {
     marginTop: 20,
     fontSize: 14,
@@ -134,12 +154,9 @@ const styles = {
     textDecoration: "underline",
     textDecorationThickness: 1,
   },
-  errorMessage: {
-    fontSize: 12,
-    color: "#a43939",
-    marginTop: 6,
-  },
 };
+
+/* ===================== LOGIN FUNCTION ===================== */
 
 export default function Login() {
   const { login, signup } = useAuth();
@@ -241,6 +258,7 @@ export default function Login() {
 
   const passwordTooShort = password && password.length < 4;
 
+  // RETURN LOGIN PAGE LAYOUT
   return (
     <div style={styles.pageContainer}>
       <div style={styles.cardWrapper}>
@@ -270,6 +288,7 @@ export default function Login() {
           <form onSubmit={handleSubmit} style={styles.form} noValidate>
             {!isLogin && (
               <>
+                {/* Username Field (Signup only) */}
                 <div style={styles.field}>
                   <label htmlFor="username-input" style={styles.label}>
                     Username
@@ -287,7 +306,7 @@ export default function Login() {
                       ...styles.input,
                       ...(touched.username && !username ? styles.inputError : {}),
                     }}
-                    onFocus={(e) => (e.target.style.boxShadow = "0 0 0 3px rgba(154, 66, 7, 0.1)")}
+                    onFocus={(e) => Object.assign(e.target.style, styles.inputFocus)}
                     required
                     autoComplete="username"
                     aria-required="true"
@@ -301,6 +320,7 @@ export default function Login() {
                   )}
                 </div>
 
+                {/* Email Field (Signup only) */}
                 <div style={styles.field}>
                   <label htmlFor="email-input" style={styles.label}>
                     Email Address
@@ -318,7 +338,7 @@ export default function Login() {
                       ...styles.input,
                       ...(touched.email && !email ? styles.inputError : {}),
                     }}
-                    onFocus={(e) => (e.target.style.boxShadow = "0 0 0 3px rgba(154, 66, 7, 0.1)")}
+                    onFocus={(e) => Object.assign(e.target.style, styles.inputFocus)}
                     required
                     autoComplete="email"
                     aria-required="true"
@@ -335,38 +355,42 @@ export default function Login() {
             )}
 
             {isLogin && (
-              <div style={styles.field}>
-                <label htmlFor="identifier-input" style={styles.label}>
-                  Email or Username
-                </label>
-                <input
-                  id="identifier-input"
-                  type="text"
-                  value={identifier}
-                  onChange={(e) => setIdentifier(e.target.value)}
-                  onBlur={(e) => {
-                    handleBlur("identifier");
-                    e.target.style.boxShadow = "none";
-                  }}
-                  style={{
-                    ...styles.input,
-                    ...(touched.identifier && !identifier ? styles.inputError : {}),
-                  }}
-                  onFocus={(e) => (e.target.style.boxShadow = "0 0 0 3px rgba(154, 66, 7, 0.1)")}
-                  required
-                  autoComplete="username email"
-                  aria-required="true"
-                  aria-invalid={touched.identifier && !identifier}
-                  aria-describedby={touched.identifier && !identifier ? "identifier-error" : undefined}
-                />
-                {touched.identifier && !identifier && (
-                  <div id="identifier-error" style={styles.errorMessage} role="alert">
-                    Email or username is required
-                  </div>
-                )}
-              </div>
+              <>
+                {/* Identifier Field (Login only) */}
+                <div style={styles.field}>
+                  <label htmlFor="identifier-input" style={styles.label}>
+                    Email or Username
+                  </label>
+                  <input
+                    id="identifier-input"
+                    type="text"
+                    value={identifier}
+                    onChange={(e) => setIdentifier(e.target.value)}
+                    onBlur={(e) => {
+                      handleBlur("identifier");
+                      e.target.style.boxShadow = "none";
+                    }}
+                    style={{
+                      ...styles.input,
+                      ...(touched.identifier && !identifier ? styles.inputError : {}),
+                    }}
+                    onFocus={(e) => Object.assign(e.target.style, styles.inputFocus)}
+                    required
+                    autoComplete="username email"
+                    aria-required="true"
+                    aria-invalid={touched.identifier && !identifier}
+                    aria-describedby={touched.identifier && !identifier ? "identifier-error" : undefined}
+                  />
+                  {touched.identifier && !identifier && (
+                    <div id="identifier-error" style={styles.errorMessage} role="alert">
+                      Email or username is required
+                    </div>
+                  )}
+                </div>
+              </>
             )}
 
+            {/* Password Field */}
             <div style={styles.field}>
               <label htmlFor="password-input" style={styles.label}>
                 Password
@@ -386,7 +410,7 @@ export default function Login() {
                     ? styles.inputError
                     : {}),
                 }}
-                onFocus={(e) => (e.target.style.boxShadow = "0 0 0 3px rgba(154, 66, 7, 0.1)")}
+                onFocus={(e) => Object.assign(e.target.style, styles.inputFocus)}
                 required
                 autoComplete={isLogin ? "current-password" : "new-password"}
                 aria-required="true"
@@ -400,6 +424,7 @@ export default function Login() {
               )}
             </div>
 
+            {/* Submit Button */}
             <button
               type="submit"
               disabled={loading}
@@ -421,6 +446,7 @@ export default function Login() {
             </button>
           </form>
 
+          {/* Toggle Between Login and Signup */}
           <div style={styles.toggleWrapper}>
             {isLogin ? "New here?" : "Already have an account?"}
             <span 

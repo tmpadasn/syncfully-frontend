@@ -16,6 +16,8 @@ import {
 import { getAllWorks } from "../api/works";
 import UserRatings from "../components/users/UserRatings";
 
+/* ===================== ACCOUNT PAGE FUNCTION ===================== */
+
 export default function Account() {
   const { user, logout, authLoading } = useAuth();
   const navigate = useNavigate();
@@ -28,9 +30,7 @@ export default function Account() {
   const [following, setFollowing] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  /* ---------------------------------------------------------
-     FETCH USER DATA ONCE AUTH IS READY
-  --------------------------------------------------------- */
+  // Fetch user data on mount
   useEffect(() => {
     if (authLoading || !user) return;
 
@@ -134,9 +134,7 @@ export default function Account() {
     );
   }
 
-  /* ---------------------------------------------------------
-     DELETE ACCOUNT
-  --------------------------------------------------------- */
+  // Delete account
   const handleDelete = async () => {
     if (!window.confirm("Are you sure? This cannot be undone.")) return;
 
@@ -149,76 +147,209 @@ export default function Account() {
     }
   };
 
-  /* ---------------------------------------------------------
-      STYLES
-  --------------------------------------------------------- */
-  const pageContainer = {
-    minHeight: "100vh",
-    padding: "40px 20px",
-    background: "linear-gradient(135deg, #faf8f5 0%, #f5f0ea 100%)",
+  /* ===================== UI STYLES ===================== */
+  const styles = {
+    // Page layout
+    pageContainer: {
+      minHeight: "100vh",
+      padding: "40px 20px",
+      background: "linear-gradient(135deg, #faf8f5 0%, #f5f0ea 100%)",
+    },
+
+    // Profile section
+    profileCard: {
+      background: "#fff",
+      padding: "40px 36px",
+      borderRadius: "16px",
+      boxShadow: "0 20px 40px rgba(0,0,0,0.08)",
+      maxWidth: "820px",
+      margin: "0 auto 48px",
+    },
+    avatar: {
+      width: 160,
+      height: 160,
+      borderRadius: "50%",
+      objectFit: "cover",
+      border: "4px solid #e8dccf",
+    },
+
+    // Labels and text
+    infoLabel: {
+      fontSize: 12,
+      fontWeight: 800,
+      textTransform: "uppercase",
+      color: "#8a6f5f",
+      marginBottom: 6,
+      opacity: 0.75,
+      letterSpacing: 0.8,
+    },
+    infoText: {
+      fontSize: 16,
+      fontWeight: 600,
+      color: "#3b2e2e",
+    },
+    sectionLabel: {
+      fontSize: 13,
+      fontWeight: 800,
+      textTransform: "uppercase",
+      color: "#8a6f5f",
+      marginBottom: 14,
+      opacity: 0.75,
+      letterSpacing: 0.8,
+    },
+
+    // Stats grid
+    statsGrid: {
+      display: "grid",
+      gridTemplateColumns: "1fr",
+      gap: 24,
+      marginTop: 36,
+      paddingTop: 32,
+      borderTop: "1px solid #efe5db",
+    },
+    statCard: {
+      background: "linear-gradient(135deg, #faf6f1 0%, #f5f0ea 100%)",
+      padding: "20px 16px",
+      borderRadius: 12,
+      boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
+      flex: 1,
+      textAlign: "center",
+      border: "1px solid #efe5db",
+    },
+    statValue: {
+      fontSize: 32,
+      fontWeight: 800,
+      color: "#9a4207"
+    },
+    statLabel: {
+      fontSize: 14,
+      opacity: 0.75,
+      marginTop: 8,
+      fontWeight: 600
+    },
+
+    // Breakdown cards
+    breakdownGrid: {
+      display: "grid",
+      gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))",
+      gap: 12
+    },
+    breakdownCard: {
+      background: "linear-gradient(135deg, #fff9f5 0%, #fef5f0 100%)",
+      padding: "16px",
+      borderRadius: 10,
+      border: "1.5px solid #f0e0d8",
+      textAlign: "center",
+      transition: "all 0.2s ease",
+      cursor: "pointer",
+    },
+    breakdownValue: {
+      fontSize: 24,
+      fontWeight: 800,
+      color: "#9a4207"
+    },
+    breakdownLabel: {
+      fontSize: 12,
+      marginTop: 6,
+      fontWeight: 600,
+      color: "#5d4c4c",
+      textTransform: "capitalize"
+    },
+
+    // User cards (followers/following)
+    userGrid: {
+      display: "grid",
+      gridTemplateColumns: "repeat(auto-fill, minmax(120px, 1fr))",
+      gap: 12
+    },
+    userCard: {
+      background: "linear-gradient(135deg, #fff9f5 0%, #fef5f0 100%)",
+      padding: "16px",
+      borderRadius: 10,
+      border: "1.5px solid #f0e0d8",
+      textAlign: "center",
+      transition: "all 0.2s ease",
+      cursor: "pointer",
+    },
+    userAvatar: {
+      width: "60px",
+      height: "60px",
+      borderRadius: "50%",
+      objectFit: "cover",
+      border: "2px solid #e8dccf",
+      marginBottom: "8px",
+      display: "block",
+      margin: "0 auto 8px",
+    },
+    userName: {
+      fontSize: 12,
+      fontWeight: 600,
+      color: "#3b2e2e",
+      marginTop: 6
+    },
+
+    // Genre bar
+    genreRow: {
+      display: "flex",
+      alignItems: "center",
+      gap: 12,
+      marginBottom: 10
+    },
+    genreCount: {
+      width: 30,
+      textAlign: "right",
+      fontSize: 13,
+      fontWeight: 700,
+      color: "#3b2e2e"
+    },
+    genreBar: (color) => ({
+      height: 28,
+      background: `linear-gradient(90deg, ${color}, ${color}dd)`,
+      borderRadius: 6,
+      display: "flex",
+      alignItems: "center",
+      paddingLeft: 12,
+      color: "#fff",
+      fontSize: 12,
+      fontWeight: 600,
+      textTransform: "capitalize",
+      boxShadow: "0 4px 12px rgba(154, 66, 7, 0.15)",
+      transition: "all 0.2s ease",
+      flex: 1
+    }),
+
+    // Buttons
+    buttonContainer: {
+      display: "grid",
+      gridTemplateColumns: "1fr 1fr",
+      gap: 16,
+      marginTop: 32
+    },
+    button: (bg) => ({
+      padding: "13px 26px",
+      borderRadius: 8,
+      border: "none",
+      fontWeight: 700,
+      fontSize: 14,
+      cursor: "pointer",
+      color: "#fff",
+      background: bg,
+      boxShadow: "0 8px 20px rgba(0,0,0,0.15)",
+      transition: "transform 0.1s ease, box-shadow 0.1s ease, opacity 0.15s",
+    }),
+
+    // Empty state
+    emptyState: {
+      textAlign: "center",
+      opacity: 0.6,
+      fontSize: 13,
+      padding: "20px"
+    }
   };
 
-  const profileCard = {
-    background: "#fff",
-    padding: "40px 36px",
-    borderRadius: "16px",
-    boxShadow: "0 20px 40px rgba(0,0,0,0.08)",
-    maxWidth: "820px",
-    margin: "0 auto 48px",
-  };
-
-  const avatarStyle = {
-    width: 160,
-    height: 160,
-    borderRadius: "50%",
-    objectFit: "cover",
-    border: "4px solid #e8dccf",
-  };
-
-  const infoLabel = {
-    fontSize: 12,
-    fontWeight: 800,
-    textTransform: "uppercase",
-    color: "#8a6f5f",
-    marginBottom: 6,
-    opacity: 0.75,
-    letterSpacing: 0.8,
-  };
-
-  const infoText = {
-    fontSize: 16,
-    fontWeight: 600,
-    color: "#3b2e2e",
-  };
-
-  const statCard = {
-    background: "linear-gradient(135deg, #faf6f1 0%, #f5f0ea 100%)",
-    padding: "20px 16px",
-    borderRadius: 12,
-    boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
-    flex: 1,
-    textAlign: "center",
-    border: "1px solid #efe5db",
-  };
-
-  const actionButton = (bg) => ({
-    padding: "13px 26px",
-    borderRadius: 8,
-    border: "none",
-    fontWeight: 700,
-    fontSize: 14,
-    cursor: "pointer",
-    color: "#fff",
-    background: bg,
-    boxShadow: "0 8px 20px rgba(0,0,0,0.15)",
-    transition: "transform 0.1s ease, box-shadow 0.1s ease, opacity 0.15s",
-  });
-
-  /* ---------------------------------------------------------
-      RENDER
-  --------------------------------------------------------- */
+  // RETURN ACCOUNT PAGE LAYOUT
   return (
-    <div style={pageContainer}>
+    <div style={styles.pageContainer}>
       <div className="page-container">
         <div className="page-inner">
 
@@ -228,8 +359,8 @@ export default function Account() {
               Your Account
             </h1>
 
-            {/* PROFILE SECTION */}
-            <div style={profileCard}>
+            {/* Profile Section */}
+            <div style={styles.profileCard}>
               <div style={{ display: "flex", gap: 48, alignItems: "center" }}>
                 
                 {/* Column 1: Avatar */}
@@ -239,45 +370,34 @@ export default function Account() {
                     DEFAULT_AVATAR_URL
                   }
                   alt="avatar"
-                  style={avatarStyle}
+                  style={styles.avatar}
                 />
 
                 {/* Column 2: Username */}
                 <div style={{ flex: 1, textAlign: 'center' }}>
-                  <div style={{ ...infoLabel, fontSize: 14, marginBottom: 10 }}>USERNAME</div>
-                  <div style={{ ...infoText, fontSize: 22 }}>{backendUser.username}</div>
+                  <div style={{ ...styles.infoLabel, fontSize: 14, marginBottom: 10 }}>USERNAME</div>
+                  <div style={{ ...styles.infoText, fontSize: 22 }}>{backendUser.username}</div>
                 </div>
 
                 {/* Column 3: Email Address */}
                 <div style={{ flex: 1, textAlign: 'center' }}>
-                  <div style={{ ...infoLabel, fontSize: 14, marginBottom: 10 }}>EMAIL ADDRESS</div>
-                  <div style={{ ...infoText, fontSize: 18 }}>{backendUser.email}</div>
+                  <div style={{ ...styles.infoLabel, fontSize: 14, marginBottom: 10 }}>EMAIL ADDRESS</div>
+                  <div style={{ ...styles.infoText, fontSize: 18 }}>{backendUser.email}</div>
                 </div>
               </div>
 
               {/* User Stats Grid */}
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "1fr",
-                  gap: 24,
-                  marginTop: 36,
-                  paddingTop: 32,
-                  borderTop: "1px solid #efe5db",
-                }}
-              >
+              <div style={styles.statsGrid}>
                 {/* Works Rated */}
-                <div style={statCard}>
-                  <div style={{ fontSize: 32, fontWeight: 800, color: "#9a4207" }}>{Object.keys(ratings).length}</div>
-                  <div style={{ fontSize: 14, opacity: 0.75, marginTop: 8, fontWeight: 600 }}>Works Rated</div>
+                <div style={styles.statCard}>
+                  <div style={styles.statValue}>{Object.keys(ratings).length}</div>
+                  <div style={styles.statLabel}>Works Rated</div>
                 </div>
 
                 {/* Stats by Type */}
                 <div>
-                  <div style={{ fontSize: 13, fontWeight: 800, textTransform: "uppercase", color: "#8a6f5f", marginBottom: 14, opacity: 0.75, letterSpacing: 0.8 }}>
-                    📊 Rating Breakdown by Type
-                  </div>
-                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 12 }}>
+                  <div style={styles.sectionLabel}>📊 Rating Breakdown by Type</div>
+                  <div style={styles.breakdownGrid}>
                     {(() => {
                       const typeStats = {};
                       Object.keys(ratings).forEach(workId => {
@@ -291,29 +411,24 @@ export default function Account() {
                       const sorted = Object.entries(typeStats).sort((a, b) => b[1] - a[1]);
                       
                       if (sorted.length === 0) {
-                        return <div style={{ gridColumn: "1 / -1", textAlign: "center", opacity: 0.6, fontSize: 13 }}>No ratings yet</div>;
+                        return <div style={styles.emptyState}>No ratings yet</div>;
                       }
                       
                       return sorted.map(([type, count]) => (
-                        <div key={type} style={{
-                          background: "linear-gradient(135deg, #fff9f5 0%, #fef5f0 100%)",
-                          padding: "16px",
-                          borderRadius: 10,
-                          border: "1.5px solid #f0e0d8",
-                          textAlign: "center",
-                          transition: "all 0.2s ease",
-                        }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.transform = "translateY(-4px)";
-                          e.currentTarget.style.boxShadow = "0 8px 16px rgba(154, 66, 7, 0.12)";
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.transform = "none";
-                          e.currentTarget.style.boxShadow = "none";
-                        }}
+                        <div 
+                          key={type} 
+                          style={styles.breakdownCard}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.transform = "translateY(-4px)";
+                            e.currentTarget.style.boxShadow = "0 8px 16px rgba(154, 66, 7, 0.12)";
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.transform = "none";
+                            e.currentTarget.style.boxShadow = "none";
+                          }}
                         >
-                          <div style={{ fontSize: 24, fontWeight: 800, color: "#9a4207" }}>{count}</div>
-                          <div style={{ fontSize: 12, marginTop: 6, fontWeight: 600, color: "#5d4c4c", textTransform: "capitalize" }}>
+                          <div style={styles.breakdownValue}>{count}</div>
+                          <div style={styles.breakdownLabel}>
                             {type}
                             {count !== 1 ? "s" : ""}
                           </div>
@@ -325,9 +440,7 @@ export default function Account() {
 
                 {/* Most Rated Genres */}
                 <div>
-                  <div style={{ fontSize: 13, fontWeight: 800, textTransform: "uppercase", color: "#8a6f5f", marginBottom: 14, opacity: 0.75, letterSpacing: 0.8 }}>
-                    🎭 Most Rated Genres
-                  </div>
+                  <div style={styles.sectionLabel}>🎭 Most Rated Genres</div>
                   <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                     {(() => {
                       const genreStats = {};
@@ -344,35 +457,18 @@ export default function Account() {
                       const sorted = Object.entries(genreStats).sort((a, b) => b[1] - a[1]).slice(0, 5);
                       
                       if (sorted.length === 0) {
-                        return <div style={{ textAlign: "center", opacity: 0.6, fontSize: 13 }}>No genre data available</div>;
+                        return <div style={styles.emptyState}>No genre data available</div>;
                       }
                       
                       const maxCount = sorted[0][1];
+                      const colors = ["#9a4207", "#b95716", "#c86f38", "#d4885c", "#d9956f"];
                       
-                      return sorted.map(([genre, count], idx) => {
-                        const percentage = (count / maxCount) * 100;
-                        const colors = ["#9a4207", "#b95716", "#c86f38", "#d4885c", "#d9956f"];
-                        
-                        return (
-                          <div key={genre} style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                            <div style={{ width: 30, textAlign: "right", fontSize: 13, fontWeight: 700, color: "#3b2e2e" }}>
-                              {count}
-                            </div>
-                            <div style={{ flex: 1 }}>
-                              <div style={{
-                                height: 28,
-                                background: `linear-gradient(90deg, ${colors[idx % colors.length]}, ${colors[idx % colors.length]}dd)`,
-                                borderRadius: 6,
-                                display: "flex",
-                                alignItems: "center",
-                                paddingLeft: 12,
-                                color: "#fff",
-                                fontSize: 12,
-                                fontWeight: 600,
-                                textTransform: "capitalize",
-                                boxShadow: "0 4px 12px rgba(154, 66, 7, 0.15)",
-                                transition: "all 0.2s ease",
-                              }}
+                      return sorted.map(([genre, count], idx) => (
+                        <div key={genre} style={styles.genreRow}>
+                          <div style={styles.genreCount}>{count}</div>
+                          <div style={{ flex: 1 }}>
+                            <div 
+                              style={styles.genreBar(colors[idx % colors.length])}
                               onMouseEnter={(e) => {
                                 e.currentTarget.style.transform = "translateX(8px)";
                                 e.currentTarget.style.boxShadow = "0 6px 16px rgba(154, 66, 7, 0.25)";
@@ -381,39 +477,28 @@ export default function Account() {
                                 e.currentTarget.style.transform = "none";
                                 e.currentTarget.style.boxShadow = "0 4px 12px rgba(154, 66, 7, 0.15)";
                               }}
-                              >
-                                {genre}
-                              </div>
+                            >
+                              {genre}
                             </div>
                           </div>
-                        );
-                      });
+                        </div>
+                      ));
                     })()}
                   </div>
                 </div>
 
                 {/* Followers Section */}
                 <div>
-                  <div style={{ fontSize: 13, fontWeight: 800, textTransform: "uppercase", color: "#8a6f5f", marginBottom: 14, opacity: 0.75, letterSpacing: 0.8 }}>
-                    👥 Followers
-                  </div>
+                  <div style={styles.sectionLabel}>👥 Followers</div>
                   {followers.length === 0 ? (
-                    <div style={{ textAlign: "center", opacity: 0.6, fontSize: 13, padding: "20px" }}>No followers yet</div>
+                    <div style={styles.emptyState}>No followers yet</div>
                   ) : (
-                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(120px, 1fr))", gap: 12 }}>
+                    <div style={styles.userGrid}>
                       {followers.map((follower) => (
                         <div
                           key={follower.userId || follower.id}
                           onClick={() => navigate(`/profile/${follower.userId || follower.id}`)}
-                          style={{
-                            background: "linear-gradient(135deg, #fff9f5 0%, #fef5f0 100%)",
-                            padding: "16px",
-                            borderRadius: 10,
-                            border: "1.5px solid #f0e0d8",
-                            textAlign: "center",
-                            transition: "all 0.2s ease",
-                            cursor: "pointer",
-                          }}
+                          style={styles.userCard}
                           onMouseEnter={(e) => {
                             e.currentTarget.style.transform = "translateY(-4px)";
                             e.currentTarget.style.boxShadow = "0 8px 16px rgba(154, 66, 7, 0.12)";
@@ -426,18 +511,9 @@ export default function Account() {
                           <img
                             src={follower.profilePictureUrl || DEFAULT_AVATAR_URL}
                             alt={follower.username}
-                            style={{
-                              width: "60px",
-                              height: "60px",
-                              borderRadius: "50%",
-                              objectFit: "cover",
-                              border: "2px solid #e8dccf",
-                              marginBottom: "8px",
-                              display: "block",
-                              margin: "0 auto 8px",
-                            }}
+                            style={styles.userAvatar}
                           />
-                          <div style={{ fontSize: 12, fontWeight: 600, color: "#3b2e2e", marginTop: 6 }}>
+                          <div style={styles.userName}>
                             {follower.username}
                           </div>
                         </div>
@@ -448,26 +524,16 @@ export default function Account() {
 
                 {/* Following Section */}
                 <div>
-                  <div style={{ fontSize: 13, fontWeight: 800, textTransform: "uppercase", color: "#8a6f5f", marginBottom: 14, opacity: 0.75, letterSpacing: 0.8 }}>
-                    👫 Following
-                  </div>
+                  <div style={styles.sectionLabel}>👫 Following</div>
                   {following.length === 0 ? (
-                    <div style={{ textAlign: "center", opacity: 0.6, fontSize: 13, padding: "20px" }}>Not following anyone yet</div>
+                    <div style={styles.emptyState}>Not following anyone yet</div>
                   ) : (
-                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(120px, 1fr))", gap: 12 }}>
+                    <div style={styles.userGrid}>
                       {following.map((user) => (
                         <div
                           key={user.userId || user.id}
                           onClick={() => navigate(`/profile/${user.userId || user.id}`)}
-                          style={{
-                            background: "linear-gradient(135deg, #fff9f5 0%, #fef5f0 100%)",
-                            padding: "16px",
-                            borderRadius: 10,
-                            border: "1.5px solid #f0e0d8",
-                            textAlign: "center",
-                            transition: "all 0.2s ease",
-                            cursor: "pointer",
-                          }}
+                          style={styles.userCard}
                           onMouseEnter={(e) => {
                             e.currentTarget.style.transform = "translateY(-4px)";
                             e.currentTarget.style.boxShadow = "0 8px 16px rgba(154, 66, 7, 0.12)";
@@ -480,18 +546,9 @@ export default function Account() {
                           <img
                             src={user.profilePictureUrl || DEFAULT_AVATAR_URL}
                             alt={user.username}
-                            style={{
-                              width: "60px",
-                              height: "60px",
-                              borderRadius: "50%",
-                              objectFit: "cover",
-                              border: "2px solid #e8dccf",
-                              marginBottom: "8px",
-                              display: "block",
-                              margin: "0 auto 8px",
-                            }}
+                            style={styles.userAvatar}
                           />
-                          <div style={{ fontSize: 12, fontWeight: 600, color: "#3b2e2e", marginTop: 6 }}>
+                          <div style={styles.userName}>
                             {user.username}
                           </div>
                         </div>
@@ -502,10 +559,9 @@ export default function Account() {
               </div>
 
               {/* Action Buttons */}
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginTop: 32 }}>
-                
+              <div style={styles.buttonContainer}>
                 <button
-                  style={actionButton("linear-gradient(135deg,#9a4207,#b95716)")}
+                  style={styles.button("linear-gradient(135deg,#9a4207,#b95716)")}
                   onClick={() => navigate("/account/edit")}
                   onMouseEnter={(e) => (e.currentTarget.style.transform = "translateY(-2px)")}
                   onMouseLeave={(e) => (e.currentTarget.style.transform = "none")}
@@ -514,18 +570,17 @@ export default function Account() {
                 </button>
 
                 <button
-                  style={actionButton("#c0392b")}
+                  style={styles.button("#c0392b")}
                   onClick={handleDelete}
                   onMouseEnter={(e) => (e.currentTarget.style.transform = "translateY(-2px)")}
                   onMouseLeave={(e) => (e.currentTarget.style.transform = "none")}
                 >
                   🗑 Delete Account
                 </button>
-
               </div>
             </div>
 
-            {/* RATING HISTORY */}
+            {/* Rating History */}
             <section style={{ marginTop: 48 }}>
               <h2 className="section-title" style={{ marginBottom: 24, fontSize: 28, fontWeight: 800 }}>Your Rating History</h2>
               <UserRatings ratings={ratings} works={works} />

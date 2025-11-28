@@ -13,6 +13,8 @@ import {
   shuffleArray,
 } from '../utils/normalize';
 
+/* ===================== RECOMMENDATIONS FUNCTION ===================== */
+
 export default function Recommendations() {
   useNavigationWithClearFilters();
   const navigate = useNavigate();
@@ -28,8 +30,55 @@ export default function Recommendations() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // ---------- CARD COMPONENT ----------
-  const WorkCard = ({ item }) => (
+/* ===================== UI STYLES ===================== */
+
+const styles = {
+  /* ===================== PAGE LAYOUT ===================== */
+  pageContainer: {
+    display: "flex",
+    flexDirection: "column",
+  },
+  pageInner: {
+    flex: 1,
+  },
+  pageMain: {
+    maxWidth: "1200px",
+    margin: "0 auto",
+    width: "100%",
+  },
+
+  /* ===================== HEADINGS ===================== */
+  welcomeText: {
+    fontSize: '24px',
+    fontWeight: '700',
+    color: '#392c2c',
+    marginTop: '40px',
+    marginBottom: '24px',
+    textAlign: 'center'
+  },
+  welcomeEmphasis: {
+    color: '#9a4207',
+    fontWeight: '900'
+  },
+
+  /* ===================== ERROR MESSAGES ===================== */
+  errorBox: {
+    padding: '16px',
+    background: '#f8d7da',
+    border: '1px solid #f5c6cb',
+    borderRadius: '8px',
+    color: '#721c24',
+    marginBottom: '20px',
+  },
+
+  /* ===================== EMPTY STATE ===================== */
+  emptyMessage: {
+    color: '#392c2cff'
+  },
+};
+
+/* ===================== WORK CARD COMPONENT ===================== */
+const WorkCard = ({ item }) => (
     <Link
       to={`/works/${item.workId}`}
       style={{ textDecoration: 'none', color: 'inherit' }}
@@ -72,7 +121,7 @@ export default function Recommendations() {
     </Link>
   );
 
-  // ---------- GRID RENDER ----------
+  // GRID RENDER
   const renderCarousel = (items = []) => (
     <HomeCarousel scrollChunk={3}>
       {items.map((item) => (
@@ -83,9 +132,9 @@ export default function Recommendations() {
     </HomeCarousel>
   );
 
-  // ---------- MAIN LOGIC ----------
+  // MAIN LOGIC
   useEffect(() => {
-    // 🚫 If guest, redirect to login immediately
+    // If guest, redirect to login immediately
     if (isGuest) {
       navigate('/login', {
         state: { message: 'Log in to see your personalized recommendations.' },
@@ -116,7 +165,7 @@ export default function Recommendations() {
         const staticFriends = shuffled.slice(10, 20);
         const staticExplore = shuffled.slice(20, 30);
 
-        // 1️⃣ Try personalized recommendations for section 1
+        // Try personalized recommendations for section 1
         let currentRecommendations = [];
         try {
           const recommendationsData = await getUserRecommendations(userId);
@@ -165,33 +214,17 @@ export default function Recommendations() {
     fetchRecommendations();
   }, [user, isGuest, navigate]);
 
-  // ---------- RENDER ----------
+  // RETURN RECOMMENDATIONS PAGE LAYOUT
   return (
     <div className="page-container">
       <div className="page-inner">
         <main className="page-main">
-          <p style={{
-            fontSize: '24px',
-            fontWeight: '700',
-            color: '#392c2c',
-            marginTop: '40px',
-            marginBottom: '24px',
-            textAlign: 'center'
-          }}>
-            We found some <span style={{ color: '#9a4207', fontWeight: '900' }}>amazing picks</span> for you!
+          <p style={styles.welcomeText}>
+            We found some <span style={styles.welcomeEmphasis}>amazing picks</span> for you!
           </p>
 
           {error && (
-            <div
-              style={{
-                padding: '16px',
-                background: '#f8d7da',
-                border: '1px solid #f5c6cb',
-                borderRadius: '8px',
-                color: '#721c24',
-                marginBottom: '20px',
-              }}
-            >
+            <div style={styles.errorBox}>
               {error}
             </div>
           )}
@@ -203,7 +236,7 @@ export default function Recommendations() {
           ) : lists.current.length > 0 ? (
             renderCarousel(lists.current)
           ) : (
-            <p style={{ color: '#392c2cff' }}>
+            <p style={styles.emptyMessage}>
               No recommendations available at the moment.
             </p>
           )}
@@ -217,7 +250,7 @@ export default function Recommendations() {
           ) : lists.profile.length > 0 ? (
             renderCarousel(lists.profile)
           ) : (
-            <p style={{ color: '#392c2cff' }}>
+            <p style={styles.emptyMessage}>
               No profile-based recommendations available.
             </p>
           )}
@@ -231,7 +264,7 @@ export default function Recommendations() {
           ) : lists.friends.length > 0 ? (
             renderCarousel(lists.friends)
           ) : (
-            <p style={{ color: '#392c2cff' }}>
+            <p style={styles.emptyMessage}>
               No friend-based recommendations available.
             </p>
           )}
@@ -245,7 +278,7 @@ export default function Recommendations() {
           ) : lists.explore.length > 0 ? (
             renderCarousel(lists.explore)
           ) : (
-            <p style={{ color: '#392c2cff' }}>
+            <p style={styles.emptyMessage}>
               No additional works to explore.
             </p>
           )}

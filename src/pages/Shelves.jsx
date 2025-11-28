@@ -10,6 +10,8 @@ import WorkCardCarousel from '../components/WorkCardCarousel';
 import { Skeleton } from '../components/Skeleton';
 import logger from '../utils/logger';
 
+/* ===================== UI STYLES ===================== */
+// Styles for the Shelves page
 const styles = {
   container: {
     maxWidth: 1200,
@@ -413,6 +415,8 @@ const styles = {
   }
 };
 
+/* ===================== SHELVES FUNCTION ===================== */
+
 export default function Shelves() {
   const { user, isGuest } = useAuth();
   const { shelves, loading, error, createNewShelf, updateExistingShelf, deleteExistingShelf, getOrCreateFavourites } = useShelves(user?.userId);
@@ -640,6 +644,7 @@ export default function Shelves() {
     }
   };
 
+  // RETURN SHELVES PAGE LAYOUT
   return (
     <div style={styles.container}>
       {/* Header */}
