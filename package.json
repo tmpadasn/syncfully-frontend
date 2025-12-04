@@ -16,7 +16,11 @@
     "react-router-dom": "^6.16.0",
     "react-scripts": "5.0.1"
   },
-  "devDependencies": {},
+  "devDependencies": {
+    "react-icons": "^4.11.0",
+    "react-router-dom": "^6.16.0",
+    "react-scripts": "5.0.1"
+  },
   "browserslist": {
     "production": [
       ">0.2%",
