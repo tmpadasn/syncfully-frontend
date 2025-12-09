@@ -114,6 +114,7 @@ jobs:
           browser: chrome
           spec: cypress/e2e/**/*.cy.js
         env:
+          PORT: 3001
           REACT_APP_API_URL: http://localhost:3000/api
 
       - name: Stop backend server
