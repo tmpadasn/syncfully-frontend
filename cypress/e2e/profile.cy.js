@@ -71,35 +71,46 @@ describe('User Profile Page Tests', () => {
       // Navigate to another user's profile
       cy.visit('http://localhost:3001/profile/3');
       cy.wait(1500);
+      
+      // Scroll down to see the button
+      cy.scrollTo('bottom');
+      cy.wait(300);
+      
+      // If already following, unfollow first to reset state
+      // Check if "Unfollow" button exists, if so click it
+      cy.get('button').then(($buttons) => {
+        const unfollowBtn = Array.from($buttons).find(btn => btn.innerText.includes('Unfollow'));
+        if (unfollowBtn) {
+          cy.wrap(unfollowBtn).click({ force: true });
+          cy.wait(500);
+        }
+      });
     });
 
     it('Should display follow button for other users', () => {
-      // Follow button should exist for different user
-      cy.get('button').contains(/Follow|Unfollow/).should('exist');
+      // Follow button should exist for different user (at this point should be "+" after beforeEach unfollow)
+      cy.get('button').filter((i, el) => el.innerText.includes('Follow')).should('exist');
     });
 
     it('Should allow authenticated user to follow another user', () => {
       // Find and click the follow button (button text is "+ Follow")
-      cy.get('button').contains(/\+ Follow/).click({ force: true });
+      cy.get('button').filter((i, el) => el.innerText.trim() === '+ Follow').click({ force: true });
       cy.wait(500);
       // Button should change to unfollow (text is "✕ Unfollow")
-      cy.get('button').contains(/✕ Unfollow/).should('exist');
+      cy.get('button').filter((i, el) => el.innerText.trim() === '✕ Unfollow').should('exist');
     });
 
     it('Should allow authenticated user to unfollow a user', () => {
-      // First check if already following
-      cy.get('button').then(($btn) => {
-        if ($btn.text().includes('Follow') && !$btn.text().includes('Unfollow')) {
-          // If showing "+ Follow", click to follow first
-          cy.get('button').contains(/\+ Follow/).click();
-          cy.wait(500);
-        }
-        // Now unfollow
-        cy.get('button').contains(/✕ Unfollow/).click({ force: true });
-        cy.wait(500);
-        // Should show follow button again
-        cy.get('button').contains(/\+ Follow/).should('exist');
-      });
+      // First follow the user
+      cy.get('button').filter((i, el) => el.innerText.trim() === '+ Follow').click({ force: true });
+      cy.wait(500);
+      
+      // Now unfollow
+      cy.get('button').filter((i, el) => el.innerText.trim() === '✕ Unfollow').click({ force: true });
+      cy.wait(500);
+      
+      // Should show follow button again
+      cy.get('button').filter((i, el) => el.innerText.trim() === '+ Follow').should('exist');
     });
 
     it('Should update follow status visually', () => {
@@ -107,7 +118,7 @@ describe('User Profile Page Tests', () => {
       cy.url().should('include', '/profile/');
       cy.contains('carol').should('be.visible');
       // Follow button should be visible
-      cy.get('button').contains(/Follow|Unfollow/).should('exist');
+      cy.get('button').filter((i, el) => el.innerText.includes('Follow')).should('exist');
     });
 
   });
@@ -228,8 +239,12 @@ describe('User Profile Page Tests', () => {
       // Profile should load
       cy.contains('bob').should('be.visible');
       
+      // Scroll down to check button area
+      cy.scrollTo('bottom');
+      cy.wait(300);
+      
       // Follow button should NOT exist for guests (only shows for authenticated users)
-      cy.get('button').contains(/\+ Follow/).should('not.exist');
+      cy.get('button').filter((i, el) => el.innerText.trim() === '+ Follow').should('not.exist');
       
       // But back button should still exist
       cy.get('button').contains('Back to Search').should('exist');
