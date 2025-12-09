@@ -95,13 +95,13 @@ jobs:
         working-directory: backend
         run: |
           npm start &
-          echo $! > backend.pid
+          echo $! > ../backend.pid
         env:
           NODE_ENV: test
           PORT: 3000
 
       - name: Wait for backend to be ready
-        run: npx wait-on http://localhost:3000 -t 60000
+        run: npx wait-on http://localhost:3000/health -t 120000
 
       - name: Run Cypress E2E tests
         uses: cypress-io/github-action@v6
@@ -119,8 +119,8 @@ jobs:
       - name: Stop backend server
         if: always()
         run: |
-          if [ -f backend/backend.pid ]; then
-            kill $(cat backend/backend.pid) || true
+          if [ -f backend.pid ]; then
+            kill $(cat backend.pid) || true
           fi
 
       - name: Upload Cypress screenshots on failure
