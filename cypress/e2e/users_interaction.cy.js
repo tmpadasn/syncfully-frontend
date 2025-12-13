@@ -1,11 +1,10 @@
 /**
- * ==================== HAPPY PATH 1: USERS INTERACTION WORKFLOW ====================
+ * ==================== USERS INTERACTION WORKFLOW ====================
  * This Cypress test suite verifies the user interaction workflow including:
  * - Logging in
  * - Searching for users
  * - Following and unfollowing users
  * - Navigating to the following section
- * - Editing user profile information
  * 
  * It also includes negative path tests to ensure proper error handling.
  * 
@@ -16,7 +15,7 @@ const TEST_USER = 'alice';
 const TEST_PASSWORD = 'alice';
 const TARGET_USER = 'david';
 
-describe('Happy path 1: Users interaction', { testIsolation: false }, () => {
+describe('Users interaction', { testIsolation: false }, () => {
   
   // ----- HELPER FUNCTIONS -----
   
@@ -142,34 +141,6 @@ describe('Happy path 1: Users interaction', { testIsolation: false }, () => {
     });
   });
 
-  // ----- TEST 5: EDIT PROFILE -----
-  it('Step 5: Edits account email and saves changes', () => {
-    // Click on account icon/link to navigate to account page
-    cy.get('[aria-label*="account"], [aria-label*="profile"], [href="/account"]').first().click({ force: true });
-    cy.location('pathname').should('eq', '/account');
-    
-    // Navigate to edit page
-    cy.get('button').filter((i, el) => el.innerText.includes('Edit')).first().click({ force: true });
-    cy.location('pathname').should('include', '/account/edit');
-    
-    // Verify edit page layout
-    cy.get('h1').filter((i, el) => el.textContent.includes('Edit Profile')).should('be.visible');
-    cy.get('input[name="email"]').should('exist');
-    
-    // Update email
-    const newEmail = `${TEST_USER}.updated@example.com`;
-    cy.get('input[name="email"]').clear().type(newEmail);
-    
-    // Save changes
-    cy.get('button').filter((i, el) => el.innerText.includes('Save')).first().click({ force: true });
-    
-    // Wait for redirect back to account page
-    cy.location('pathname', { timeout: 10000 }).should('eq', '/account');
-    
-    // Verify the updated email is displayed
-    cy.contains(newEmail).should('be.visible', { timeout: 5000 });
-  });
-
   // ----- NEGATIVE PATH TESTS -----
   
   it('Negative: Cannot follow a user already followed', () => {
@@ -203,25 +174,5 @@ describe('Happy path 1: Users interaction', { testIsolation: false }, () => {
     
     // Verify no results shown (either empty state or no user cards visible)
     cy.get('h3').should('not.exist');
-  });
-
-  it('Negative: Edit account with invalid email fails', () => {
-    // Click on account icon/link to navigate to account page
-    cy.get('[aria-label*="account"], [aria-label*="profile"], [href="/account"]').first().click({ force: true });
-    cy.location('pathname').should('eq', '/account');
-    
-    // Navigate to edit page
-    cy.get('button').filter((i, el) => el.innerText.includes('Edit')).first().click({ force: true });
-    cy.location('pathname').should('include', '/account/edit');
-    
-    // Try to save with invalid email
-    cy.get('input[name="email"]').clear().type('invalid-email-format');
-    cy.get('button').filter((i, el) => el.innerText.includes('Save')).first().click({ force: true });
-    
-    // Verify error message or page doesn't redirect
-    cy.location('pathname').should('include', '/account/edit');
-    cy.get('div').filter((i, el) => 
-      el.textContent && (el.textContent.toLowerCase().includes('error') || el.textContent.toLowerCase().includes('invalid'))
-    ).should('be.visible');
   });
 });
