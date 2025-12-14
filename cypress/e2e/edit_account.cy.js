@@ -1,20 +1,22 @@
 /**
  * ==================== EDIT ACCOUNT FLOW ====================
- * This Cypress test suite verifies the account edit functionality including:
- * - Logging in and out
- * - Navigating to edit account page
- * - Editing email address
- * - Saving changes
- * - Validating error handling for invalid inputs
  * 
- * Note: testIsolation is disabled for this file to preserve session between tests
+ * Edit account workflow:
+ * - Logging in with wrong password
+ * - Logging in with valid credentials
+ * - Navigating to edit account page
+ * - Editing email address with invalid format
+ * - Editing email address with valid format
+ * - Saving changes
+ * - Logging out
+ * 
  */
 
 const TEST_USER = 'alice';
 const TEST_PASSWORD = 'alice';
 const WRONG_PASSWORD = 'wrongpassword';
 
-describe('Edit account', { testIsolation: false }, () => {
+describe('Edit account', () => {
   
   // ----- HELPER FUNCTIONS -----
   
@@ -28,90 +30,57 @@ describe('Edit account', { testIsolation: false }, () => {
     cy.location('pathname').should('eq', '/');
   };
 
-  // ----- TEST 1: LOGIN WITH WRONG PASSWORD -----
-  it('Step 1: Login with wrong password fails', () => {
-    // Navigate to home
-    cy.visit('http://localhost:3001/');
+  // ----- COMPLETE ACCOUNT EDIT WORKFLOW -----
+  it('Complete workflow: Wrong password, Login, Edit profile, Invalid email, Logout', () => {
     
-    // Click sign in button in the middle of the page (banner button)
+    // Step 1: Test login with wrong password
+    cy.visit('http://localhost:3001/');
     cy.contains('button, a, span', /Sign in|Log in/i).filter(':visible').first().click({ force: true });
     cy.location('pathname').should('include', 'login');
-    
-    // Enter correct username but wrong password (manually, not using login helper)
+
     cy.get('input[type="text"]').first().type(TEST_USER);
     cy.get('input[type="password"]').type(WRONG_PASSWORD);
     cy.get('button[type="submit"]').click();
-    
-    // Verify we're still on login page (not redirected to home)
+
     cy.location('pathname', { timeout: 5000 }).should('include', 'login');
-    
-    // Verify error message is displayed with role="alert"
     cy.get('div[role="alert"]').should('be.visible').and('contain', 'The credentials dont match');
-  });
-
-  // ----- TEST 2: LOGIN SUCCESSFULLY -----
-  it('Step 2: Logs in successfully with correct password', () => {
+    cy.log('✓ Verified wrong password fails');
+    
+    // Step 2: Login successfully
     login(TEST_USER, TEST_PASSWORD);
-    cy.location('pathname').should('eq', '/');
     cy.contains(TEST_USER).should('be.visible');
-  });
-
-  // ----- TEST 3: EDIT PROFILE -----
-  it('Step 3: Edits account email and saves changes', () => {
-    // Click on account icon/link to navigate to account page
+    cy.log('✓ Logged in successfully');
+    
+    // Step 3: Edit account with invalid email first
     cy.get('[aria-label*="account"], [aria-label*="profile"], [href="/account"]').first().click({ force: true });
     cy.location('pathname').should('eq', '/account');
-    
-    // Navigate to edit page
-    cy.get('button').filter((i, el) => el.innerText.includes('Edit')).first().click({ force: true });
-    cy.location('pathname').should('include', '/account/edit');
-    
-    // Verify edit page layout
-    cy.get('h1').filter((i, el) => el.textContent.includes('Edit Profile')).should('be.visible');
-    cy.get('input[name="email"]').should('exist');
-    
-    // Update email
-    const newEmail = `${TEST_USER}.updated@example.com`;
-    cy.get('input[name="email"]').clear().type(newEmail);
-    
-    // Save changes
-    cy.get('button').filter((i, el) => el.innerText.includes('Save')).first().click({ force: true });
-    
-    // Wait for redirect back to account page
-    cy.location('pathname', { timeout: 10000 }).should('eq', '/account');
-    
-    // Verify the updated email is displayed
-    cy.contains(newEmail).should('be.visible', { timeout: 5000 });
-  });
 
-  // ----- TEST 4: EDIT ACCOUNT WITH INVALID EMAIL -----
-  it('Step 4: Edit account with invalid email fails', () => {
-    // Click on account icon/link to navigate to account page
-    cy.get('[aria-label*="account"], [aria-label*="profile"], [href="/account"]').first().click({ force: true });
-    cy.location('pathname').should('eq', '/account');
-    
-    // Navigate to edit page
     cy.get('button').filter((i, el) => el.innerText.includes('Edit')).first().click({ force: true });
     cy.location('pathname').should('include', '/account/edit');
-    
-    // Try to save with invalid email
+
     cy.get('input[name="email"]').clear().type('invalid-email-format');
     cy.get('button').filter((i, el) => el.innerText.includes('Save')).first().click({ force: true });
-    
-    // Verify error message or page doesn't redirect
     cy.location('pathname').should('include', '/account/edit');
+
     cy.get('div').filter((i, el) => 
       el.textContent && (el.textContent.toLowerCase().includes('error') || el.textContent.toLowerCase().includes('invalid'))
     ).should('be.visible');
-  });
-
-  // ----- TEST 5: LOGOUT -----
-  it('Step 5: Logs out successfully', () => {
-    // Find and click logout button in the header
-    cy.get('button[aria-label="Logout"]').should('be.visible').click({ force: true });
+    cy.log('✓ Verified invalid email fails');
     
-    // Verify redirected to login page after logout
+    // Step 4: Edit account with valid email
+    cy.get('input[name="email"]').clear();
+    const newEmail = `${TEST_USER}.updated@example.com`;
+    
+    cy.get('input[name="email"]').type(newEmail);
+    cy.get('button').filter((i, el) => el.innerText.includes('Save')).first().click({ force: true });
+    cy.location('pathname', { timeout: 10000 }).should('eq', '/account');
+    cy.contains(newEmail).should('be.visible', { timeout: 5000 });
+    cy.log('✓ Successfully edited account email with valid email');
+    
+    // Step 5: Logout
+    cy.get('button[aria-label="Logout"]').should('be.visible').click({ force: true });
     cy.location('pathname', { timeout: 5000 }).should('eq', '/login');
     cy.contains(TEST_USER).should('not.exist');
+    cy.log('✓ Logged out successfully');
   });
 });
