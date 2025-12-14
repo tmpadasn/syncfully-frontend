@@ -1,6 +1,7 @@
 /**
  * ==================== EDIT ACCOUNT FLOW ====================
  * This Cypress test suite verifies the account edit functionality including:
+ * - Logging in and out
  * - Navigating to edit account page
  * - Editing email address
  * - Saving changes
@@ -13,7 +14,7 @@ const TEST_USER = 'alice';
 const TEST_PASSWORD = 'alice';
 const WRONG_PASSWORD = 'wrongpassword';
 
-describe('Edit profile', { testIsolation: false }, () => {
+describe('Edit account', { testIsolation: false }, () => {
   
   // ----- HELPER FUNCTIONS -----
   
@@ -104,5 +105,13 @@ describe('Edit profile', { testIsolation: false }, () => {
     ).should('be.visible');
   });
 
-
+  // ----- TEST 5: LOGOUT -----
+  it('Step 5: Logs out successfully', () => {
+    // Find and click logout button in the header
+    cy.get('button[aria-label="Logout"]').should('be.visible').click({ force: true });
+    
+    // Verify redirected to login page after logout
+    cy.location('pathname', { timeout: 5000 }).should('eq', '/login');
+    cy.contains(TEST_USER).should('not.exist');
+  });
 });

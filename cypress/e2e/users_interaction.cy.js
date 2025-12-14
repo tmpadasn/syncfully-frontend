@@ -1,7 +1,7 @@
 /**
  * ==================== USERS INTERACTION WORKFLOW ====================
  * This Cypress test suite verifies the user interaction workflow including:
- * - Logging in
+ * - Logging in and out
  * - Searching for users
  * - Following and unfollowing users
  * - Navigating to the following section
@@ -174,5 +174,15 @@ describe('Users interaction', { testIsolation: false }, () => {
     
     // Verify no results shown (either empty state or no user cards visible)
     cy.get('h3').should('not.exist');
+  });
+
+  // ----- TEST 5: LOGOUT -----
+  it('Step 5: Logs out successfully', () => {
+    // Find and click logout button in the header
+    cy.get('button[aria-label="Logout"]').should('be.visible').click({ force: true });
+    
+    // Verify redirected to home page after logout
+    cy.location('pathname', { timeout: 5000 }).should('eq', '/');
+    cy.contains(TEST_USER).should('not.exist');
   });
 });
