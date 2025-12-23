@@ -4,7 +4,7 @@
 
 A React-based web application for discovering, rating, and organizing entertainment content with personalized recommendations and social features.
 
-## 📋 Table of Contents
+## 📋 Table of Contents -------
 
 - [Features](#features)
 - [Tech Stack](#tech-stack)
