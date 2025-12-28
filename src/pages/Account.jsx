@@ -5,9 +5,9 @@ import { Skeleton } from "../components/Skeleton";
 import logger from "../utils/logger";
 import { DEFAULT_AVATAR_URL } from "../config/constants";
 
-import { 
-  getUserById, 
-  deleteUser, 
+import {
+  getUserById,
+  deleteUser,
   getUserRatings,
   getUserFollowers,
   getUserFollowing,
@@ -61,7 +61,7 @@ export default function Account() {
 
         // Backend returns an object map of ratings keyed by workId
         const ratingsObject = ratingsResponse?.ratings || ratingsResponse || {};
-        
+
         // Filter out work IDs that don't exist in the works list
         const validWorks = allWorks?.works || [];
         const validWorkIds = new Set(validWorks.map(w => w.id || w.workId));
@@ -74,11 +74,11 @@ export default function Account() {
 
         setRatings(filteredRatings);
         setWorks(validWorks);
-        
+
         // Set followers
         const followersList = followersResponse?.followers || [];
         setFollowers(followersList);
-        
+
         // Set following
         const followingList = followingResponse?.following || [];
         setFollowing(followingList);
@@ -362,7 +362,7 @@ export default function Account() {
             {/* Profile Section */}
             <div style={styles.profileCard}>
               <div style={{ display: "flex", gap: 48, alignItems: "center" }}>
-                
+
                 {/* Column 1: Avatar */}
                 <img
                   src={
@@ -407,16 +407,16 @@ export default function Account() {
                           typeStats[work.type]++;
                         }
                       });
-                      
+
                       const sorted = Object.entries(typeStats).sort((a, b) => b[1] - a[1]);
-                      
+
                       if (sorted.length === 0) {
                         return <div style={styles.emptyState}>No ratings yet</div>;
                       }
-                      
+
                       return sorted.map(([type, count]) => (
-                        <div 
-                          key={type} 
+                        <div
+                          key={type}
                           style={styles.breakdownCard}
                           onMouseEnter={(e) => {
                             e.currentTarget.style.transform = "translateY(-4px)";
@@ -453,21 +453,20 @@ export default function Account() {
                           });
                         }
                       });
-                      
+
                       const sorted = Object.entries(genreStats).sort((a, b) => b[1] - a[1]).slice(0, 5);
-                      
+
                       if (sorted.length === 0) {
                         return <div style={styles.emptyState}>No genre data available</div>;
                       }
-                      
-                      const maxCount = sorted[0][1];
+
                       const colors = ["#9a4207", "#b95716", "#c86f38", "#d4885c", "#d9956f"];
-                      
+
                       return sorted.map(([genre, count], idx) => (
                         <div key={genre} style={styles.genreRow}>
                           <div style={styles.genreCount}>{count}</div>
                           <div style={{ flex: 1 }}>
-                            <div 
+                            <div
                               style={styles.genreBar(colors[idx % colors.length])}
                               onMouseEnter={(e) => {
                                 e.currentTarget.style.transform = "translateX(8px)";

@@ -26,7 +26,7 @@ export default function SearchResults() {
   const { navigateAndClearFilters } = useNavigationWithClearFilters();
   const { user } = useAuth();
   const isMountedRef = useRef(true);
-  
+
   /* ===================== UI STYLES ===================== */
   const styles = {
     /* ===================== PAGE LAYOUT ===================== */
@@ -329,18 +329,18 @@ export default function SearchResults() {
       marginBottom: 12,
     },
   };
-  
+
   const params = new URLSearchParams(search);
   const query = params.get('q') || '';
   const typeFilter = params.get('type') || '';        // TYPE filter (movie, book, music, user, etc.)
   const yearFilter = params.get('year') || '';
   const genreFilter = params.get('genre') || '';
   const ratingFilter = params.get('rating') || '';
-  
+
   // Shelf context for adding works
   const addToShelfId = params.get('addToShelf') || '';
   const shelfName = params.get('shelfName') || '';
-  
+
   const [results, setResults] = useState({ works: [], users: [] });
   const [loading, setLoading] = useState(true);
   const [addedWorks, setAddedWorks] = useState(new Set());
@@ -352,31 +352,31 @@ export default function SearchResults() {
   // Load user's Favourites shelf and check which works are already in it
   const loadFavourites = useCallback(async () => {
     if (!user || !isMountedRef.current) return;
-    
+
     try {
       // Get user's shelves
       const shelvesData = await getUserShelves(user.userId);
       if (!isMountedRef.current) return;
-      
+
       // Extract the shelves array from the response
       const shelves = extractShelvesFromResponse(shelvesData);
-      
+
       // Find or create Favourites shelf
       const favourites = await getOrCreateFavouritesShelf(user.userId, shelves);
       if (!isMountedRef.current) return;
-      
+
       setFavouritesShelfId(favourites.shelfId);
-      
+
       // Get works in Favourites shelf
       const favouritesWorksData = await getShelfWorks(favourites.shelfId);
       if (!isMountedRef.current) return;
-      
+
       // Extract works array from API response
       const favouritesWorks = extractWorksFromResponse(favouritesWorksData);
-      
+
       // Create a set of work IDs that are in Favourites
       const workIds = extractWorkIdsFromShelf(favouritesWorks);
-      
+
       if (isMountedRef.current) {
         setFavouritedWorks(workIds);
       }
@@ -404,7 +404,7 @@ export default function SearchResults() {
     try {
       const shelfWorksResponse = await getShelfWorks(addToShelfId);
       if (!isMountedRef.current) return;
-      
+
       let worksArray = [];
 
       if (Array.isArray(shelfWorksResponse)) {
@@ -455,7 +455,7 @@ export default function SearchResults() {
   const getPageTitle = () => {
     if (loading) return 'Searching...';
     if (query) return `RESULTS FOR "${query}"`;
-    
+
     // Build title based on active filters
     const parts = [];
     if (typeFilter && typeFilter !== 'user') parts.push(typeFilter.toUpperCase());
@@ -463,27 +463,27 @@ export default function SearchResults() {
     if (genreFilter) parts.push(genreFilter.toUpperCase());
     if (yearFilter) parts.push(yearFilter + '+');
     if (ratingFilter) parts.push(`${ratingFilter}★+`);
-    
+
     if (parts.length > 0) {
       return 'FILTERS:                ' + parts.join('                |                ');
     }
-    
+
     return 'BROWSE ALL';
   };
 
   // Memoized fetch results function
   const fetchResults = useCallback(async () => {
     if (!isMountedRef.current) return;
-    
+
     // Reset results immediately to prevent flash of old content
     setResults({ works: [], users: [] });
     setLoading(true);
     const searchTerm = query.trim();
-      
+
       try {
         // Prepare filters for backend - ensure consistent parameter names
         const filters = {};
-        
+
         // Handle TYPE filter - "user" is a special case for itemType, others are work types
         if (typeFilter && typeFilter !== 'Any' && typeFilter !== '') {
           if (typeFilter === 'user') {
@@ -494,7 +494,7 @@ export default function SearchResults() {
             filters.type = typeFilter;
           }
         }
-        
+
         // itemTypeFilter is no longer used since we merged it into TYPE
         if (yearFilter && yearFilter !== 'Any' && yearFilter !== '') filters.year = yearFilter;
         if (genreFilter && genreFilter !== 'Any' && genreFilter !== '') filters.genre = genreFilter;
@@ -627,7 +627,7 @@ export default function SearchResults() {
     if (!addToShelfId) return;
     const workIdStr = String(workId);
     const isInShelf = addedWorks.has(workIdStr);
-    
+
     setAddingWork(workIdStr);
     try {
       if (isInShelf) {
@@ -652,33 +652,33 @@ export default function SearchResults() {
     if (!user) {
       return;
     }
-    
+
     const workIdStr = String(workId);
     const isCurrentlyFavourited = favouritedWorks.has(workIdStr);
-    
+
     setFavouritingWork(workId);
-    
+
     try {
       let shelfId = favouritesShelfId;
-      
+
       // If we don't have the shelf ID yet, get or create it
       if (!shelfId) {
         const shelvesData = await getUserShelves(user.userId);
-        
+
         // Extract the shelves array from the response: {success: true, data: {shelves: [...]}}
-        const shelves = Array.isArray(shelvesData) 
-          ? shelvesData 
+        const shelves = Array.isArray(shelvesData)
+          ? shelvesData
           : (shelvesData.data?.shelves || shelvesData.shelves || []);
-        
+
         const favourites = await getOrCreateFavouritesShelf(user.userId, shelves);
         shelfId = favourites.shelfId;
         setFavouritesShelfId(shelfId);
       }
-      
+
       if (isCurrentlyFavourited) {
         // Remove from favourites
         await removeWorkFromShelf(shelfId, workId);
-        
+
         setFavouritedWorks(prev => {
           const newSet = new Set([...prev]);
           newSet.delete(workIdStr);
@@ -687,13 +687,13 @@ export default function SearchResults() {
       } else {
         // Add to favourites
         await addWorkToShelf(shelfId, workId);
-        
+
         setFavouritedWorks(prev => {
           const newSet = new Set([...prev, workIdStr]);
           return newSet;
         });
       }
-      
+
       setTimeout(() => {
         setFavouritingWork(null);
       }, 500);
@@ -719,7 +719,7 @@ export default function SearchResults() {
   return (
     <>
       <FilterBar />
-      
+
       {/* Fixed banner for adding to shelf on the right */}
       {addToShelfId && shelfName && (
         <div style={styles.bannerContainer}>
@@ -781,7 +781,7 @@ export default function SearchResults() {
           </div>
         </div>
       )}
-      
+
       <div className="page-container">
         <div className="page-inner">
           <main className="page-main">
@@ -829,9 +829,9 @@ export default function SearchResults() {
                   {/* Works Section */}
                   {results.works.length > 0 && (
                     <div style={{ marginBottom: 40 }}>
-                      <h2 style={{ 
-                        fontSize: 18, 
-                        fontWeight: 600, 
+                      <h2 style={{
+                        fontSize: 18,
+                        fontWeight: 600,
                         color: '#392c2cff',
                         marginBottom: 16,
                         paddingBottom: 8,
@@ -843,15 +843,14 @@ export default function SearchResults() {
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                         {results.works.map((entity, idx) => {
                           // Check if this work is favourited
-                          const isFavourited = favouritedWorks.has(String(entity.entityId));
                           const workIdStr = String(entity.entityId);
                           const isInShelf = addedWorks.has(workIdStr);
                           const isProcessingWork = addingWork === workIdStr;
-                          
+
                           return (
                           <div key={entity.entityId}>
                             <div style={{ width: '100%', display: 'flex', gap: 12, alignItems: 'flex-start', position: 'relative' }}>
-                              
+
                               {/* Heart button for Favourites - always shown */}
                               {user && (
                                 <button
@@ -890,13 +889,13 @@ export default function SearchResults() {
                                     e.currentTarget.style.background = '#9a4207c8';
                                   }}
                                 >
-                                  <FiHeart 
-                                    size={16} 
+                                  <FiHeart
+                                    size={16}
                                     fill={favouritedWorks.has(String(entity.entityId)) ? 'white' : 'none'}
                                   />
                                 </button>
                               )}
-                              
+
                               {/* Plus button for adding to shelf - only shown when in add mode */}
                               {addToShelfId && (
                                 <button
@@ -938,11 +937,11 @@ export default function SearchResults() {
                                   {isInShelf ? <FiCheck size={18} /> : <FiPlus size={18} />}
                                 </button>
                               )}
-                              
+
                               <div
                                 onClick={() => navigateAndClearFilters(`/works/${entity.entityId}`)}
-                                style={{ 
-                                  flexShrink: 0, 
+                                style={{
+                                  flexShrink: 0,
                                   cursor: 'pointer',
                                   transition: 'transform 0.2s ease, box-shadow 0.2s ease'
                                 }}
@@ -955,11 +954,11 @@ export default function SearchResults() {
                                   e.currentTarget.style.boxShadow = 'none';
                                 }}
                               >
-                                <div style={{ 
-                                  width: 96, 
-                                  height: 140, 
-                                  overflow: 'hidden', 
-                                  borderRadius: 4, 
+                                <div style={{
+                                  width: 96,
+                                  height: 140,
+                                  overflow: 'hidden',
+                                  borderRadius: 4,
                                   cursor: 'pointer',
                                   display: 'flex',
                                   alignItems: 'center',
@@ -970,11 +969,11 @@ export default function SearchResults() {
                                 </div>
                               </div>
                               <div style={{ flex: 1, padding: '8px 0', display: 'flex', flexDirection: 'column', gap: 4 }}>
-                                <h3 
+                                <h3
                                   onClick={() => navigateAndClearFilters(`/works/${entity.entityId}`)}
-                                  style={{ 
-                                    margin: 0, 
-                                    fontSize: 16, 
+                                  style={{
+                                    margin: 0,
+                                    fontSize: 16,
                                     fontWeight: 600,
                                     cursor: 'pointer',
                                     display: 'inline-block',
@@ -998,11 +997,11 @@ export default function SearchResults() {
                               </div>
                             </div>
                             {idx < results.works.length - 1 && (
-                              <div style={{ 
-                                marginTop: 22, 
-                                borderBottom: '2px solid #9a420776', 
-                                paddingBottom: 6, 
-                                marginBottom: 12 
+                              <div style={{
+                                marginTop: 22,
+                                borderBottom: '2px solid #9a420776',
+                                paddingBottom: 6,
+                                marginBottom: 12
                               }} />
                             )}
                           </div>
@@ -1015,9 +1014,9 @@ export default function SearchResults() {
                   {/* Users Section */}
                   {results.users.length > 0 && (
                     <div>
-                      <h2 style={{ 
-                        fontSize: 18, 
-                        fontWeight: 600, 
+                      <h2 style={{
+                        fontSize: 18,
+                        fontWeight: 600,
                         color: '#392c2cff',
                         marginBottom: 16,
                         paddingBottom: 8,
@@ -1032,17 +1031,17 @@ export default function SearchResults() {
                             <div style={{ width: '100%', display: 'flex', gap: 12, alignItems: 'flex-start' }}>
                               <div
                                 onClick={() => navigate(`/profile/${entity.entityId}`, { state: { prevSearch: search } })}
-                                style={{ 
-                                  flexShrink: 0, 
+                                style={{
+                                  flexShrink: 0,
                                   cursor: 'pointer'
                                 }}
                               >
-                                <div 
-                                  style={{ 
-                                    width: 96, 
-                                    height: 96, 
-                                    overflow: 'hidden', 
-                                    borderRadius: '50%', 
+                                <div
+                                  style={{
+                                    width: 96,
+                                    height: 96,
+                                    overflow: 'hidden',
+                                    borderRadius: '50%',
                                     cursor: 'pointer',
                                     display: 'flex',
                                     alignItems: 'center',
@@ -1063,11 +1062,11 @@ export default function SearchResults() {
                                 </div>
                               </div>
                               <div style={{ flex: 1, padding: '8px 0', display: 'flex', flexDirection: 'column', gap: 4 }}>
-                                <h3 
+                                <h3
                                   onClick={() => navigate(`/profile/${entity.entityId}`, { state: { prevSearch: search } })}
-                                  style={{ 
-                                    margin: 0, 
-                                    fontSize: 16, 
+                                  style={{
+                                    margin: 0,
+                                    fontSize: 16,
                                     fontWeight: 600,
                                     cursor: 'pointer',
                                     display: 'inline-block',
@@ -1088,11 +1087,11 @@ export default function SearchResults() {
                               </div>
                             </div>
                             {idx < results.users.length - 1 && (
-                              <div style={{ 
-                                marginTop: 22, 
-                                borderBottom: '2px solid #9a420776', 
-                                paddingBottom: 6, 
-                                marginBottom: 12 
+                              <div style={{
+                                marginTop: 22,
+                                borderBottom: '2px solid #9a420776',
+                                paddingBottom: 6,
+                                marginBottom: 12
                               }} />
                             )}
                           </div>

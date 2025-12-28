@@ -275,7 +275,6 @@ function WorkCardCarouselInner({
           const Wrapper = card.link ? Link : 'div';
           const wrapperProps = card.link ? { to: card.link } : {};
           const title = card.title || 'Untitled Work';
-          const badge = card.badge;
           const cardId = card.id ?? `${title}-${card.link ?? ''}`;
           const isHovered = hoveredCardId === cardId;
           const extras = renderCardExtras ? renderCardExtras(card, { isHovered }) : card.extras;

@@ -139,13 +139,13 @@ class PageErrorBoundaryClass extends React.Component {
     };
   }
 
-  static getDerivedStateFromError(error) {
+  static getDerivedStateFromError() {
     return { hasError: true };
   }
 
   componentDidCatch(error, errorInfo) {
     logger.error('Page Error Boundary caught an error:', error, errorInfo);
-    
+
     this.setState({
       error,
       errorInfo
@@ -168,11 +168,11 @@ class PageErrorBoundaryClass extends React.Component {
             <div style={styles.errorWrapper}>
               <div style={styles.errorBox}>
                 <div style={styles.errorEmoji}>😕</div>
-                
+
                 <h1 style={styles.errorHeading}>
                   Oops! This page crashed
                 </h1>
-                
+
                 <p style={styles.errorDescription}>
                   Something unexpected happened while loading this page.
                   <br />
@@ -194,7 +194,7 @@ class PageErrorBoundaryClass extends React.Component {
                   >
                     🔄 Reload Page
                   </button>
-                  
+
                   <button
                     onClick={() => window.location.href = '/'}
                     style={styles.secondaryButton}
