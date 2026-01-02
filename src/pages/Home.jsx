@@ -1,3 +1,8 @@
+/*
+ Home page.
+ Shows popular works, recent activity, and carousels.
+ Loads data on mount and keeps UI responsive.
+*/
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { getPopularWorks, getAllWorks } from '../api/works';
 import { getAllUsers, getUserRatings, getUserFollowing } from '../api/users';
@@ -42,7 +47,8 @@ const processFriendsData = async (users, allWorks, currentUserId, isMountedRef) 
   for (const user of eligibleUsers) {
     if (!isMountedRef.current) break; // Stop if component unmounted
     
-    try {
+      try {
+        // Fetch ratings for this friend and pick the most recent rated work
       const ratingsResponse = await getUserRatings(user.userId);
       
       if (!isMountedRef.current) break; // Check again after async call
@@ -135,7 +141,7 @@ const processFollowingData = async (following, allWorks, isMountedRef) => {
     }
   }
 
-  // Alternate between followed users - take one work from each in round-robin fashion
+  // Round-robin: take one work per followed user to mix the feed
   let maxWorks = Math.max(...followingRatings.map(f => f.length));
   for (let i = 0; i < maxWorks; i++) {
     for (let j = 0; j < followingRatings.length; j++) {
@@ -221,6 +227,44 @@ const PopularWorkCard = ({ work }) => (
       />
     </div>
   </Link>
+);
+/**
+ * Reusable carousel section for works with loading and empty states.
+ */
+const SectionCarousel = ({
+  title,
+  loading,
+  items,
+  emptyMessage,
+  variant = 'default',
+}) => (
+  <>
+    <h3 className="section-title" style={{ marginTop: 40 }}>
+      {title}
+    </h3>
+
+    {loading ? (
+      <WorkGridSkeleton
+        count={6}
+        columns="repeat(auto-fill, minmax(180px, 1fr))"
+      />
+    ) : items.length === 0 ? (
+    emptyMessage ? <p>{emptyMessage}</p> : null
+    ) : (
+      <HomeCarousel scrollChunk={3}>
+        {items.map(w => (
+          <div
+            key={w.workId}
+            className={`home-card ${variant}`}
+            style={{ flexShrink: 0, width: '180px' }}
+        >
+             <PopularWorkCard work={w} />
+          </div>
+
+        ))}
+      </HomeCarousel>
+    )}
+  </>
 );
 
 /* ===================== HOME PAGE FUNCTION ===================== */
@@ -400,7 +444,8 @@ export default function Home() {
   const loadPage = useCallback(async () => {
     if (!isMountedRef.current) return;
 
-    try {
+      try {
+        // Reset lists and show loading UI while fetching
       // Reset state immediately to prevent flash of old content
       setPopular([]);
       setFriends([]);
@@ -728,67 +773,46 @@ export default function Home() {
           )}
 
           {/* Popular Works */}
-          <h3 className="section-title" style={{ marginTop: 20 }}>
-            WEEK'S TOP 10
-          </h3>
+          <SectionCarousel
+  title="WEEK'S TOP 10"
+  loading={loading}
+  items={popular}
+  emptyMessage="No popular works available."
+  variant="popular"
+/>
 
-          {loading ? (
-            <WorkGridSkeleton count={6} columns="repeat(auto-fill, minmax(180px, 1fr))" />
-          ) : (
-            <HomeCarousel scrollChunk={3}>
-              {popular.map(w => (
-                <div key={w.workId} style={{ flexShrink: 0, width: '180px' }}>
-                  <PopularWorkCard work={w} />
-                </div>
-              ))}
-            </HomeCarousel>
-          )}
 
           {/* Recently Watched */}
-          {user && (
+          
             <>
-              <h3 className="section-title" style={{ marginTop: 40 }}>
-                RECENTLY WATCHED
-              </h3>
+              {user && (
+  <SectionCarousel
+    title="RECENTLY WATCHED"
+    loading={recentLoading}
+    items={recentMovies}
+    emptyMessage="No recently rated movies yet."
+    variant="movie"
+  />
+)}
 
-              {recentLoading ? (
-                <WorkGridSkeleton count={6} columns="repeat(auto-fill, minmax(180px, 1fr))" />
-              ) : recentMovies.length === 0 ? (
-                <p>No recently rated movies yet.</p>
-              ) : (
-                <HomeCarousel scrollChunk={3}>
-                  {recentMovies.map(w => (
-                    <div key={w.workId} style={{ flexShrink: 0, width: '180px' }}>
-                      <PopularWorkCard work={w} />
-                    </div>
-                  ))}
-                </HomeCarousel>
-              )}
             </>
-          )}
+          
 
           {/* Recently Played */}
-          {user && (
+          
             <>
-              <h3 className="section-title" style={{ marginTop: 40 }}>
-                RECENTLY PLAYED
-              </h3>
+              {user && (
+  <SectionCarousel
+    title="RECENTLY PLAYED"
+    loading={recentLoading}
+    items={recentMusic}
+    emptyMessage="No recently rated music yet."
+    variant="music"
+  />
+)}
 
-              {recentLoading ? (
-                <WorkGridSkeleton count={6} columns="repeat(auto-fill, minmax(180px, 1fr))" />
-              ) : recentMusic.length === 0 ? (
-                <p>No recently rated music yet.</p>
-              ) : (
-                <HomeCarousel scrollChunk={3}>
-                  {recentMusic.map(w => (
-                    <div key={w.workId} style={{ flexShrink: 0, width: '180px' }}>
-                      <PopularWorkCard work={w} />
-                    </div>
-                  ))}
-                </HomeCarousel>
-              )}
             </>
-          )}
+          
         </main>
       </div>
     </div>

@@ -7,6 +7,8 @@ import UserRatings from "../components/users/UserRatings";
 import { ProfileSkeleton } from "../components/Skeleton";
 import logger from "../utils/logger";
 import { DEFAULT_AVATAR_URL } from "../config/constants";
+import { statsStyles } from "../styles/stats";
+import BreakdownList from "../components/BreakdownList";
 
 /* ===================== PROFILE FUNCTION ===================== */
 
@@ -26,6 +28,7 @@ export default function Profile() {
   const [isFollowing, setIsFollowing] = useState(false);
   const [followLoading, setFollowLoading] = useState(false);
 
+  // Load profile data and follow status on mount
   useEffect(() => {
     const load = async () => {
       // Reset state immediately to prevent flash of old content
@@ -180,26 +183,6 @@ export default function Profile() {
     },
 
     /* ===================== STATS SECTION ===================== */
-    statCard: {
-      background: "linear-gradient(135deg, #faf6f1 0%, #f5f0ea 100%)",
-      padding: "20px 16px",
-      borderRadius: 12,
-      boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
-      flex: 1,
-      textAlign: "center",
-      border: "1px solid #efe5db",
-    },
-    statValue: {
-      fontSize: 32,
-      fontWeight: 800,
-      color: "#9a4207",
-    },
-    statLabel: {
-      fontSize: 14,
-      opacity: 0.75,
-      marginTop: 8,
-      fontWeight: 600,
-    },
 
     /* ===================== BREAKDOWN SECTION ===================== */
     breakdownHeader: {
@@ -318,13 +301,13 @@ export default function Profile() {
                 />
 
                 {/* Column 2: Username */}
-                <div style={styles.infoColumn}>
+                <div style={{ flex: 1, textAlign: 'center' }}>
                   <div style={{ ...styles.infoLabel, fontSize: 14, marginBottom: 10 }}>USERNAME</div>
                   <div style={{ ...styles.infoText, fontSize: 22 }}>{profileUser.username}</div>
                 </div>
 
                 {/* Column 3: Email Address */}
-                <div style={styles.infoColumn}>
+                <div style={{ flex: 1, textAlign: 'center' }}>
                   <div style={{ ...styles.infoLabel, fontSize: 14, marginBottom: 10 }}>EMAIL ADDRESS</div>
                   <div style={{ ...styles.infoText, fontSize: 18 }}>{profileUser.email}</div>
                 </div>
@@ -333,9 +316,9 @@ export default function Profile() {
               {/* User Stats Grid */}
               <div style={styles.statsContainer}>
                 {/* Works Rated */}
-                <div style={styles.statCard}>
-                  <div style={styles.statValue}>{Object.keys(ratings).length}</div>
-                  <div style={styles.statLabel}>Works Rated</div>
+                <div style={statsStyles.statCard}>
+                  <div style={statsStyles.statValue}>{Object.keys(ratings).length}</div>
+                  <div style={statsStyles.statLabel}>Works Rated</div>
                 </div>
 
                 {/* Stats by Type */}
@@ -344,43 +327,15 @@ export default function Profile() {
                     📊 Rating Breakdown by Type
                   </div>
                   <div style={styles.breakdownGrid}>
-                    {(() => {
-                      const typeStats = {};
-                      Object.keys(ratings).forEach(workId => {
-                        const work = works.find(w => (w.id || w.workId) === Number(workId));
-                        if (work && work.type) {
-                          if (!typeStats[work.type]) typeStats[work.type] = 0;
-                          typeStats[work.type]++;
-                        }
-                      });
-
-                      const sorted = Object.entries(typeStats).sort((a, b) => b[1] - a[1]);
-
-                      if (sorted.length === 0) {
-                        return <div style={{ gridColumn: "1 / -1", textAlign: "center", opacity: 0.6, fontSize: 13 }}>No ratings yet</div>;
-                      }
-
-                      return sorted.map(([type, count]) => (
-                        <div
-                          key={type}
-                          style={styles.breakdownCard}
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.transform = "translateY(-4px)";
-                            e.currentTarget.style.boxShadow = "0 8px 16px rgba(154, 66, 7, 0.12)";
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.transform = "none";
-                            e.currentTarget.style.boxShadow = "none";
-                          }}
-                        >
-                          <div style={styles.breakdownValue}>{count}</div>
-                          <div style={styles.breakdownLabel}>
-                            {type}
-                            {count !== 1 ? "s" : ""}
-                          </div>
-                        </div>
-                      ));
-                    })()}
+                    <BreakdownList
+                      ratings={ratings}
+                      works={works}
+                      keyName="type"
+                      emptyMessage="No ratings yet"
+                      cardStyle={styles.breakdownCard}
+                      valueStyle={styles.breakdownValue}
+                      labelStyle={styles.breakdownLabel}
+                    />
                   </div>
                 </div>
 
@@ -391,6 +346,7 @@ export default function Profile() {
                   </div>
                   <div style={styles.genresContainer}>
                     {(() => {
+                      // Count genres from the user's rated works.
                       const genreStats = {};
                       Object.keys(ratings).forEach(workId => {
                         const work = works.find(w => (w.id || w.workId) === Number(workId));

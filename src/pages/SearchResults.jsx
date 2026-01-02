@@ -1,3 +1,8 @@
+/*
+ Search results page.
+ Shows works and users that match the search query.
+ Supports adding works to shelves and quick actions.
+*/
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useLocation, useNavigate} from 'react-router-dom';
 import { getAllWorks } from '../api/works';
@@ -17,6 +22,36 @@ import {
   extractWorksFromResponse,
   extractWorkIdsFromShelf,
 } from '../utils/normalize';
+
+// Small reusable header for result items (title + subtitle/meta)
+function ResultHeader({ title, subtitle, meta, onClick }) {
+  return (
+    <>
+      <h3
+        onClick={onClick}
+        style={{
+          margin: 0,
+          fontSize: 16,
+          fontWeight: 600,
+          cursor: 'pointer',
+          display: 'inline-block',
+          width: 'fit-content'
+        }}
+        onMouseEnter={(e) => { e.currentTarget.style.textDecoration = 'underline'; }}
+        onMouseLeave={(e) => { e.currentTarget.style.textDecoration = 'none'; }}
+      >
+        {title}
+      </h3>
+      <div style={{ display: 'flex', gap: 16, alignItems: 'baseline' }}>
+        <p style={{ margin: 0, color: '#666', fontSize: 14 }}>{subtitle}</p>
+        <span style={{ margin: 0, color: '#888', fontSize: 12 }}>{meta}</span>
+      </div>
+    </>
+  );
+}
+
+// ResultHeader shows a compact title and meta info.
+// Click the title to go to the item.
 
 /* ===================== SEARCH RESULTS FUNCTION ===================== */
 
@@ -329,6 +364,9 @@ export default function SearchResults() {
       marginBottom: 12,
     },
   };
+
+  // Main search logic loads either a search result or a full catalog
+  // depending on query parameters. Results merge and are filtered.
   
   const params = new URLSearchParams(search);
   const query = params.get('q') || '';
@@ -385,6 +423,7 @@ export default function SearchResults() {
     }
   }, [user]);
 
+  // Load the user's favourites on mount (uses mounted flag)
   useEffect(() => {
     isMountedRef.current = true;
     loadFavourites();
@@ -619,6 +658,7 @@ export default function SearchResults() {
     }
   }, [query, typeFilter, yearFilter, genreFilter, ratingFilter]);
 
+  // Fetch search results when filters or query change
   useEffect(() => {
     fetchResults();
   }, [fetchResults]);
@@ -970,27 +1010,12 @@ export default function SearchResults() {
                                 </div>
                               </div>
                               <div style={{ flex: 1, padding: '8px 0', display: 'flex', flexDirection: 'column', gap: 4 }}>
-                                <h3 
+                                <ResultHeader
+                                  title={entity.title}
+                                  subtitle={entity.subtitle}
+                                  meta={`★ ${entity.rating.toFixed(1)}`}
                                   onClick={() => navigateAndClearFilters(`/works/${entity.entityId}`)}
-                                  style={{ 
-                                    margin: 0, 
-                                    fontSize: 16, 
-                                    fontWeight: 600,
-                                    cursor: 'pointer',
-                                    display: 'inline-block',
-                                    width: 'fit-content'
-                                  }}
-                                  onMouseEnter={(e) => {
-                                    e.currentTarget.style.textDecoration = 'underline';
-                                  }}
-                                  onMouseLeave={(e) => {
-                                    e.currentTarget.style.textDecoration = 'none';
-                                  }}
-                                >{entity.title}</h3>
-                                <div style={{ display: 'flex', gap: 16, alignItems: 'baseline' }}>
-                                  <p style={{ margin: 0, color: '#666', fontSize: 14 }}>{entity.subtitle}</p>
-                                  <span style={{ margin: 0, color: '#888', fontSize: 12 }}>★ {entity.rating.toFixed(1)}</span>
-                                </div>
+                                />
                                 <p style={{ margin: 0, color: '#888', fontSize: 13 }}>{entity.meta}</p>
                                 {entity.description && (
                                   <p style={{ margin: 0, color: '#555', fontSize: 13, lineHeight: 1.4, marginTop: 4 }}>{entity.description}</p>
@@ -1063,27 +1088,12 @@ export default function SearchResults() {
                                 </div>
                               </div>
                               <div style={{ flex: 1, padding: '8px 0', display: 'flex', flexDirection: 'column', gap: 4 }}>
-                                <h3 
+                                <ResultHeader
+                                  title={entity.title}
+                                  subtitle={entity.subtitle}
+                                  meta={entity.meta}
                                   onClick={() => navigate(`/profile/${entity.entityId}`, { state: { prevSearch: search } })}
-                                  style={{ 
-                                    margin: 0, 
-                                    fontSize: 16, 
-                                    fontWeight: 600,
-                                    cursor: 'pointer',
-                                    display: 'inline-block',
-                                    width: 'fit-content'
-                                  }}
-                                  onMouseEnter={(e) => {
-                                    e.currentTarget.style.textDecoration = 'underline';
-                                  }}
-                                  onMouseLeave={(e) => {
-                                    e.currentTarget.style.textDecoration = 'none';
-                                  }}
-                                >{entity.title}</h3>
-                                <div style={{ display: 'flex', gap: 16, alignItems: 'baseline' }}>
-                                  <p style={{ margin: 0, color: '#666', fontSize: 14 }}>{entity.subtitle}</p>
-                                  <span style={{ margin: 0, color: '#888', fontSize: 12 }}>{entity.meta}</span>
-                                </div>
+                                />
                                 <p style={{ margin: 0, color: '#888', fontSize: 13 }}>User Account</p>
                               </div>
                             </div>

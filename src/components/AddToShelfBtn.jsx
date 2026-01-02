@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { FiHeart, FiX } from 'react-icons/fi';
 import { addWorkToShelf, getOrCreateFavouritesShelf } from '../api/shelves';
+import { modalStyles } from '../styles/modal';
 
 /* ===================== UI STYLES ===================== */
 const styles = {
@@ -22,39 +23,7 @@ const styles = {
     background: '#7d3506a0',
     transform: 'scale(1.05)'
   },
-  modal: {
-    position: 'fixed',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    background: 'rgba(0,0,0,0.5)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    zIndex: 1000
-  },
-  modalContent: {
-    background: 'white',
-    borderRadius: 12,
-    padding: 30,
-    maxWidth: 500,
-    width: '90%',
-    boxShadow: '0 4px 20px rgba(0,0,0,0.3)'
-  },
-  modalHeader: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 20,
-    paddingBottom: 15,
-    borderBottom: '2px solid #eee'
-  },
-  modalTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#392c2c'
-  },
+  
   closeButton: {
     background: 'none',
     border: 'none',
@@ -112,6 +81,13 @@ const styles = {
     border: '1px solid #66bb6a'
   }
 };
+
+// reuse shared modal styles
+styles.modal = modalStyles.modal;
+styles.modalContent = modalStyles.modalContent;
+// preserve original AddToShelfBtn header thickness (was 2px in original file)
+styles.modalHeader = { ...modalStyles.modalHeader, borderBottom: '2px solid #eee' };
+styles.modalTitle = modalStyles.modalTitle;
 
 /**
  * Component to add a work to a shelf

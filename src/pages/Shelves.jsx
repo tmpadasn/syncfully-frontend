@@ -1,3 +1,10 @@
+/*
+ Shelves page component.
+ Shows the user's shelves.
+ Each shelf can expand to show its works.
+ Work details load when a shelf opens.
+ Supports create, edit, and delete actions.
+*/
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import useAuth from '../hooks/useAuth';
@@ -6,6 +13,7 @@ import { getWork } from '../api/works';
 import { getUserRatings } from '../api/users';
 import { removeWorkFromShelf } from '../api/shelves';
 import { FiPlus, FiTrash2, FiEdit2, FiX, FiChevronDown, FiHeart } from 'react-icons/fi';
+import { modalStyles } from '../styles/modal';
 import WorkCardCarousel from '../components/WorkCardCarousel';
 import { Skeleton } from '../components/Skeleton';
 import logger from '../utils/logger';
@@ -13,6 +21,26 @@ import logger from '../utils/logger';
 /* ===================== UI STYLES ===================== */
 // Styles for the Shelves page
 const styles = {
+
+    shelfSection: {
+    marginBottom: 24,
+    background: '#fff',
+    borderRadius: 16,
+    boxShadow: '0 8px 24px rgba(0,0,0,0.08)',
+    border: '1px solid #e0e0e0',
+    overflow: 'hidden',
+  },
+
+  favouritesShelf: {
+    marginBottom: 32,
+    background: '#fff',
+    borderRadius: 18,
+    boxShadow: '0 10px 28px rgba(154, 66, 7, 0.18)',
+    border: '2px solid #9a4207c8',
+    overflow: 'hidden',
+  },
+
+
   container: {
     maxWidth: 1200,
     margin: '0 auto',
@@ -26,11 +54,6 @@ const styles = {
     paddingBottom: 20,
     borderBottom: '2px solid #9a4207c8'
   },
-  title: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: '#392c2c'
-  },
   createButton: {
     display: 'flex',
     alignItems: 'center',
@@ -43,21 +66,6 @@ const styles = {
     cursor: 'pointer',
     fontSize: 16,
     fontWeight: 'bold'
-  },
-  shelfSection: {
-    marginBottom: 30,
-    background: '#f9f9f9',
-    borderRadius: 12,
-    border: '1px solid #e0e0e0',
-    overflow: 'hidden'
-  },
-  favouritesShelf: {
-    marginBottom: 30,
-    background: 'linear-gradient(135deg, #fff5e6 0%, #ffe8cc 100%)',
-    borderRadius: 12,
-    border: '2px solid #9a4207c8',
-    overflow: 'hidden',
-    boxShadow: '0 4px 12px rgba(154, 66, 7, 0.15)'
   },
   shelfHeader: {
     display: 'flex',
@@ -147,7 +155,7 @@ const styles = {
   },
   workCard: {
     background: '#9a4207c8',
-    borderRadius: 8,
+    borderRadius: 12,
     padding: 12,
     overflow: 'hidden',
     transition: 'transform 0.12s ease, box-shadow 0.12s ease',
@@ -262,39 +270,7 @@ const styles = {
     marginBottom: 20,
     border: '1px solid #66bb6a'
   },
-  modal: {
-    position: 'fixed',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    background: 'rgba(0,0,0,0.5)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    zIndex: 1000
-  },
-  modalContent: {
-    background: 'white',
-    borderRadius: 12,
-    padding: 30,
-    maxWidth: 500,
-    width: '90%',
-    boxShadow: '0 4px 20px rgba(0,0,0,0.3)'
-  },
-  modalHeader: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 20,
-    paddingBottom: 15,
-    borderBottom: '1px solid #eee'
-  },
-  modalTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#392c2c'
-  },
+  
   closeButton: {
     background: 'none',
     border: 'none',
@@ -415,6 +391,12 @@ const styles = {
   }
 };
 
+// reuse shared modal styles
+styles.modal = modalStyles.modal;
+styles.modalContent = modalStyles.modalContent;
+styles.modalHeader = modalStyles.modalHeader;
+styles.modalTitle = modalStyles.modalTitle;
+
 /* ===================== SHELVES FUNCTION ===================== */
 
 export default function Shelves() {
@@ -445,7 +427,7 @@ export default function Shelves() {
     }
   }, [loading, shelves, isGuest, getOrCreateFavourites]);
 
-  // Sort shelves to keep Favourites at the top and remove duplicates
+  // Put Favourites shelf first and remove duplicates
   const sortedShelves = [...shelves]
     .filter((shelf, index, self) => {
       // Remove duplicate Favourites shelves (keep only the first one)
@@ -464,7 +446,7 @@ export default function Shelves() {
       return 0;
     });
 
-  // Load user ratings once
+  // Load user's ratings once to avoid extra calls
   const loadUserRatings = useCallback(async () => {
     if (!user?.userId || !isMountedRef.current) return;
     
@@ -491,6 +473,7 @@ export default function Shelves() {
     };
   }, [loadUserRatings]);
 
+  // Open shelf. Load works when the shelf is opened.
   const toggleShelf = async (shelfId) => {
     const newState = !expandedShelves[shelfId];
     setExpandedShelves({ ...expandedShelves, [shelfId]: newState });
@@ -621,7 +604,8 @@ export default function Shelves() {
   };
 
   const handleRemoveFromShelf = async (shelfId, workId) => {
-    // If this work is already marked for removal, confirm and remove it
+    // First click marks for removal.
+    // Second click removes the work.
     if (removingWork?.shelfId === shelfId && removingWork?.workId === workId) {
       try {
         await removeWorkFromShelf(shelfId, workId);

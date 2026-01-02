@@ -3,6 +3,9 @@
  * Handles data transformation and standardization across the application
  */
 
+// Usage: import normalization helpers and call before rendering data.
+// Example: const work = normalizeWork(rawWork);
+
 import { DEFAULT_AVATAR_URL } from '../config/constants';
 
 /* ===================== WORK NORMALIZATION ===================== */

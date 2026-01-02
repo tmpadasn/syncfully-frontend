@@ -1,9 +1,15 @@
+/*
+ Account page.
+ Shows user profile, stats, followers, and rating history.
+ Loads user data and related lists on mount.
+*/
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import useAuth from "../hooks/useAuth";
 import { Skeleton } from "../components/Skeleton";
 import logger from "../utils/logger";
 import { DEFAULT_AVATAR_URL } from "../config/constants";
+import { statsStyles } from "../styles/stats";
 
 import { 
   getUserById, 
@@ -15,6 +21,7 @@ import {
 
 import { getAllWorks } from "../api/works";
 import UserRatings from "../components/users/UserRatings";
+import BreakdownList from "../components/BreakdownList";
 
 /* ===================== ACCOUNT PAGE FUNCTION ===================== */
 
@@ -33,7 +40,7 @@ export default function Account() {
   // Fetch user data on mount
   useEffect(() => {
     if (authLoading || !user) return;
-
+    // Load user and lists in one request. This reduces wait time.
     const load = async () => {
       setLoading(true);
 
@@ -59,10 +66,9 @@ export default function Account() {
 
         setBackendUser(u);
 
-        // Backend returns an object map of ratings keyed by workId
+        // Ratings come as a map keyed by work id
         const ratingsObject = ratingsResponse?.ratings || ratingsResponse || {};
-        
-        // Filter out work IDs that don't exist in the works list
+        // Keep only ratings for works that exist in the catalog
         const validWorks = allWorks?.works || [];
         const validWorkIds = new Set(validWorks.map(w => w.id || w.workId));
         const filteredRatings = Object.keys(ratingsObject).reduce((acc, workId) => {
@@ -263,18 +269,7 @@ export default function Account() {
       gap: 12
     },
     userCard: {
-      background: "linear-gradient(135deg, #fff9f5 0%, #fef5f0 100%)",
-      padding: "16px",
-      borderRadius: 10,
-      border: "1.5px solid #f0e0d8",
-      textAlign: "center",
-      transition: "all 0.2s ease",
-      cursor: "pointer",
-    },
-    userAvatar: {
-      width: "60px",
-      height: "60px",
-      borderRadius: "50%",
+        // Removed stat styles
       objectFit: "cover",
       border: "2px solid #e8dccf",
       marginBottom: "8px",
@@ -376,65 +371,37 @@ export default function Account() {
                 {/* Column 2: Username */}
                 <div style={{ flex: 1, textAlign: 'center' }}>
                   <div style={{ ...styles.infoLabel, fontSize: 14, marginBottom: 10 }}>USERNAME</div>
-                  <div style={{ ...styles.infoText, fontSize: 22 }}>{backendUser.username}</div>
+                  <div style={{ ...styles.infoText, fontSize: 22, fontWeight: 600 }}>{backendUser.username}</div>
                 </div>
 
                 {/* Column 3: Email Address */}
                 <div style={{ flex: 1, textAlign: 'center' }}>
                   <div style={{ ...styles.infoLabel, fontSize: 14, marginBottom: 10 }}>EMAIL ADDRESS</div>
-                  <div style={{ ...styles.infoText, fontSize: 18 }}>{backendUser.email}</div>
+                  <div style={{ ...styles.infoText, fontSize: 18, fontWeight: 600 }}>{backendUser.email}</div>
                 </div>
               </div>
 
               {/* User Stats Grid */}
               <div style={styles.statsGrid}>
-                {/* Works Rated */}
-                <div style={styles.statCard}>
-                  <div style={styles.statValue}>{Object.keys(ratings).length}</div>
-                  <div style={styles.statLabel}>Works Rated</div>
-                </div>
+                  {/* Works Rated */}
+                  <div style={styles.statCard}>
+                    <div style={styles.statValue}>{Object.keys(ratings).length}</div>
+                    <div style={styles.statLabel}>Works Rated</div>
+                  </div>
 
                 {/* Stats by Type */}
                 <div>
                   <div style={styles.sectionLabel}>📊 Rating Breakdown by Type</div>
                   <div style={styles.breakdownGrid}>
-                    {(() => {
-                      const typeStats = {};
-                      Object.keys(ratings).forEach(workId => {
-                        const work = works.find(w => (w.id || w.workId) === Number(workId));
-                        if (work && work.type) {
-                          if (!typeStats[work.type]) typeStats[work.type] = 0;
-                          typeStats[work.type]++;
-                        }
-                      });
-                      
-                      const sorted = Object.entries(typeStats).sort((a, b) => b[1] - a[1]);
-                      
-                      if (sorted.length === 0) {
-                        return <div style={styles.emptyState}>No ratings yet</div>;
-                      }
-                      
-                      return sorted.map(([type, count]) => (
-                        <div 
-                          key={type} 
-                          style={styles.breakdownCard}
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.transform = "translateY(-4px)";
-                            e.currentTarget.style.boxShadow = "0 8px 16px rgba(154, 66, 7, 0.12)";
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.transform = "none";
-                            e.currentTarget.style.boxShadow = "none";
-                          }}
-                        >
-                          <div style={styles.breakdownValue}>{count}</div>
-                          <div style={styles.breakdownLabel}>
-                            {type}
-                            {count !== 1 ? "s" : ""}
-                          </div>
-                        </div>
-                      ));
-                    })()}
+                    <BreakdownList
+                      ratings={ratings}
+                      works={works}
+                      keyName="type"
+                      emptyMessage="No ratings yet"
+                      cardStyle={styles.breakdownCard}
+                      valueStyle={styles.breakdownValue}
+                      labelStyle={styles.breakdownLabel}
+                    />
                   </div>
                 </div>
 
@@ -443,6 +410,7 @@ export default function Account() {
                   <div style={styles.sectionLabel}>🎭 Most Rated Genres</div>
                   <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                     {(() => {
+                      // Count genres from rated works. This runs in the browser.
                       const genreStats = {};
                       Object.keys(ratings).forEach(workId => {
                         const work = works.find(w => (w.id || w.workId) === Number(workId));

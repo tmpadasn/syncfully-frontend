@@ -399,6 +399,7 @@ export default function WorkDetails() {
     }
   }, [workId]);
 
+  // Load work details, ratings, and similar works on mount
   useEffect(() => {
     isMountedRef.current = true;
     loadWorkData();
@@ -498,22 +499,7 @@ export default function WorkDetails() {
   if (loading) return <WorkDetailsSkeleton />;
   if (!work) return <p>Work not found.</p>;
 
-  const messageBox = (type) => ({
-    padding: '12px 16px',
-    marginBottom: 16,
-    borderRadius: 8,
-    fontSize: 14,
-    fontWeight: 500,
-    ...(type === 'success' ? {
-      border: '1px solid #c3e6cb',
-      background: '#d4edda',
-      color: '#155724'
-    } : {
-      border: '1px solid #f5c6cb',
-      background: '#f8d7da',
-      color: '#721c24'
-    })
-  });
+  
 
   // RETURN WORK DETAILS PAGE LAYOUT
   return (
