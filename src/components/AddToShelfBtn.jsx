@@ -98,8 +98,7 @@ export default function AddToShelfBtn({ workId, userId, shelves, onSuccess }) {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState(null);
   const [availableShelves, setAvailableShelves] = useState([]);
-  const [focusedIndex, setFocusedIndex] = useState(-1);
-  
+
   // Refs for focus management
   const triggerButtonRef = useRef(null);
   const modalRef = useRef(null);
@@ -109,8 +108,7 @@ export default function AddToShelfBtn({ workId, userId, shelves, onSuccess }) {
   useEffect(() => {
     if (showModal && shelves) {
       setAvailableShelves(shelves);
-      setFocusedIndex(-1);
-      
+
       // Focus the close button when modal opens
       setTimeout(() => {
         closeButtonRef.current?.focus();
@@ -173,7 +171,7 @@ export default function AddToShelfBtn({ workId, userId, shelves, onSuccess }) {
     try {
       await addWorkToShelf(shelfId, workId);
       setMessage({ type: 'success', text: 'Work added to shelf!' });
-      
+
       setTimeout(() => {
         closeModal();
         if (onSuccess) onSuccess();
@@ -193,9 +191,9 @@ export default function AddToShelfBtn({ workId, userId, shelves, onSuccess }) {
       // Get or create Favourites shelf
       const favourites = await getOrCreateFavouritesShelf(userId, availableShelves);
       await addWorkToShelf(favourites.shelfId, workId);
-      
+
       setMessage({ type: 'success', text: 'Added to Favourites!' });
-      
+
       setTimeout(() => {
         closeModal();
         if (onSuccess) onSuccess();
@@ -229,23 +227,23 @@ export default function AddToShelfBtn({ workId, userId, shelves, onSuccess }) {
       </button>
 
       {showModal && (
-        <div 
-          style={styles.modal} 
+        <div
+          style={styles.modal}
           onClick={closeModal}
           role="dialog"
           aria-modal="true"
           aria-labelledby="modal-title"
         >
-          <div 
+          <div
             ref={modalRef}
-            style={styles.modalContent} 
+            style={styles.modalContent}
             onClick={(e) => e.stopPropagation()}
           >
             <div style={styles.modalHeader}>
               <h2 id="modal-title" style={styles.modalTitle}>Add to Shelf</h2>
-              <button 
+              <button
                 ref={closeButtonRef}
-                style={styles.closeButton} 
+                style={styles.closeButton}
                 onClick={closeModal}
                 aria-label="Close dialog"
               >
@@ -254,7 +252,7 @@ export default function AddToShelfBtn({ workId, userId, shelves, onSuccess }) {
             </div>
 
             {message && (
-              <div 
+              <div
                 style={message.type === 'error' ? styles.errorMessage : styles.successMessage}
                 role="alert"
                 aria-live="polite"
@@ -284,7 +282,7 @@ export default function AddToShelfBtn({ workId, userId, shelves, onSuccess }) {
                     shelf => shelf.name?.toLowerCase() === 'favourites' || shelf.name?.toLowerCase() === 'favorite'
                   );
                   const favouritesCount = favouritesShelf?.works?.length || 0;
-                  
+
                   return (
                     <button
                       ref={firstFocusableRef}
@@ -319,9 +317,9 @@ export default function AddToShelfBtn({ workId, userId, shelves, onSuccess }) {
                   if (shelfName === 'favorite' || shelfName === 'favourites') {
                     return null;
                   }
-                  
+
                   const workCount = shelf.works?.length || 0;
-                  
+
                   return (
                     <button
                       key={shelf.shelfId}

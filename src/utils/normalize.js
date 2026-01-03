@@ -57,8 +57,8 @@ export const normalizeWorkWithMeta = (work) => {
   const normalized = normalizeWork(work);
   if (!normalized) return null;
 
-  const genresArray = Array.isArray(normalized.genres) 
-    ? normalized.genres 
+  const genresArray = Array.isArray(normalized.genres)
+    ? normalized.genres
     : [];
 
   return {
@@ -130,17 +130,17 @@ export const normalizeGenres = (genres) => {
 
 export const extractWorksFromResponse = (response) => {
   if (!response) return [];
-  
+
   // Already an array
   if (Array.isArray(response)) return response;
-  
+
   // Check common nested structures
   const data = response.data || response;
-  
+
   if (Array.isArray(data)) return data;
   if (data.works && Array.isArray(data.works)) return data.works;
   if (data.items && Array.isArray(data.items)) return data.items;
-  
+
   return [];
 };
 
@@ -152,14 +152,14 @@ export const extractWorksFromResponse = (response) => {
 
 export const extractRatingsFromResponse = (response) => {
   if (!response) return [];
-  
+
   if (Array.isArray(response)) return response;
-  
+
   const data = response.data || response;
-  
+
   if (Array.isArray(data)) return data;
   if (data.ratings && Array.isArray(data.ratings)) return data.ratings;
-  
+
   return [];
 };
 
@@ -171,14 +171,14 @@ export const extractRatingsFromResponse = (response) => {
 
 export const extractShelvesFromResponse = (response) => {
   if (!response) return [];
-  
+
   if (Array.isArray(response)) return response;
-  
+
   const data = response.data || response;
-  
+
   if (Array.isArray(data)) return data;
   if (data.shelves && Array.isArray(data.shelves)) return data.shelves;
-  
+
   return [];
 };
 
@@ -200,7 +200,7 @@ export const extractWorkFromResponse = (response) => {
   if (data.work) {
     return data.work;
   }
-  
+
   // Check if data itself is a work object (has workId or id)
   if (data.workId || data.id) {
     return data;
@@ -330,7 +330,7 @@ export const extractWorkIdsFromShelf = (works) => {
     const nestedWork = typeof w.work === 'object' ? w.work : null;
     const nestedWorkId = nestedWork ? (nestedWork.id || nestedWork._id) : null;
     const id = w.id || w.workId || w._id || w.entityId || nestedWorkId;
-    
+
     return id ? String(id) : null;
   }).filter(Boolean);
 
@@ -347,7 +347,7 @@ export const extractWorkIdsFromShelf = (works) => {
 export const mergeUniqueWorks = (primary, secondary) => {
   const seen = new Set(primary.map(work => work.entityId || work.workId || work.id));
   const merged = [...primary];
-  
+
   secondary.forEach(work => {
     const id = work.entityId || work.workId || work.id;
     if (work && id && !seen.has(id)) {
@@ -355,7 +355,7 @@ export const mergeUniqueWorks = (primary, secondary) => {
       merged.push(work);
     }
   });
-  
+
   return merged;
 };
 
@@ -400,7 +400,7 @@ export const applyWorkFilters = (works, filters) => {
   if (!Array.isArray(works)) return [];
 
   const { type, genre, year, rating } = filters;
-  
+
   const genreFilterValue = genre ? String(genre).toLowerCase() : '';
   const ratingFilterValue = rating ? Number(rating) : null;
   const yearFilterValue = year ? Number(year) : null;
@@ -419,7 +419,7 @@ export const applyWorkFilters = (works, filters) => {
 
     // Genre filter
     if (genreFilterValue) {
-      const workGenres = Array.isArray(work.genres) 
+      const workGenres = Array.isArray(work.genres)
         ? work.genres.map(g => g.toLowerCase())
         : [];
       if (!workGenres.some(g => g === genreFilterValue)) {
@@ -454,6 +454,6 @@ export const applyWorkFilters = (works, filters) => {
  * @param {*} output - Output data
  */
 
-export const logNormalization = (context, input, output) => {
+export const logNormalization = () => {
   // Debug logging disabled for production
 };

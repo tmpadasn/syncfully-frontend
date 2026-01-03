@@ -84,13 +84,6 @@ export default function Toast({ message, onClose, duration = 4000, link }) {
     return () => clearTimeout(timer);
   }, [onClose, duration]);
 
-  const handleClick = () => {
-    if (link) {
-      navigate(link);
-      onClose();
-    }
-  };
-
   const handleIconClick = (e) => {
     e.stopPropagation();
     if (link) {
