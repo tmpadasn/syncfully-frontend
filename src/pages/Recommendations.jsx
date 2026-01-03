@@ -20,6 +20,8 @@ import {
 
 /* ===================== RECOMMENDATIONS FUNCTION ===================== */
 
+// Recommendations page component.
+// Shows personalized picks and fallbacks when no backend data present.
 export default function Recommendations() {
   useNavigationWithClearFilters();
   const navigate = useNavigate();

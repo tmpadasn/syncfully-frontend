@@ -158,6 +158,11 @@ const styles = {
 
 /* ===================== LOGIN FUNCTION ===================== */
 
+// Login component
+// Responsible for presenting login/signup UI, validating simple inputs,
+// and delegating auth calls to the Auth hook. Keeps local form state
+// and sets a short-lived flag on successful auth so other pages can show
+// a welcome message.
 export default function Login() {
   const { login, signup } = useAuth();
   const location = useLocation();
@@ -213,7 +218,7 @@ export default function Login() {
 
         await login(identifier, password);
       } else {
-        // Validate signup inputs
+        // Basic signup validation — ensure required fields are present
         if (!username.trim()) {
           setError("Please enter a username.");
           setLoading(false);
@@ -224,7 +229,7 @@ export default function Login() {
           setLoading(false);
           return;
         }
-        // Email format validation
+        // Simple email format check to catch obvious typos early
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(email.trim())) {
           setError("Please enter a valid email address.");
@@ -237,10 +242,13 @@ export default function Login() {
           return;
         }
 
+        // Auth hook handles server calls and error translation
         await signup({ username, email, password });
       }
 
-      // Set flag for fresh login
+      // Mark that the user just logged in so the landing page can show
+      // a brief welcome message. This avoids coupling the auth flow with
+      // the global UI directly.
       sessionStorage.setItem(STORAGE_KEY_JUST_LOGGED_IN, 'true');
       navigate("/");
     } catch (err) {

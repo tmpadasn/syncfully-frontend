@@ -1,3 +1,4 @@
+/* WorkCardCarousel: carousel specialized for work cards; preserves hover and badge presentation. */
 import { useState } from 'react';
 import useHorizontalScroll from '../hooks/useHorizontalScroll';
 import { getScrollButtonHandlers } from '../utils/scrollButtonHandlers';
@@ -162,6 +163,7 @@ const styles = {
 
 /* ===================== ANIMATIONS ===================== */
 const hideScrollbarCSS = sharedHideScrollbar;
+/* Inner: manages hover state and attaches horizontal scroll hook. */
 function WorkCardCarouselInner({
   cards = [],
   emptyMessage = 'No items yet.',
@@ -290,7 +292,10 @@ function WorkCardCarouselInner({
   );
 }
 
-// Wrap with ErrorBoundary to prevent carousel crashes from breaking the entire page
+/**
+ * Public wrapper that protects the carousel with an ErrorBoundary.
+ * This prevents a failing card render from crashing the entire page.
+ */
 export default function WorkCardCarousel(props) {
   return (
     <ErrorBoundary

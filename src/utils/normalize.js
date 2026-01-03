@@ -4,7 +4,7 @@
  */
 
 // Usage: import normalization helpers and call before rendering data.
-// Example: const work = normalizeWork(rawWork);
+
 
 import { DEFAULT_AVATAR_URL } from '../config/constants';
 
@@ -455,5 +455,7 @@ export const applyWorkFilters = (works, filters) => {
  */
 
 export const logNormalization = (context, input, output) => {
-  // Debug logging disabled for production
+  // Intentionally left as a no-op helper.
+  // When needed, this can be wired to the app logger to emit
+  // debug information about normalization during development.
 };

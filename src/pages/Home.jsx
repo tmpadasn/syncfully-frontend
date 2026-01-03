@@ -12,6 +12,7 @@ import useNavigationWithClearFilters from '../hooks/useNavigationWithClearFilter
 import useAuth from '../hooks/useAuth';
 import { WorkGridSkeleton, FriendGridSkeleton } from '../components/Skeleton';
 import HomeCarousel from '../components/HomeCarousel';
+import FeatureIcon from '../components/FeatureIcon';
 import logger from '../utils/logger';
 import {
   extractWorksFromResponse,
@@ -269,6 +270,9 @@ const SectionCarousel = ({
 
 /* ===================== HOME PAGE FUNCTION ===================== */
 
+// Home page component.
+// Aggregates multiple feeds (popular, friends, following) on one page.
+// Loads several endpoints in a controlled way to keep UI responsive.
 export default function Home() {
   useNavigationWithClearFilters();
 
@@ -441,6 +445,8 @@ export default function Home() {
   }, []);
 
   // Memoized load page function
+  // Loads popular works and optional social feeds in parallel.
+  // Uses `isMountedRef` to avoid state updates after unmount.
   const loadPage = useCallback(async () => {
     if (!isMountedRef.current) return;
 
@@ -675,76 +681,25 @@ export default function Home() {
                   marginTop: 40,
                   flexWrap: 'wrap'
                 }}>
-                  <div style={{ textAlign: 'center', maxWidth: 200 }}>
-                    <div style={{ 
-                      fontSize: 36, 
-                      marginBottom: 12,
-                      width: 60,
-                      height: 60,
-                      margin: '0 auto 12px',
-                      background: 'rgba(255, 255, 255, 0.2)',
-                      borderRadius: '50%',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      color: '#fff'
-                    }}>
-                      <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="currentColor" />
-                      </svg>
-                    </div>
-                    <div style={{ color: '#fff', fontSize: 14, fontWeight: 600 }}>
-                      Personalized Recommendations
-                    </div>
-                  </div>
-                  <div style={{ textAlign: 'center', maxWidth: 200 }}>
-                    <div style={{ 
-                      fontSize: 36, 
-                      marginBottom: 12,
-                      width: 60,
-                      height: 60,
-                      margin: '0 auto 12px',
-                      background: 'rgba(255, 255, 255, 0.2)',
-                      borderRadius: '50%',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      color: '#fff'
-                    }}>
-                      <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
-                        <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
-                      </svg>
-                    </div>
-                    <div style={{ color: '#fff', fontSize: 14, fontWeight: 600 }}>
-                      Track Your Collection
-                    </div>
-                  </div>
-                  <div style={{ textAlign: 'center', maxWidth: 200 }}>
-                    <div style={{ 
-                      fontSize: 36, 
-                      marginBottom: 12,
-                      width: 60,
-                      height: 60,
-                      margin: '0 auto 12px',
-                      background: 'rgba(255, 255, 255, 0.2)',
-                      borderRadius: '50%',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      color: '#fff'
-                    }}>
-                      <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-                        <circle cx="9" cy="7" r="4" />
-                        <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-                        <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-                      </svg>
-                    </div>
-                    <div style={{ color: '#fff', fontSize: 14, fontWeight: 600 }}>
-                      See Friends' Favorites
-                    </div>
-                  </div>
+                  <FeatureIcon label="Personalized Recommendations">
+                    <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="currentColor" />
+                    </svg>
+                  </FeatureIcon>
+                  <FeatureIcon label="Track Your Collection">
+                    <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+                      <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+                    </svg>
+                  </FeatureIcon>
+                  <FeatureIcon label="See Friends' Favorites">
+                    <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                      <circle cx="9" cy="7" r="4" />
+                      <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                      <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                    </svg>
+                  </FeatureIcon>
                 </div>
               </div>
             </div>

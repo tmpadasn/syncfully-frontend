@@ -1,5 +1,4 @@
-// Shared style tokens for carousels.
-// Use these to keep carousel UI consistent.
+/* Carousel UI tokens: shared layout and control styles for horizontal carousels. */
 export const carouselWrapper = {
   position: 'relative',
   display: 'flex',
@@ -7,6 +6,7 @@ export const carouselWrapper = {
   gap: '12px',
 };
 
+/* Scroll button style generator; reflects enabled/disabled affordance. */
 export const scrollButton = (isEnabled) => ({
   flexShrink: 0,
   background: isEnabled ? 'rgba(70, 40, 20, 0.9)' : 'rgba(70, 40, 20, 0.3)',
@@ -37,6 +37,7 @@ export const scrollContainer = {
   scrollBehavior: 'smooth',
 };
 
+/* Inline CSS fragment to suppress WebKit scrollbars (applied locally). */
 export const hideScrollbarCSS = `
   div::-webkit-scrollbar { display: none; }
 `;

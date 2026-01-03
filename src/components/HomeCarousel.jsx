@@ -1,3 +1,4 @@
+/* HomeCarousel: generic horizontal carousel encapsulating scroll state and controls. */
 import { useMemo } from 'react';
 import ErrorBoundary from './ErrorBoundary';
 import useHorizontalScroll from '../hooks/useHorizontalScroll';
@@ -29,8 +30,8 @@ const styles = {
 
 /* ===================== ANIMATIONS ===================== */
 const hideScrollbarCSS = sharedHideScrollbar;
+/* Memoize children and attach horizontal scroll hook to container. */
 function HomeCarouselInner({ children, scrollChunk = 3 }) {
-  // use memo to avoid passing a new children reference on each render
   const childrenDep = useMemo(() => children, [children]);
   const { scrollContainerRef, canScrollLeft, canScrollRight, scrollBy } = useHorizontalScroll({ scrollChunk, deps: [childrenDep] });
   const leftHandlers = getScrollButtonHandlers(canScrollLeft);
@@ -66,6 +67,10 @@ function HomeCarouselInner({ children, scrollChunk = 3 }) {
   );
 }
 
+/**
+ * Public wrapper that adds an ErrorBoundary.
+ * Keeps the page resilient if a single carousel fails to render.
+ */
 export default function HomeCarousel(props) {
   return (
     <ErrorBoundary

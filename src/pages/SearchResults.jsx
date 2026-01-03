@@ -55,6 +55,8 @@ function ResultHeader({ title, subtitle, meta, onClick }) {
 
 /* ===================== SEARCH RESULTS FUNCTION ===================== */
 
+// Search results page component.
+// Merges server search results with client-side filters and shelf state.
 export default function SearchResults() {
   const { search } = useLocation();
   const navigate = useNavigate();
@@ -511,6 +513,8 @@ export default function SearchResults() {
   };
 
   // Memoized fetch results function
+  // Fetches data, applies client-side filters, and normalizes results.
+  // Designed to avoid duplicate backend calls by using memoization.
   const fetchResults = useCallback(async () => {
     if (!isMountedRef.current) return;
     

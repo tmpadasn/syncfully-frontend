@@ -1,3 +1,4 @@
+/* FilterBar: client-side filter controls populated from backend work data. */
 import { useRef, useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { FiChevronDown, FiBook, FiMusic, FiFilm } from 'react-icons/fi';

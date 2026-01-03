@@ -1,3 +1,4 @@
+/* Header: primary navigation bar with search and profile affordances. */
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { FiSearch, FiLogIn, FiZap, FiGrid, FiLogOut } from "react-icons/fi";
 import { useState, useEffect, useRef } from 'react';

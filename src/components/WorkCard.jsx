@@ -1,3 +1,4 @@
+/* WorkCard: presentational component for a single work (cover, meta, link). */
 import { Link } from 'react-router-dom';
 import ErrorBoundary from './ErrorBoundary';
 

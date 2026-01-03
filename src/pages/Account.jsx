@@ -25,6 +25,8 @@ import BreakdownList from "../components/BreakdownList";
 
 /* ===================== ACCOUNT PAGE FUNCTION ===================== */
 
+// Account page component.
+// Shows profile, stats, and lists. Keeps related data grouped to reduce re-fetches.
 export default function Account() {
   const { user, logout, authLoading } = useAuth();
   const navigate = useNavigate();

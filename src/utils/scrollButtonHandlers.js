@@ -1,5 +1,4 @@
-// Small helpers for carousel scroll button hover effects.
-// Use these when rendering previous/next buttons.
+/* Returns mouse handlers for scroll buttons; no-ops when disabled. */
 export function getScrollButtonHandlers(isEnabled) {
   return {
     onMouseEnter: (e) => {

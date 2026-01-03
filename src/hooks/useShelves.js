@@ -14,6 +14,9 @@ import { SHELF_NAMES } from '../config/constants';
 /**
  * Custom hook for managing user shelves
  */
+// Hook: useShelves
+// Encapsulates shelf CRUD and avoids repeating API logic in pages.
+// Keeps local list in-sync and exposes helper actions.
 export default function useShelves(userId) {
   const [shelves, setShelves] = useState([]);
   const [loading, setLoading] = useState(true);

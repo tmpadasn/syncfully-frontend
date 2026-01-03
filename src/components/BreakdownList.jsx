@@ -1,6 +1,8 @@
 import React from 'react';
 
+/* BreakdownList: aggregates rating frequencies by a specified key (compact summary). */
 export default function BreakdownList({ ratings = {}, works = [], keyName = 'type', emptyMessage = 'No ratings yet', cardStyle = {}, valueStyle = {}, labelStyle = {} }) {
+  // Build a frequency map of the selected key across rated works.
   const stats = {};
   Object.keys(ratings).forEach(workId => {
     const work = works.find(w => (w.id || w.workId) === Number(workId));
@@ -9,6 +11,7 @@ export default function BreakdownList({ ratings = {}, works = [], keyName = 'typ
     }
   });
 
+  // Sort descending by count to show the most common items first.
   const sorted = Object.entries(stats).sort((a, b) => b[1] - a[1]);
 
   if (sorted.length === 0) {

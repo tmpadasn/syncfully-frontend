@@ -1,4 +1,4 @@
-// Hook: useHorizontalScroll
+
 // Provides a ref and simple helpers to make horizontal carousels work.
 // Call it in a carousel component. Attach `scrollContainerRef` to the scroll element.
 import { useCallback, useEffect, useRef, useState } from 'react';

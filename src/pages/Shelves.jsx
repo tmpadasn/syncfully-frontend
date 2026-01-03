@@ -398,7 +398,10 @@ styles.modalHeader = modalStyles.modalHeader;
 styles.modalTitle = modalStyles.modalTitle;
 
 /* ===================== SHELVES FUNCTION ===================== */
-
+/*
+ Shelves page component.
+ Manages user's shelves and lazy-loads shelf contents when opened.
+*/
 export default function Shelves() {
   const { user, isGuest } = useAuth();
   const { shelves, loading, error, createNewShelf, updateExistingShelf, deleteExistingShelf, getOrCreateFavourites } = useShelves(user?.userId);

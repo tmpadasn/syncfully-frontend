@@ -1,3 +1,4 @@
+/* AppRouter: route table composing top-level pages within a consistent header and error boundary. */
 import { Routes, Route } from 'react-router-dom';
 import Header from '../components/Header';
 import PageErrorBoundary from '../components/PageErrorBoundary';
@@ -13,6 +14,7 @@ import ProtectedRoute from './ProtectedRoute';
 import GuestRoute from './GuestRoute';
 import Shelves from '../pages/Shelves';
 
+// Renders header and route definitions; routes are wrapped with a page-level error boundary.
 export default function AppRouter() {
   return (
     <div>

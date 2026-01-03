@@ -409,7 +409,8 @@ export default function WorkDetails() {
     };
   }, [loadWorkData]);
 
-  // Fetch initial recommendation version for logged-in users
+  // Fetch initial recommendation version for logged-in users.
+  // This lets the UI show which recommendation model/version the backend uses.
   useEffect(() => {
     if (!isGuest && loggedUserId && isMountedRef.current) {
       getUserRecommendations(loggedUserId)

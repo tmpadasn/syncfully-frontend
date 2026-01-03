@@ -12,6 +12,9 @@ import BreakdownList from "../components/BreakdownList";
 
 /* ===================== PROFILE FUNCTION ===================== */
 
+// Profile page component.
+// Shows another user's public profile and rating breakdowns.
+// Checks follow relationship to show follow/unfollow affordances.
 export default function Profile() {
   const { userId } = useParams();
   const navigate = useNavigate();
