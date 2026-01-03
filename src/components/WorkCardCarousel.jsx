@@ -1,8 +1,7 @@
 /* WorkCardCarousel: carousel specialized for work cards; preserves hover and badge presentation. */
 import { useState } from 'react';
-import useHorizontalScroll from '../hooks/useHorizontalScroll';
-import { getScrollButtonHandlers } from '../utils/scrollButtonHandlers';
-import { carouselWrapper, scrollContainer, scrollButton, hideScrollbarCSS as sharedHideScrollbar } from '../utils/carouselUI';
+import HorizontalCarousel from './HorizontalCarousel';
+import { carouselWrapper, scrollContainer, scrollButton } from '../utils/carouselUI';
 import { Link } from 'react-router-dom';
 import ErrorBoundary from './ErrorBoundary';
 
@@ -12,7 +11,13 @@ const styles = {
   carouselWrapper: carouselWrapper,
 
   /* ===================== SCROLL BUTTON ===================== */
-  scrollButton: scrollButton,
+  // Slightly smaller buttons for work cards to reduce visual weight
+  scrollButton: (isEnabled) => ({
+    ...scrollButton(isEnabled),
+    width: '48px',
+    height: '48px',
+    fontSize: '24px',
+  }),
 
   /* ===================== SCROLL CONTAINER ===================== */
   scrollContainer: scrollContainer,
@@ -162,8 +167,7 @@ const styles = {
 };
 
 /* ===================== ANIMATIONS ===================== */
-const hideScrollbarCSS = sharedHideScrollbar;
-/* Inner: manages hover state and attaches horizontal scroll hook. */
+/* Inner: manages hover state. HorizontalCarousel attaches scroll hook. */
 function WorkCardCarouselInner({
   cards = [],
   emptyMessage = 'No items yet.',
@@ -172,7 +176,6 @@ function WorkCardCarouselInner({
   onCardMouseLeave
 }) {
   const [hoveredCardId, setHoveredCardId] = useState(null);
-  const { scrollContainerRef, canScrollLeft, canScrollRight, scrollBy } = useHorizontalScroll({ scrollChunk, deps: [cards.length] });
 
   if (!cards || cards.length === 0) {
     return (
@@ -182,24 +185,15 @@ function WorkCardCarouselInner({
     );
   }
 
-  const leftHandlers = getScrollButtonHandlers(canScrollLeft);
-  const rightHandlers = getScrollButtonHandlers(canScrollRight);
-
   return (
-    <div style={styles.carouselWrapper}>
-      <button
-        onClick={() => scrollBy('left')}
-        disabled={!canScrollLeft}
-        aria-label="Scroll left"
-        style={styles.scrollButton(canScrollLeft)}
-        {...leftHandlers}
-      >
-        ‹
-      </button>
-
-      <div ref={scrollContainerRef} style={styles.scrollContainer}>
-        <style>{hideScrollbarCSS}</style>
-        {cards.map((card) => {
+    <HorizontalCarousel
+      scrollChunk={scrollChunk}
+      wrapperStyle={styles.carouselWrapper}
+      containerStyle={styles.scrollContainer}
+      buttonStyle={styles.scrollButton}
+      deps={[cards.length]}
+    >
+      {cards.map((card) => {
           if (!card) return null;
           const Wrapper = card.link ? Link : 'div';
           const wrapperProps = card.link ? { to: card.link } : {};
@@ -276,18 +270,7 @@ function WorkCardCarouselInner({
             </div>
           );
         })}
-      </div>
-
-      <button
-        onClick={() => scrollBy('right')}
-        disabled={!canScrollRight}
-        aria-label="Scroll right"
-        style={styles.scrollButton(canScrollRight)}
-        {...rightHandlers}
-      >
-        ›
-      </button>
-    </div>
+    </HorizontalCarousel>
   );
 }
 

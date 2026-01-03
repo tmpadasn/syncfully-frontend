@@ -2,6 +2,10 @@ import React from 'react';
 import logger from '../utils/logger';
 import { IS_DEVELOPMENT } from '../config/constants';
 
+/* PageErrorBoundary: catches uncaught errors at the page level and renders a
+  recovery UI while recording diagnostic details. This containment prevents
+  a single page failure from rendering the entire SPA unusable. */
+
 /* ===================== UI STYLES ===================== */
 const styles = {
   /* ===================== ERROR WRAPPER ===================== */

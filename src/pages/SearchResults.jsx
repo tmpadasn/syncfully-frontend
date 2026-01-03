@@ -56,7 +56,9 @@ function ResultHeader({ title, subtitle, meta, onClick }) {
 /* ===================== SEARCH RESULTS FUNCTION ===================== */
 
 // Search results page component.
-// Merges server search results with client-side filters and shelf state.
+// Performs server-side search then applies client-side filtering and shelf
+// state merging. The component caches and normalizes work entities to present
+// a unified results list with fast client-side filtering.
 export default function SearchResults() {
   const { search } = useLocation();
   const navigate = useNavigate();

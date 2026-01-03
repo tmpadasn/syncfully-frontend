@@ -22,11 +22,13 @@ import {
 import { getAllWorks } from "../api/works";
 import UserRatings from "../components/users/UserRatings";
 import BreakdownList from "../components/BreakdownList";
+import HoverBar from "../components/HoverBar";
 
 /* ===================== ACCOUNT PAGE FUNCTION ===================== */
-
 // Account page component.
-// Shows profile, stats, and lists. Keeps related data grouped to reduce re-fetches.
+// Presents the authenticated user's profile, computed statistics, followers
+// and following lists, and rating history. Data is fetched once on mount and
+// grouped to minimize redundant API calls and re-renders.
 export default function Account() {
   const { user, logout, authLoading } = useAuth();
   const navigate = useNavigate();
@@ -271,12 +273,29 @@ export default function Account() {
       gap: 12
     },
     userCard: {
-        // Removed stat styles
+      // Square card that holds the circular avatar and username
+      width: 120,
+      height: 120,
+      borderRadius: 12,
+      border: "1.5px solid #e8dccf",
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
+      justifyContent: "center",
+      padding: 8,
+      boxSizing: "border-box",
+      background:"linear-gradient(135deg, #fff9f5 0%, #fef5f0 100%)",
+      cursor: "pointer",
+      transition: "transform 0.12s ease, box-shadow 0.12s ease",
+      overflow: "hidden",
+    },
+    userAvatar: {
+      width: 60,
+      height: 60,
+      borderRadius: "50%",
       objectFit: "cover",
       border: "2px solid #e8dccf",
-      marginBottom: "8px",
       display: "block",
-      margin: "0 auto 8px",
     },
     userName: {
       fontSize: 12,
@@ -436,19 +455,9 @@ export default function Account() {
                         <div key={genre} style={styles.genreRow}>
                           <div style={styles.genreCount}>{count}</div>
                           <div style={{ flex: 1 }}>
-                            <div
-                              style={styles.genreBar(colors[idx % colors.length])}
-                              onMouseEnter={(e) => {
-                                e.currentTarget.style.transform = "translateX(8px)";
-                                e.currentTarget.style.boxShadow = "0 6px 16px rgba(154, 66, 7, 0.25)";
-                              }}
-                              onMouseLeave={(e) => {
-                                e.currentTarget.style.transform = "none";
-                                e.currentTarget.style.boxShadow = "0 4px 12px rgba(154, 66, 7, 0.15)";
-                              }}
-                            >
+                            <HoverBar style={styles.genreBar(colors[idx % colors.length])}>
                               {genre}
-                            </div>
+                            </HoverBar>
                           </div>
                         </div>
                       ));

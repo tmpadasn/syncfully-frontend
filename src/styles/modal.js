@@ -51,3 +51,7 @@ export const modalStyles = {
 
 // Usage: import { modalStyles } from '../styles/modal';
 // <div style={modalStyles.modal}><div style={modalStyles.modalContent}>...</div></div>
+
+// These tokens are intended as static style primitives for dialog overlays
+// and content containers. Consumers should apply them directly to preserve
+// visual consistency across modal variants.

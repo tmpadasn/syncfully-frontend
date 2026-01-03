@@ -84,6 +84,8 @@ export default function Toast({ message, onClose, duration = 4000, link }) {
     return () => clearTimeout(timer);
   }, [onClose, duration]);
 
+  // Auto-dismiss toast after `duration` milliseconds to keep notifications transient.
+
   const handleIconClick = (e) => {
     e.stopPropagation();
     if (link) {
@@ -91,6 +93,7 @@ export default function Toast({ message, onClose, duration = 4000, link }) {
       onClose();
     }
   };
+  // Icon click navigates to the linked content and dismisses the toast immediately.
 
   return (
     <>

@@ -4,8 +4,11 @@ import useAuth from "../hooks/useAuth";
 import { getUserById, updateUser } from "../api/users";
 import { DEFAULT_AVATAR_URL } from "../config/constants";
 
-/* ===================== EDIT ACCOUNT PAGE FUNCTION ===================== */
-
+/* EditAccount
+  Renders a simple profile edit form. On mount the component loads the
+  current user's data into local form state. Saving issues an update call
+  and updates the authentication context with the server response.
+*/
 export default function EditAccount() {
   const { user, authLoading, setUser } = useAuth();
   const navigate = useNavigate();

@@ -1,5 +1,7 @@
 import { useState } from "react";
 
+// UserForm: small controlled form used for editing basic user fields.
+// It manages local form state and emits a single `onSubmit` event with the form payload.
 /* ===================== UI STYLES ===================== */
 const styles = {
   /* ===================== FORM CONTAINER ===================== */

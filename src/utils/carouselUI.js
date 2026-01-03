@@ -1,4 +1,6 @@
 /* Carousel UI tokens: shared layout and control styles for horizontal carousels. */
+// Shared UI tokens for horizontal carousels (wrapper, buttons, container).
+// Keep these tokens minimal and composable so carousels can override specifics.
 export const carouselWrapper = {
   position: 'relative',
   display: 'flex',

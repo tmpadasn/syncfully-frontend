@@ -9,12 +9,13 @@ import logger from "../utils/logger";
 import { DEFAULT_AVATAR_URL } from "../config/constants";
 import { statsStyles } from "../styles/stats";
 import BreakdownList from "../components/BreakdownList";
+import HoverBar from "../components/HoverBar";
 
 /* ===================== PROFILE FUNCTION ===================== */
-
 // Profile page component.
-// Shows another user's public profile and rating breakdowns.
-// Checks follow relationship to show follow/unfollow affordances.
+// Displays another user's public profile and rating summaries. Loads profile
+// data and ratings, then derives follow relationship state to conditionally
+// render follow actions. Data loading is batched to reduce round-trips.
 export default function Profile() {
   const { userId } = useParams();
   const navigate = useNavigate();
@@ -373,19 +374,9 @@ export default function Profile() {
                             {count}
                           </div>
                           <div style={{ flex: 1 }}>
-                            <div
-                              style={styles.genreBar(idx)}
-                              onMouseEnter={(e) => {
-                                e.currentTarget.style.transform = "translateX(8px)";
-                                e.currentTarget.style.boxShadow = "0 6px 16px rgba(154, 66, 7, 0.25)";
-                              }}
-                              onMouseLeave={(e) => {
-                                e.currentTarget.style.transform = "none";
-                                e.currentTarget.style.boxShadow = "0 4px 12px rgba(154, 66, 7, 0.15)";
-                              }}
-                            >
+                            <HoverBar style={styles.genreBar(idx)}>
                               {genre}
-                            </div>
+                            </HoverBar>
                           </div>
                         </div>
                       ));

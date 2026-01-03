@@ -57,6 +57,11 @@ const processSimilarWorksData = (similarWorksResponse) => {
 
 export default function WorkDetails() {
 
+  // Work details page behavior:
+  // Fetches work metadata, rating summaries, and similar/recommended works.
+  // Data is normalized via helper functions to keep presentation logic simple
+  // and to avoid duplicating extraction/parsing across the component.
+
   // FETCH HOOKS AND STATES
   useNavigationWithClearFilters();
   const navigate = useNavigate();

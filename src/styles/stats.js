@@ -22,3 +22,7 @@ export const statsStyles = {
     fontWeight: 600,
   },
 };
+
+// The `statsStyles` object provides small, reusable tokens for statistic
+// presentation (value, label, card). Using tokens ensures a consistent
+// visual treatment across `Account` and `Profile` pages.

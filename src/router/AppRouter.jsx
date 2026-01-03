@@ -14,7 +14,9 @@ import ProtectedRoute from './ProtectedRoute';
 import GuestRoute from './GuestRoute';
 import Shelves from '../pages/Shelves';
 
-// Renders header and route definitions; routes are wrapped with a page-level error boundary.
+// Renders header and top-level route definitions.
+// Each route is contained within a page-level error boundary to isolate
+// page-specific failures from the rest of the application.
 export default function AppRouter() {
   return (
     <div>

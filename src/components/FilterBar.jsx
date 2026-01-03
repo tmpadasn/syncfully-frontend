@@ -174,6 +174,8 @@ export default function FilterBar() {
         const works = worksData?.works || worksData?.data || [];
         
         if (works.length > 0) {
+          // Derive filter options from backend data so the controls reflect the
+          // actual catalogue (types, genres, year ranges)
           // Extract unique types from backend data
           const types = [...new Set(
             works.map(work => work.type)
@@ -221,8 +223,8 @@ export default function FilterBar() {
             genresByType: genresByType,
             ratings: ['5','4','3','2','1'] // Standard rating scale
           });
-        } else {
-          logger.warn('⚠️ FilterBar: No works found in backend, using empty arrays');
+          } else {
+            logger.warn('⚠️ FilterBar: No works found in backend, using empty arrays');
           // Use empty arrays when no backend data
           setFilterOptions({
             types: [],

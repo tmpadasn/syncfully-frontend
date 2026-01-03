@@ -130,6 +130,8 @@ export default function Header() {
   const debounceTimerRef = useRef(null);
 
   useEffect(() => {
+    // Initialize search input from URL when on the search route.
+    // Synchronizing the input with the URL preserves history navigation behavior.
     if (location.pathname.startsWith('/search')) {
       const params = new URLSearchParams(location.search);
       const urlQuery = params.get('q') || '';

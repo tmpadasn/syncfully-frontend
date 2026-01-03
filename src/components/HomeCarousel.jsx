@@ -1,9 +1,8 @@
 /* HomeCarousel: generic horizontal carousel encapsulating scroll state and controls. */
 import { useMemo } from 'react';
 import ErrorBoundary from './ErrorBoundary';
-import useHorizontalScroll from '../hooks/useHorizontalScroll';
-import { getScrollButtonHandlers } from '../utils/scrollButtonHandlers';
-import { carouselWrapper, scrollContainer, scrollButton, hideScrollbarCSS as sharedHideScrollbar } from '../utils/carouselUI';
+import HorizontalCarousel from './HorizontalCarousel';
+import { carouselWrapper, scrollContainer, scrollButton } from '../utils/carouselUI';
 
 /* ===================== UI STYLES ===================== */
 const styles = {
@@ -29,41 +28,20 @@ const styles = {
 };
 
 /* ===================== ANIMATIONS ===================== */
-const hideScrollbarCSS = sharedHideScrollbar;
 /* Memoize children and attach horizontal scroll hook to container. */
 function HomeCarouselInner({ children, scrollChunk = 3 }) {
   const childrenDep = useMemo(() => children, [children]);
-  const { scrollContainerRef, canScrollLeft, canScrollRight, scrollBy } = useHorizontalScroll({ scrollChunk, deps: [childrenDep] });
-  const leftHandlers = getScrollButtonHandlers(canScrollLeft);
-  const rightHandlers = getScrollButtonHandlers(canScrollRight);
 
   return (
-    <div style={styles.carouselWrapper}>
-      <button
-        onClick={() => scrollBy('left')}
-        disabled={!canScrollLeft}
-        aria-label="Scroll left"
-        style={styles.scrollButton(canScrollLeft)}
-        {...leftHandlers}
-      >
-        ‹
-      </button>
-
-      <div ref={scrollContainerRef} style={styles.scrollContainer}>
-        <style>{hideScrollbarCSS}</style>
-        {children}
-      </div>
-
-      <button
-        onClick={() => scrollBy('right')}
-        disabled={!canScrollRight}
-        aria-label="Scroll right"
-        style={styles.scrollButton(canScrollRight)}
-        {...rightHandlers}
-      >
-        ›
-      </button>
-    </div>
+    <HorizontalCarousel
+      scrollChunk={scrollChunk}
+      wrapperStyle={styles.carouselWrapper}
+      containerStyle={styles.scrollContainer}
+      buttonStyle={styles.scrollButton}
+      deps={[childrenDep]}
+    >
+      {children}
+    </HorizontalCarousel>
   );
 }
 

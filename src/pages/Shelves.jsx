@@ -391,6 +391,12 @@ const styles = {
   }
 };
 
+/* Shelves page behaviour:
+  The page enumerates user shelves and lazily loads shelf contents when a
+  shelf is expanded. This pattern reduces initial load cost and binds
+  work-level fetching to explicit user intent (expansion).
+*/
+
 // reuse shared modal styles
 styles.modal = modalStyles.modal;
 styles.modalContent = modalStyles.modalContent;

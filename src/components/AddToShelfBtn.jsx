@@ -106,6 +106,8 @@ export default function AddToShelfBtn({ workId, userId, shelves, onSuccess }) {
   const firstFocusableRef = useRef(null);
 
   useEffect(() => {
+    // When modal opens, populate options and focus a sensible control.
+    // Focusing the close button reduces visual jump and improves keyboard accessibility.
     if (showModal && shelves) {
       setAvailableShelves(shelves);
 
@@ -118,6 +120,8 @@ export default function AddToShelfBtn({ workId, userId, shelves, onSuccess }) {
 
   // Handle Escape key to close modal
   useEffect(() => {
+    // Close modal with Escape key for keyboard users.
+    // This mirrors native dialog semantics to improve keyboard navigation.
     if (!showModal) return;
 
     const handleEscape = (e) => {
@@ -132,6 +136,8 @@ export default function AddToShelfBtn({ workId, userId, shelves, onSuccess }) {
 
   // Trap focus within modal
   useEffect(() => {
+    // Trap focus inside modal while open so keyboard users do not inadvertently tab away.
+    // Keeps focus within the dialog until it is dismissed.
     if (!showModal || !modalRef.current) return;
 
     const handleTabKey = (e) => {
