@@ -69,7 +69,6 @@ export default function WorkDetails() {
 
   const [work, setWork] = useState(null);
   const [ratings, setRatings] = useState([]);
-  const [similar, setSimilar] = useState([]);
   const [recommended, setRecommended] = useState([]);
   const [score, setScore] = useState(0);
   const [hoverScore, setHoverScore] = useState(0);
@@ -367,7 +366,6 @@ export default function WorkDetails() {
       // Reset all state immediately to prevent flash of old content
       setWork(null);
       setRatings([]);
-      setSimilar([]);
       setRecommended([]);
       setScore(0);
       setLoading(true);
@@ -387,7 +385,6 @@ export default function WorkDetails() {
       setRatings(processedRatings);
 
       const processedSimilarWorks = processSimilarWorksData(similarWorksResponse);
-      setSimilar(processedSimilarWorks);
 
       setRecommended(processedSimilarWorks.slice(0, 5));
     } catch (error) {
@@ -457,11 +454,11 @@ export default function WorkDetails() {
       const r = await getWorkRatings(workId);
       const processedRatings = processRatingsData(r);
       setRatings(processedRatings);
-      
+
       // Show success message briefly
       setRatingSubmittedMessage(true);
       setTimeout(() => setRatingSubmittedMessage(false), 2000);
-      
+
       // Check if recommendations changed
       if (loggedUserId) {
         try {
@@ -632,8 +629,8 @@ export default function WorkDetails() {
           {/* Add to Shelf Button */}
           {!isGuest && shelves.length > 0 && (
             <div style={{ marginBottom: 24 }}>
-              <AddToShelfBtn 
-                workId={parseInt(workId)} 
+              <AddToShelfBtn
+                workId={parseInt(workId)}
                 userId={user?.userId}
                 shelves={shelves}
                 onSuccess={() => {
@@ -654,7 +651,7 @@ export default function WorkDetails() {
                 ✓ Rating saved!
               </div>
             )}
-            
+
             <div style={styles.ratingHeader}>
               <h4 style={styles.ratingTitle}>
                 Your rating

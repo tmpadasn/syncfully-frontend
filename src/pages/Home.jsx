@@ -5,7 +5,7 @@
 */
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { getPopularWorks, getAllWorks } from '../api/works';
-import { getAllUsers, getUserRatings, getUserFollowing } from '../api/users';
+import { getUserRatings, getUserFollowing } from '../api/users';
 import { testConnection } from '../api/client';
 import { Link } from 'react-router-dom';
 import useNavigationWithClearFilters from '../hooks/useNavigationWithClearFilters';
@@ -21,11 +21,11 @@ import {
   normalizeRatingsObject,
   shuffleArray,
 } from '../utils/normalize';
-import { 
-  DEFAULT_AVATAR_URL, 
-  WORK_TYPES, 
-  HOME_CAROUSEL_LIMIT, 
-  STORAGE_KEY_JUST_LOGGED_IN 
+import {
+  DEFAULT_AVATAR_URL,
+  WORK_TYPES,
+  HOME_CAROUSEL_LIMIT,
+  STORAGE_KEY_JUST_LOGGED_IN
 } from '../config/constants';
 
 
@@ -94,22 +94,22 @@ const processFollowingData = async (following, allWorks, isMountedRef) => {
 
   // First, fetch all ratings for each user being followed
   const followingRatings = [];
-  
+
   for (const followedUser of following) {
     if (!isMountedRef.current) break;
-    
+
     try {
       const ratingsResponse = await getUserRatings(followedUser.userId || followedUser.id);
-      
+
       if (!isMountedRef.current) break;
-      
+
       const ratingsData = ratingsResponse?.data || ratingsResponse || {};
       const entries = normalizeRatingsObject(ratingsData);
       if (entries.length === 0) continue;
 
       // Get all ratings sorted by most recent
       const sortedRatings = entries.sort((a, b) => b.ratedAt - a.ratedAt);
-      
+
       // Get up to 5 most recent ratings per followed user
       const userWorks = [];
       for (let i = 0; i < Math.min(5, sortedRatings.length); i++) {
@@ -133,7 +133,7 @@ const processFollowingData = async (following, allWorks, isMountedRef) => {
           });
         }
       }
-      
+
       if (userWorks.length > 0) {
         followingRatings.push(userWorks);
       }
@@ -159,7 +159,7 @@ const getRandomWorks = (allWorks, type, limit = 10) => {
   try {
     // Filter works by type
     const filteredWorks = allWorks.filter(work => work.type === type);
-    
+
     // Shuffle and take first 'limit' items
     const shuffled = shuffleArray(filteredWorks);
     return shuffled.slice(0, limit).map(normalizeWork).filter(Boolean);
@@ -174,7 +174,7 @@ const getRandomWorks = (allWorks, type, limit = 10) => {
 /**
  * FriendCard component - Displays friend's recently liked work
  * Uses .friend-card-home CSS class for consistent Home page styling
- * 
+ *
  * @param {Object} props - Component props
  * @param {Object} props.friend - Friend data with name, avatar, and liked album info
  * @returns {React.ReactNode} Card showing friend's profile, avatar, and liked album cover
@@ -182,7 +182,7 @@ const getRandomWorks = (allWorks, type, limit = 10) => {
 const FriendCard = ({ friend }) => (
   <div className="friend-card-home">
     {/* Album cover image with link to work details */}
-    <Link to={`/works/${friend.likedAlbum.workId}`} style={{ flex: 1 }}>
+    <Link to={`/works/${friend.likedAlbum.workId}`} style={{ flex: 1, textDecoration: 'none' }}>
       <div style={{ height: '200px', overflow: 'hidden' }}>
         <img
           src={friend.likedAlbum.coverUrl}
@@ -213,7 +213,7 @@ const FriendCard = ({ friend }) => (
 /**
  * PopularWorkCard component - Displays work cover with hover effects
  * Uses .popular-work-card CSS class for consistent styling across carousels
- * 
+ *
  * @param {Object} props - Component props
  * @param {Object} props.work - Work data with cover URL and ID
  * @returns {React.ReactNode} Clickable card linking to work details with cover image
@@ -281,160 +281,15 @@ export default function Home() {
   const isMountedRef = useRef(true);
 
   const [popular, setPopular] = useState([]);
-  const [friends, setFriends] = useState([]);
   const [following, setFollowing] = useState([]);
   const [recentMovies, setRecentMovies] = useState([]);
   const [recentMusic, setRecentMusic] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [friendsLoading, setFriendsLoading] = useState(true);
   const [followingLoading, setFollowingLoading] = useState(true);
   const [recentLoading, setRecentLoading] = useState(true);
   const [showWelcome, setShowWelcome] = useState(false);
 
-  /* ===================== UI STYLES ===================== */
-  const styles = {
-    /* ===================== PAGE LAYOUT ===================== */
-    pageContainer: {
-      display: 'flex',
-      flexDirection: 'column',
-      minHeight: '100vh',
-    },
-    pageInner: {
-      flex: 1,
-    },
-    pageMain: {
-      width: '100%',
-    },
-
-    /* ===================== HERO SECTION ===================== */
-    heroContainer: {
-      position: 'relative',
-      minHeight: '600px',
-      background: 'linear-gradient(135deg, #9a4207 0%, #6d2f04 100%)',
-      color: '#fff',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      overflow: 'hidden',
-      padding: '60px 20px',
-    },
-    heroBackground: {
-      position: 'absolute',
-      width: '200px',
-      height: '200px',
-      borderRadius: '50%',
-      top: '-50px',
-      left: '-50px',
-      background: 'rgba(255, 255, 255, 0.05)',
-      pointerEvents: 'none',
-    },
-    heroContent: {
-      position: 'relative',
-      zIndex: 1,
-    },
-    heroTitle: {
-      fontSize: 32,
-      fontWeight: 700,
-      marginBottom: 16,
-      color: '#fff',
-      textShadow: '0 2px 4px rgba(0,0,0,0.2)',
-    },
-    heroText: {
-      fontSize: 18,
-      marginBottom: 32,
-      color: '#fff',
-      opacity: 0.95,
-      maxWidth: 600,
-      margin: '0 auto 32px',
-      lineHeight: 1.6,
-    },
-    buttonContainer: {
-      display: 'flex',
-      gap: 16,
-      justifyContent: 'center',
-      flexWrap: 'wrap',
-    },
-    signInButton: {
-      display: 'inline-block',
-      padding: '14px 40px',
-      background: '#fff',
-      color: '#9a4207',
-      fontSize: 16,
-      fontWeight: 700,
-      borderRadius: 8,
-      textDecoration: 'none',
-      transition: 'all 0.3s ease',
-      boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-    },
-    signUpButton: {
-      display: 'inline-block',
-      padding: '14px 40px',
-      background: 'transparent',
-      color: '#fff',
-      fontSize: 16,
-      fontWeight: 700,
-      borderRadius: 8,
-      textDecoration: 'none',
-      border: '2px solid #fff',
-      transition: 'all 0.3s ease',
-    },
-
-    /* ===================== FEATURES SECTION ===================== */
-    featuresContainer: {
-      display: 'flex',
-      gap: 64,
-      justifyContent: 'center',
-      marginTop: 40,
-      flexWrap: 'wrap',
-    },
-    featureCard: {
-      textAlign: 'center',
-      maxWidth: 200,
-    },
-    featureIcon: {
-      fontSize: 36,
-      marginBottom: 12,
-      width: 60,
-      height: 60,
-      margin: '0 auto 12px',
-      background: 'rgba(255, 255, 255, 0.2)',
-      borderRadius: '50%',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      color: '#fff',
-    },
-    featureTitle: {
-      fontSize: 16,
-      fontWeight: 700,
-      marginBottom: 6,
-      color: '#fff',
-    },
-    featureText: {
-      fontSize: 14,
-      color: 'rgba(255, 255, 255, 0.85)',
-      lineHeight: 1.4,
-    },
-
-    /* ===================== CONTENT SECTIONS ===================== */
-    sectionContainer: {
-      maxWidth: '1200px',
-      margin: '0 auto',
-      padding: '40px 20px',
-      width: '100%',
-    },
-    sectionTitle: {
-      fontSize: 28,
-      fontWeight: 800,
-      marginBottom: 24,
-      color: '#392c2c',
-    },
-
-    /* ===================== LOADING STATE ===================== */
-    loadingContainer: {
-      marginTop: 24,
-    },
-  };
+  /* removed styles object - using inline styles and CSS classes instead */
 
   // Check if user just logged in
   useEffect(() => {
@@ -454,12 +309,10 @@ export default function Home() {
         // Reset lists and show loading UI while fetching
       // Reset state immediately to prevent flash of old content
       setPopular([]);
-      setFriends([]);
       setFollowing([]);
       setRecentMovies([]);
       setRecentMusic([]);
       setLoading(true);
-      setFriendsLoading(true);
       setFollowingLoading(true);
       setRecentLoading(true);
 
@@ -476,58 +329,39 @@ export default function Home() {
       const allWorks = worksData?.works || [];
 
       if (currentUserId) {
-        // Only fetch friends if logged in
-        const usersResponse = await getAllUsers();
-        
-        if (!isMountedRef.current) return;
-        
-        const users = usersResponse?.data || usersResponse || [];
-        const friendActivity = await processFriendsData(
-          users,
-          allWorks,
-          currentUserId,
-          isMountedRef
-        );
-        
-        if (!isMountedRef.current) return;
-        
-        setFriends(friendActivity);
-
         // Fetch following data
         try {
           const followingResponse = await getUserFollowing(currentUserId);
           const followingList = followingResponse?.following || [];
-          
+
           if (!isMountedRef.current) return;
-          
+
           const followingActivity = await processFollowingData(
             followingList,
             allWorks,
             isMountedRef
           );
-          
+
           if (!isMountedRef.current) return;
-          
+
           setFollowing(followingActivity);
         } catch (error) {
           logger.error('Failed to fetch following:', error);
           setFollowing([]);
         }
       } else {
-        setFriends([]); // logged-out users see no friends list
         setFollowing([]);
       }
 
       setLoading(false);
-      setFriendsLoading(false);
       setFollowingLoading(false);
 
       // Load random movies and music
       const movies = getRandomWorks(allWorks, WORK_TYPES.MOVIE, HOME_CAROUSEL_LIMIT);
       const music = getRandomWorks(allWorks, WORK_TYPES.MUSIC, HOME_CAROUSEL_LIMIT);
-      
+
       if (!isMountedRef.current) return;
-      
+
       setRecentMovies(movies);
       setRecentMusic(music);
       setRecentLoading(false);
@@ -535,7 +369,6 @@ export default function Home() {
       logger.error('Error loading home page:', error);
       if (isMountedRef.current) {
         setLoading(false);
-        setFriendsLoading(false);
         setFollowingLoading(false);
         setRecentLoading(false);
       }
@@ -597,7 +430,7 @@ export default function Home() {
                 borderRadius: '50%',
                 pointerEvents: 'none'
               }} />
-              
+
               {/* Content */}
               <div style={{ position: 'relative', zIndex: 1 }}>
                 <h2 style={{
@@ -621,8 +454,8 @@ export default function Home() {
                   Join Syncfully to get personalized recommendations, track what you've watched and listened to, and discover works tailored just for you.
                 </p>
                 <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap' }}>
-                  <Link 
-                    to="/login" 
+                  <Link
+                    to="/login"
                     style={{
                       display: 'inline-block',
                       padding: '14px 40px',
@@ -646,8 +479,8 @@ export default function Home() {
                   >
                     Sign In
                   </Link>
-                  <Link 
-                    to="/login?mode=signup" 
+                  <Link
+                    to="/login?mode=signup"
                     style={{
                       display: 'inline-block',
                       padding: '14px 40px',
@@ -672,7 +505,7 @@ export default function Home() {
                     Create Account
                   </Link>
                 </div>
-                
+
                 {/* Feature highlights */}
                 <div style={{
                   display: 'flex',
@@ -681,25 +514,76 @@ export default function Home() {
                   marginTop: 40,
                   flexWrap: 'wrap'
                 }}>
-                  <FeatureIcon label="Personalized Recommendations">
-                    <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="currentColor" />
-                    </svg>
-                  </FeatureIcon>
-                  <FeatureIcon label="Track Your Collection">
-                    <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
-                      <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
-                    </svg>
-                  </FeatureIcon>
-                  <FeatureIcon label="See Friends' Favorites">
-                    <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-                      <circle cx="9" cy="7" r="4" />
-                      <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-                      <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-                    </svg>
-                  </FeatureIcon>
+                  <div style={{ textAlign: 'center', maxWidth: 200 }}>
+                    <div style={{ 
+                      fontSize: 36, 
+                      marginBottom: 12,
+                      width: 60,
+                      height: 60,
+                      margin: '0 auto 12px',
+                      background: 'rgba(255, 255, 255, 0.2)',
+                      borderRadius: '50%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: '#fff'
+                    }}>
+                      <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="currentColor" />
+                      </svg>
+                    </div>
+                    <div style={{ color: '#fff', fontSize: 14, fontWeight: 600 }}>
+                      Personalized Recommendations
+                    </div>
+                  </div>
+                  <div style={{ textAlign: 'center', maxWidth: 200 }}>
+                    <div style={{ 
+                      fontSize: 36, 
+                      marginBottom: 12,
+                      width: 60,
+                      height: 60,
+                      margin: '0 auto 12px',
+                      background: 'rgba(255, 255, 255, 0.2)',
+                      borderRadius: '50%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: '#fff'
+                    }}>
+                      <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+                        <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+                      </svg>
+                    </div>
+                    <div style={{ color: '#fff', fontSize: 14, fontWeight: 600 }}>
+                      Track Your Collection
+                    </div>
+                  </div>
+                  <div style={{ textAlign: 'center', maxWidth: 200 }}>
+                    <div style={{ 
+                      fontSize: 36, 
+                      marginBottom: 12,
+                      width: 60,
+                      height: 60,
+                      margin: '0 auto 12px',
+                      background: 'rgba(255, 255, 255, 0.2)',
+                      borderRadius: '50%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: '#fff'
+                    }}>
+                      <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                        <circle cx="9" cy="7" r="4" />
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                      </svg>
+                    </div>
+                    <div style={{ color: '#fff', fontSize: 14, fontWeight: 600 }}>
+                      See Friends' Favorites
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -709,7 +593,7 @@ export default function Home() {
           {user && (
             <>
               <h3 className="section-title" style={{ marginTop: 40 }}>
-                FRIENDS' FAVOURITES 
+                FRIENDS' FAVOURITES
               </h3>
               {followingLoading ? (
                 <FriendGridSkeleton count={4} />

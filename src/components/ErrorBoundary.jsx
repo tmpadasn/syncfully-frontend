@@ -97,7 +97,7 @@ class ErrorBoundary extends React.Component {
     };
   }
 
-  static getDerivedStateFromError(error) {
+  static getDerivedStateFromError() {
     // Update state so the next render will show the fallback UI
     return { hasError: true };
   }
@@ -105,7 +105,7 @@ class ErrorBoundary extends React.Component {
   componentDidCatch(error, errorInfo) {
     // Log error details for debugging
     logger.error('ErrorBoundary caught an error:', error, errorInfo);
-    
+
     this.setState({
       error,
       errorInfo
@@ -140,7 +140,7 @@ class ErrorBoundary extends React.Component {
             <p style={styles.errorMessage}>
               We encountered an unexpected error. Don't worry, your data is safe.
             </p>
-            
+
             <div style={styles.buttonContainer}>
               <button
                 onClick={this.handleReset}
@@ -150,7 +150,7 @@ class ErrorBoundary extends React.Component {
               >
                 Try Again
               </button>
-              
+
               <button
                 onClick={() => window.location.href = '/'}
                 style={styles.secondaryButton}
