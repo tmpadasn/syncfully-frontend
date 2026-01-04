@@ -7,6 +7,9 @@ export default function HoverBar({ children, style = {}, className, ...rest }) {
     transition: 'all 0.18s ease',
   };
 
+  /* Hover affordance rationale: subtle translate and shadow enhance discoverability
+     without altering layout, keeping interactions visually consistent. */
+
   return (
     <div
       className={className}

@@ -93,6 +93,8 @@ styles.modalTitle = modalStyles.modalTitle;
  * Component to add a work to a shelf
  * Shows a modal with available shelves
  */
+/* Modal focus and feedback: ensures keyboard users land on a sensible control
+  and that success/error states are shown transiently to avoid blocking flow. */
 export default function AddToShelfBtn({ workId, userId, shelves, onSuccess }) {
   const [showModal, setShowModal] = useState(false);
   const [loading, setLoading] = useState(false);

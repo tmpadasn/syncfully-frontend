@@ -68,6 +68,9 @@ export default function SearchResults() {
   const { user } = useAuth();
   const isMountedRef = useRef(true);
 
+  /* Normalization and caching: results are normalized into a stable shape
+     and merged with shelf state to provide consistent client-side filtering. */
+
   /* ===================== UI STYLES ===================== */
   const styles = {
     /* ===================== PAGE LAYOUT ===================== */

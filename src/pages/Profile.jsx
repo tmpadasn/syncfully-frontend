@@ -34,7 +34,9 @@ export default function Profile() {
   const [followLoading, setFollowLoading] = useState(false);
 
   // Load profile data and follow status on mount
-  useEffect(() => {
+    /* Follow-state derivation: batch public profile and follow lists, then
+      compute relationship flags to drive conditional UI affordances. */
+    useEffect(() => {
     const load = async () => {
       // Reset state immediately to prevent flash of old content
       setProfileUser(null);

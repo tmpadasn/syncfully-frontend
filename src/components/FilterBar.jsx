@@ -153,6 +153,8 @@ const styles = {
 };
 
 export default function FilterBar() {
+  /* URL-sync and derived options: filter controls reflect backend catalogue
+     and persist selections via URL params so results are shareable. */
   const location = useLocation();
   const navigate = useNavigate();
   const params = new URLSearchParams(location.search);

@@ -79,7 +79,9 @@ export default function Toast({ message, onClose, duration = 4000, link }) {
   /* Toast: transient, non-blocking notification that auto-dismisses after a duration. */
   /* Optionally navigates to linked content when the icon is clicked. */
 
-  useEffect(() => {
+    /* Auto-dismiss behavior: keeps notifications transient and avoids stacking.
+      The effect ensures the toast is removed after `duration` milliseconds. */
+    useEffect(() => {
     const timer = setTimeout(() => {
       onClose();
     }, duration);

@@ -62,10 +62,12 @@ describe('Edit account', () => {
     cy.get('button').filter((i, el) => el.innerText.includes('Save')).first().click({ force: true });
     cy.location('pathname').should('include', '/account/edit');
 
-    cy.get('div').filter((i, el) => 
-      el.textContent && (el.textContent.toLowerCase().includes('error') || el.textContent.toLowerCase().includes('invalid'))
-    ).should('be.visible');
-    cy.log('✓ Verified invalid email fails');
+    // cy.get('div').filter((i, el) => 
+    //   el.textContent && (el.textContent.toLowerCase().includes('error') || el.textContent.toLowerCase().includes('invalid'))
+    // ).should('be.visible');
+    // cy.log('✓ Verified invalid email fails');
+    cy.contains(/invalid|error/i).should('be.visible');
+
     
     // Step 4: Edit account with valid email
     cy.get('input[name="email"]').clear();

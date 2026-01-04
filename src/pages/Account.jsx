@@ -43,7 +43,9 @@ export default function Account() {
   const [loading, setLoading] = useState(true);
 
   // Fetch user data on mount
-  useEffect(() => {
+    /* Data loading strategy: batch API calls to minimize latency and avoid
+      redundant requests, then normalize results for the UI. */
+    useEffect(() => {
     if (authLoading || !user) return;
     // Load user and lists in one request. This reduces wait time.
     const load = async () => {

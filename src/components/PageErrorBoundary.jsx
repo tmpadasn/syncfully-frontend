@@ -148,6 +148,8 @@ class PageErrorBoundaryClass extends React.Component {
   }
 
   componentDidCatch(error, errorInfo) {
+    // Capture diagnostics for server-side reporting and local debugging.
+    // Storing error details here helps operators triage production issues faster.
     logger.error('Page Error Boundary caught an error:', error, errorInfo);
 
     this.setState({

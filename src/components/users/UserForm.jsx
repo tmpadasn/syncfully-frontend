@@ -63,6 +63,8 @@ export default function UserForm({ initial = {}, onSubmit }) {
   };
 
   const handleSubmit = (e) => {
+    // Prevent default submission and emit the form payload to the parent.
+    // This controlled pattern keeps validation and side-effects outside the component.
     e.preventDefault();
     onSubmit(form);
   };

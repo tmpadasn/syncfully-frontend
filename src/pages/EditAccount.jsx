@@ -29,7 +29,9 @@ export default function EditAccount() {
   const [isSaving, setIsSaving] = useState(false);
 
   // Load user
-  useEffect(() => {
+    /* Lifecycle: preload current user fields into local form state so the
+      edit form operates purely as a controlled component. */
+    useEffect(() => {
     if (authLoading || !user) return;
 
     (async () => {
@@ -50,6 +52,14 @@ export default function EditAccount() {
 
   const handleSave = async () => {
     if (isSaving) return; // Prevent duplicate submissions
+    // Client-side email validation: provide immediate, test-detectable feedback
+    // and avoid making the update API call when the email format is invalid.
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (form.email && !emailRegex.test(String(form.email).trim())) {
+      setMessage('Invalid email address');
+      setMessageType('error');
+      return;
+    }
     
     try {
       setMessage(null);

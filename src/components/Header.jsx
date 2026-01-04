@@ -119,6 +119,8 @@ const styles = {
   },
 };
 
+// Navigation UX rationale: search input is debounced to reduce requests
+// while preserving URL state so navigation and sharing remain predictable.
 export default function Header() {
   const { user, isGuest, logout } = useAuth();
   const profilePath = isGuest ? '/login' : '/account';
