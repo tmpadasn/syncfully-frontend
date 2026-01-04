@@ -53,6 +53,8 @@ function ResultHeader({ title, subtitle, meta, onClick }) {
 // ResultHeader shows a compact title and meta info.
 // Click the title to go to the item.
 
+/* SearchResults: performs server-side search, normalizes results, and applies client-side filters and shelf merging. */
+/* Caches normalized entities to provide a stable, performant results list. */
 /* ===================== SEARCH RESULTS FUNCTION ===================== */
 
 // Search results page component.

@@ -16,6 +16,7 @@ import HoverBar from "../components/HoverBar";
 // Displays another user's public profile and rating summaries. Loads profile
 // data and ratings, then derives follow relationship state to conditionally
 // render follow actions. Data loading is batched to reduce round-trips.
+// This page aggregates public profile data, ratings, and follow-state; comments document data-fetching and follow relationship logic.
 export default function Profile() {
   const { userId } = useParams();
   const navigate = useNavigate();

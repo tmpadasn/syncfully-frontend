@@ -1,4 +1,5 @@
-/* FilterBar: client-side filter controls populated from backend work data. */
+/* FilterBar: derives client-side filter controls from backend catalogue and exposes keyboard-friendly dropdowns. */
+/* Synchronizes filter state into URL params to preserve navigation and shareability. */
 import { useRef, useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { FiChevronDown, FiBook, FiMusic, FiFilm } from 'react-icons/fi';
@@ -263,7 +264,7 @@ export default function FilterBar() {
   }
 
   return (
-    <div style={styles.outer}>
+    <div style={styles.outer} >
       <div style={styles.bar}>
         {!optionsLoaded ? (
           <div style={{ ...styles.container, justifyContent: 'center', ...styles.loading }}>

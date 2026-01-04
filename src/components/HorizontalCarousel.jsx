@@ -1,11 +1,12 @@
+/* HorizontalCarousel: reusable horizontal scroll container with left/right controls. */
+/* Delegates scroll state to `useHorizontalScroll` so callers provide only children and styles. */
 import React from 'react';
 import useHorizontalScroll from '../hooks/useHorizontalScroll';
 import { getScrollButtonHandlers } from '../utils/scrollButtonHandlers';
 import { carouselWrapper, scrollContainer, scrollButton, hideScrollbarCSS as sharedHideScrollbar } from '../utils/carouselUI';
 
-/* HorizontalCarousel: centralizes horizontal scrolling UI and behavior.
-   Keeps markup, scroll buttons, and hide-scrollbar CSS in one place so callers
-   only provide children and style tokens. */
+/* HorizontalCarousel: provides a reusable horizontal scroll container with left/right controls. */
+/* Delegates scroll state to `useHorizontalScroll` so callers supply only children and styles. */
 export default function HorizontalCarousel({ children, scrollChunk = 3, wrapperStyle, containerStyle, buttonStyle, deps = [] }) {
   const { scrollContainerRef, canScrollLeft, canScrollRight, scrollBy } = useHorizontalScroll({ scrollChunk, deps });
   const leftHandlers = getScrollButtonHandlers(canScrollLeft);

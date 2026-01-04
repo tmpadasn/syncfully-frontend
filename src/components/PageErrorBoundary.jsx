@@ -183,6 +183,8 @@ class PageErrorBoundaryClass extends React.Component {
                   Don't worry – your data is safe, and you can try one of the options below.
                 </p>
 
+                /* Recovery actions: provide immediate ways to recover from page-level failures. */
+                /* Buttons reset error state or navigate to safe views to restore a usable application state. */
                 <div style={styles.buttonContainer}>
                   <button
                     onClick={this.handleReset}

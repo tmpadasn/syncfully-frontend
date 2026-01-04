@@ -18,6 +18,9 @@ import {
   normalizeGenres,
 } from '../utils/normalize';
 
+/* WorkDetails helpers: parsing and normalization helpers used to keep rendering logic concise. */
+/* These helpers isolate non-trivial mapping between API responses and UI-friendly shapes. */
+
 /* ===================== HELPER FUNCTIONS ===================== */
 
 const processWorkData = (workResponse) => {
@@ -691,7 +694,9 @@ export default function WorkDetails() {
             </div>
           </div>
 
-          {/* DISTRIBUTION */}
+           {/* Rating distribution visualization.
+             Uses per-bucket percentages and counts so the UI reflects relative feedback without extra API calls. */}
+           {/* DISTRIBUTION */}
           <div style={styles.distributionContainer}>
             <h4 style={styles.distributionTitle}>
               Rating Distribution

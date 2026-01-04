@@ -19,7 +19,6 @@ import { Skeleton } from '../components/Skeleton';
 import logger from '../utils/logger';
 
 /* ===================== UI STYLES ===================== */
-// Styles for the Shelves page
 const styles = {
 
     shelfSection: {
@@ -707,7 +706,8 @@ export default function Shelves() {
         </div>
       )}
 
-      {/* Shelves as expandable rows */}
+     { /* Render shelves as expandable rows; Favourites are prioritized and duplicates removed. */
+      /* Action buttons call stopPropagation so header clicks toggle expansion while actions remain interactive. */}
       {!loading && shelves.length > 0 && (
         <div>
           {sortedShelves.map(shelf => {
@@ -879,7 +879,8 @@ export default function Shelves() {
         </div>
       )}
 
-      {/* Modal */}
+      {/* Modal dialog: isolates create/edit form from page context.
+          Outer overlay closes the modal while inner content stops propagation so form interactions remain contained. */}
       {showModal && (
         <div style={styles.modal} onClick={handleCloseModal}>
           <div style={styles.modalContent} onClick={(e) => e.stopPropagation()}>

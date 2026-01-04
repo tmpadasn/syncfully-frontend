@@ -29,6 +29,7 @@ import HoverBar from "../components/HoverBar";
 // Presents the authenticated user's profile, computed statistics, followers
 // and following lists, and rating history. Data is fetched once on mount and
 // grouped to minimize redundant API calls and re-renders.
+// Notes: batching of API calls reduces latency; ratings are filtered to the current catalogue.
 export default function Account() {
   const { user, logout, authLoading } = useAuth();
   const navigate = useNavigate();

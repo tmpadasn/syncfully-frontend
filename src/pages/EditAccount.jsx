@@ -9,6 +9,10 @@ import { DEFAULT_AVATAR_URL } from "../config/constants";
   current user's data into local form state. Saving issues an update call
   and updates the authentication context with the server response.
 */
+
+
+// This component provides the authenticated user's profile edit UX and handles form state and submission.
+// Comments explain lifecycle points and non-obvious UI decisions; behaviour unchanged.
 export default function EditAccount() {
   const { user, authLoading, setUser } = useAuth();
   const navigate = useNavigate();

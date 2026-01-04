@@ -164,6 +164,8 @@ const styles = {
 // and sets a short-lived flag on successful auth so other pages can show
 // a welcome message.
 export default function Login() {
+  // Component state & routing: keeps local form inputs, loading and error flags.
+  // Separates UI state from Auth hook so side-effects and navigation remain explicit.
   const { login, signup } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
@@ -202,6 +204,8 @@ export default function Login() {
     setError(null);
     setLoading(true);
 
+    // Submit handler: validate locally, delegate to Auth hook, and handle navigation.
+    // Maintains a loading flag for optimistic UX and sets a session marker on success.
     try {
       if (isLogin) {
         // Validate login inputs
@@ -267,6 +271,8 @@ export default function Login() {
   const passwordTooShort = password && password.length < 4;
 
   // RETURN LOGIN PAGE LAYOUT
+  // Render: conditional fields based on `mode` with accessible attributes and inline feedback.
+  // Keeps markup simple so tests and E2E flows can reliably query inputs and errors.
   return (
     <div style={styles.pageContainer}>
       <div style={styles.cardWrapper}>

@@ -245,6 +245,9 @@ export default function AddToShelfBtn({ workId, userId, shelves, onSuccess }) {
             style={styles.modalContent}
             onClick={(e) => e.stopPropagation()}
           >
+            {/* Modal header: provides the dialog title and a programmatic close control, anchored
+              by `aria-labelledby` so assistive technologies expose the dialog context. */
+            /* Close control is focused on open to stabilise layout and give keyboard users an immediate dismiss action. */}
             <div style={styles.modalHeader}>
               <h2 id="modal-title" style={styles.modalTitle}>Add to Shelf</h2>
               <button
@@ -257,6 +260,8 @@ export default function AddToShelfBtn({ workId, userId, shelves, onSuccess }) {
               </button>
             </div>
 
+           { /* Render transient status and accessible shelf options; messages use role="alert" and live regions. */}
+            {/* Favourites is always first to preserve predictable focus order and keyboard navigation. */}
             {message && (
               <div
                 style={message.type === 'error' ? styles.errorMessage : styles.successMessage}
