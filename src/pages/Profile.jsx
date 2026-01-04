@@ -125,6 +125,9 @@ export default function Profile() {
     }
   };
 
+  /* Follow semantics: compute local follow-state immediately after action
+     to reflect intent in the UI while the backend confirms the change. */
+
   /* ===================== UI STYLES ===================== */
 
   const styles = {

@@ -171,6 +171,8 @@ export default function FilterBar() {
   
   // Load filter options from backend on component mount
   useEffect(() => {
+    // Derive filters robustly from backend data so controls reflect real catalogue shape.
+    // This ensures UX and shareable URLs match actual server-side content.
     const loadFilterOptions = async () => {
       try {
         const worksData = await getAllWorks();

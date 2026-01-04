@@ -88,6 +88,9 @@ export default function EditAccount() {
     }
   };
 
+  /* Update flow: apply optimistic UI by updating local auth context after server success.
+     This separates server validation errors from local form state management. */
+
   const handleCancel = () => {
     navigate('/account');
   };

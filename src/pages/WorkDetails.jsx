@@ -56,6 +56,9 @@ const processSimilarWorksData = (similarWorksResponse) => {
   return normalizeWorks(similarWorksResponse);
 };
 
+//  Keep helpers small and pure to simplify unit testing and reuse.
+//  Helpers normalize API responses so the component focuses on rendering.
+
 /* ===================== WORK DETAILS FUNCTION ===================== */
 
 export default function WorkDetails() {
@@ -367,6 +370,8 @@ export default function WorkDetails() {
     },
   };
 
+  //  Single-entry point for fetching and normalizing remote data.
+  // Centralizes side-effects so retry logic and loading state are predictable.
   const loadWorkData = useCallback(async () => {
     if (!isMountedRef.current) return;
 
@@ -403,6 +408,9 @@ export default function WorkDetails() {
       }
     }
   }, [workId]);
+
+    /* Mounted check: avoid state updates after unmount by tracking a ref.
+      This prevents React warnings and race conditions from overlapping requests. */
 
   // Load work details, ratings, and similar works on mount
   useEffect(() => {
@@ -490,6 +498,8 @@ export default function WorkDetails() {
   };
 
   // Rating buckets
+  //  Derive aggregates once to avoid repeated compute during render.
+  //  Keep presentation-layer calculations pure and memoizable later.
   const totalRatings = ratings.length;
   const bucketCounts = [5, 4, 3, 2, 1].map((star) => ({
     star,
@@ -508,6 +518,8 @@ export default function WorkDetails() {
   
 
   // RETURN WORK DETAILS PAGE LAYOUT
+  //  Layout composes left/middle/right concerns separately for clarity.
+  //  Encourages selective hydration and easier accessibility audits.
   return (
     <div style={styles.pageContainer}>
       {message && (

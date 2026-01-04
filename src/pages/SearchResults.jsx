@@ -52,6 +52,8 @@ function ResultHeader({ title, subtitle, meta, onClick }) {
 
 // ResultHeader shows a compact title and meta info.
 // Click the title to go to the item.
+/* Result header reuse: keeps item headings consistent and keyboard-accessible,
+   reducing duplication across results lists. */
 
 /* SearchResults: performs server-side search, normalizes results, and applies client-side filters and shelf merging. */
 /* Caches normalized entities to provide a stable, performant results list. */
@@ -396,6 +398,12 @@ export default function SearchResults() {
   const [favouritingWork, setFavouritingWork] = useState(null);
   const [favouritesShelfId, setFavouritesShelfId] = useState(null);
 
+    /* URL-driven filters: parsing `search` into params keeps the UI state
+      aligned with shareable URLs and browser history (deep links). */
+
+    /* State shapes: `results` stores normalized entities while `Set`s
+      provide O(1) membership checks for add/favourite status. */
+
   // Load user's Favourites shelf and check which works are already in it
   const loadFavourites = useCallback(async () => {
     if (!user || !isMountedRef.current) return;
@@ -494,6 +502,9 @@ export default function SearchResults() {
       }
     }
   }, [addToShelfId]);
+
+    /* Shelf-mode loading: when the page is opened with shelf context,
+      load the shelf contents once to annotate the results list. */
 
   useEffect(() => {
     loadShelfContents();
@@ -669,6 +680,9 @@ export default function SearchResults() {
     }
   }, [query, typeFilter, yearFilter, genreFilter, ratingFilter]);
 
+  /* Fetch strategy: prefer backend search for heavy lifting and use
+     client-side filters to provide immediate responsiveness and unified UI shapes. */
+
   // Fetch search results when filters or query change
   useEffect(() => {
     fetchResults();
@@ -753,6 +767,9 @@ export default function SearchResults() {
       setFavouritingWork(null);
     }
   };
+
+  /* Favourites flow: ensure the favourites shelf exists before toggling,
+     and perform idempotent operations so repeated clicks are safe. */
 
   const closeBanner = () => {
     // Remove shelf params from URL

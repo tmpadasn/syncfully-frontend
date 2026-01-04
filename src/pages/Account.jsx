@@ -160,6 +160,9 @@ export default function Account() {
     }
   };
 
+  /* Account deletion: explicit confirmation required to prevent accidental data loss.
+     Server-side delete is irreversible and UI immediately clears session on success. */
+
   /* ===================== UI STYLES ===================== */
   const styles = {
     // Page layout

@@ -156,6 +156,9 @@ const styles = {
   },
 };
 
+//Styles are scoped to this file to enable quick visual adjustments.
+// Co-locating styles reduces cognitive overhead when modifying layout.
+
 /* ===================== LOGIN FUNCTION ===================== */
 
 // Login component
@@ -437,6 +440,12 @@ export default function Login() {
                 </div>
               )}
             </div>
+
+            {/* Password guidance: a short client-side check prevents trivial mistakes
+               and improves form completion rates before submission. */}
+
+            //  Brief inline guidance reduces common input errors.
+            //  Keep client-side checks lightweight to avoid false negatives.
 
             {/* Submit Button */}
             <button

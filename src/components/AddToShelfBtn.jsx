@@ -191,6 +191,9 @@ export default function AddToShelfBtn({ workId, userId, shelves, onSuccess }) {
     }
   };
 
+  /* Add-to-shelf semantics: perform idempotent add and display transient feedback.
+     This keeps UI responsive while the backend operation is retried safely. */
+
   const handleAddToFavourites = async () => {
     setLoading(true);
     setMessage(null);

@@ -19,6 +19,8 @@ import { Skeleton } from '../components/Skeleton';
 import logger from '../utils/logger';
 
 /* ===================== UI STYLES ===================== */
+/* Centralized styling: local `styles` groups visual tokens so
+  layout and theme adjustments remain colocated for maintainability. */
 const styles = {
 
     shelfSection: {
@@ -454,6 +456,9 @@ export default function Shelves() {
       return 0;
     });
 
+  /* Shelves ordering rationale: keep 'Favourites' prominent and
+     remove accidental duplicates to present a predictable list. */
+
   // Load user's ratings once to avoid extra calls
   const loadUserRatings = useCallback(async () => {
     if (!user?.userId || !isMountedRef.current) return;
@@ -471,6 +476,9 @@ export default function Shelves() {
       }
     }
   }, [user?.userId]);
+
+    /* Ratings caching: fetch ratings once and store as a map to
+      enable O(1) lookups when rendering many work cards. */
 
   useEffect(() => {
     isMountedRef.current = true;
@@ -539,12 +547,18 @@ export default function Shelves() {
     }
   };
 
+    /* Lazy-load rationale: shelf contents are loaded on demand to reduce
+      initial page load and bind network requests to explicit user intent. */
+
   const handleOpenCreateModal = () => {
     setModalMode('create');
     setFormData({ name: '', description: '' });
     setEditingShelf(null);
     setShowModal(true);
   };
+
+    /* Modal control: `modalMode` toggles create/edit semantics while
+      `formData` holds transient values until submission. */
 
   const handleOpenEditModal = (shelf) => {
     setModalMode('edit');
@@ -588,6 +602,9 @@ export default function Shelves() {
   const handleDelete = async (shelfId, shelfName) => {
     setDeleteConfirmation({ shelfId, shelfName });
   };
+
+  /* Deletion flow: deletion is gated by a confirmation UI to prevent
+     accidental data loss and to communicate permanence to users. */
 
   const handleAddWorks = (shelfId, shelfName) => {
     // Navigate to search page with shelf context
@@ -635,6 +652,9 @@ export default function Shelves() {
       setRemovingWork({ shelfId, workId });
     }
   };
+
+    /* Two-step remove pattern: marking then confirming reduces accidental
+       removals and gives a clear affordance for undo-like behavior. */
 
   // RETURN SHELVES PAGE LAYOUT
   return (
