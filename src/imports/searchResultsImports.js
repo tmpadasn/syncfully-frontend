@@ -57,7 +57,7 @@ export {
   extractWorksFromResponse,
   extractWorkIdsFromShelf,
 } from '../utils/normalize';
-export { searchResultsStyles } from '../styles/searchResults.styles';
+export { searchResultsStyles } from '../styles/searchResultsStyles';
 export {
   fetchSearchResults,
   getPageTitle,
