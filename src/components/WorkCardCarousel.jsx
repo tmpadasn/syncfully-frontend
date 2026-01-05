@@ -1,17 +1,20 @@
-/* WorkCardCarousel: carousel for work cards with hover, badges, and rating display */
+/**
+ * WorkCardCarousel - Horizontal carousel component displaying work cards with hover effects, ratings, and links.
+ * Features: scrollable card list, dynamic rating badges, user rating display, error boundary protection.
+ */
 import { useState } from 'react';
 import HorizontalCarousel from './HorizontalCarousel';
 import { carouselWrapper, scrollContainer, scrollButton } from '../utils/carouselUI';
 import { Link } from 'react-router-dom';
 import ErrorBoundary from './ErrorBoundary';
 
-// Design tokens - centralized values for colors, spacing, sizes, and animations
+// ========== DESIGN TOKENS: Centralized color, spacing, size, and animation values ==========
 const COLORS = { primary: '#9a4207', dark: '#392c2cff', accent: '#d4b895', muted: 'rgba(57, 44, 44, 0.7)', shadow: 'rgba(0,0,0,0.2)' };
 const SPACING = { xs: 2, sm: 4, md: 8, lg: 10, xl: 14, xxl: 20, xxxl: 40, xxxxl: 60 };
 const SIZES = { cardWidth: 180, cardHeight: 340, coverHeight: 230, borderRadius: 12 };
 const ANIMATION = { scale: 1.02, transY: 8, duration: '0.3s cubic-bezier(0.4, 0, 0.2, 1)', shadowHover: 'rgba(154, 66, 7, 0.4)' };
 
-// Styles
+// ========== COMPONENT STYLES: Inline style objects for carousel, cards, badges, and error states ==========
 const styles = {
   carouselWrapper,
   scrollButton: (isEnabled) => ({ ...scrollButton(isEnabled), width: '48px', height: '48px', fontSize: '24px' }),
@@ -43,21 +46,12 @@ const styles = {
     gap: SPACING.xs
   },
   infoSection: {
-    marginTop: SPACING.lg,
-    color: COLORS.dark,
-    flex: 1,
-    display: 'flex',
-    flexDirection: 'column',
-    justifyContent: 'space-between'
+    marginTop: SPACING.lg, color: COLORS.dark, flex: 1,
+    display: 'flex', flexDirection: 'column', justifyContent: 'space-between'
   },
   cardTitle: {
-    display: 'block',
-    overflow: 'hidden',
-    textOverflow: 'ellipsis',
-    whiteSpace: 'nowrap',
-    fontSize: 15,
-    marginBottom: SPACING.sm,
-    textShadow: `0 1px 2px ${COLORS.shadow}`
+    display: 'block', overflow: 'hidden', whiteSpace: 'nowrap',
+    fontSize: 15, marginBottom: SPACING.sm, textShadow: `0 1px 2px ${COLORS.shadow}`
   },
   userRating: { fontSize: 12, color: 'rgba(57, 44, 44, 0.9)', marginBottom: SPACING.xs },
   ratedDate: { fontSize: 11, color: COLORS.muted, marginBottom: SPACING.sm },
@@ -70,17 +64,14 @@ const styles = {
   },
   errorMessage: { color: '#856404', marginBottom: SPACING.xl },
   reloadButton: {
-    padding: `${SPACING.sm}px ${SPACING.md * 2}px`,
-    background: COLORS.primary,
-    color: 'white',
-    border: 'none',
-    borderRadius: '6px',
-    cursor: 'pointer',
-    fontSize: '14px'
+    padding: `${SPACING.sm}px ${SPACING.md * 2}px`, background: COLORS.primary,
+    color: 'white', border: 'none', borderRadius: '6px',
+    cursor: 'pointer', fontSize: '14px'
   }
 };
 
-// Helper functions - reusable utilities for card display and interaction
+// ========== HELPER FUNCTIONS: Utilities for hover effects, rating formatting, and date handling ==========
+// Apply or remove hover transform and shadow effect to card element
 const applyHover = (e, isHover) => {
   if (isHover) {
     e.style.transform = `translateY(-${ANIMATION.transY}px) scale(${ANIMATION.scale})`;
@@ -91,18 +82,20 @@ const applyHover = (e, isHover) => {
   }
 };
 
-// Helper: get rating display
+// Format rating number to one decimal place for badge display
 const getRatingDisplay = (rating) => typeof rating === 'number' ? rating.toFixed(1) : rating;
 
-// Helper: format date
+// Convert ISO date string to localized date format for "Rated on" display
 const formatDate = (dateStr) => new Date(dateStr).toLocaleDateString();
 
+// ========== CAROUSEL INNER COMPONENT: Renders card grid with hover tracking and interactive elements ==========
+// Maps card data to interactive work cards within horizontal carousel with customizable extras and callbacks
 function WorkCardCarouselInner({
   cards = [], emptyMessage = 'No items yet.',
   renderCardExtras, scrollChunk = 3, onCardMouseLeave
 }) {
+  // Track which card is currently hovered to display state-dependent content (e.g., extras)
   const [hoveredCardId, setHoveredCardId] = useState(null);
-
   if (!cards || cards.length === 0) {
     return (
       <div style={styles.emptyState}>
@@ -167,9 +160,8 @@ function WorkCardCarouselInner({
   );
 }
 
-/**
- * Public wrapper with ErrorBoundary to prevent carousel failures from crashing the page.
- */
+// ========== PUBLIC CAROUSEL EXPORT: Wraps carousel with ErrorBoundary for safe failure handling ==========
+// Catches carousel rendering errors and displays fallback UI to prevent page crash
 export default function WorkCardCarousel(props) {
   return (
     <ErrorBoundary fallback={<div style={styles.errorFallback}><p style={styles.errorMessage}>Unable to load carousel</p><button onClick={() => window.location.reload()} style={styles.reloadButton}>Reload</button></div>}>

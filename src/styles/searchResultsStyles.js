@@ -1,9 +1,10 @@
 /**
- * SearchResults Page - Styles
- * Centralized inline styles with design tokens
+ * SearchResults Page - Styles: Centralized inline styles with design tokens for search results layout.
+ * Exports unified style object used by SearchResults component.
  */
 
-// Design Tokens
+// ========== DESIGN TOKENS: Reusable design values for colors, spacing, typography, and shadows ==========
+// Color palette organized by purpose (primary, secondary, text, backgrounds, borders, buttons)
 const COLORS = {
   primary: '#9a4207',
   secondary: '#4caf50',
@@ -13,7 +14,10 @@ const COLORS = {
   button: { primary: '#9a4207c8' },
 };
 
+// Spacing scale (xs to xxxxl) for consistent gaps, padding, margins
 const SPACING = { xs: 4, sm: 6, md: 8, lg: 12, xl: 16, xxl: 20, xxxl: 24, xxxxl: 40 };
+
+// Typography presets for different text levels (banner, title, body, etc.)
 const TYPOGRAPHY = {
   banner: { fontSize: 15, fontWeight: '600' },
   title: { fontSize: 13, fontWeight: 600 },
@@ -27,17 +31,21 @@ const TYPOGRAPHY = {
   userEmail: { fontSize: 14 },
   userDetails: { fontSize: 12 }
 };
+
+// Border radius values for different component shapes
 const RADII = { sm: 4, md: 6, lg: 8, xl: 10, full: '50%' };
+
+// Shadow definitions for depth and hierarchy
 const SHADOWS = { light: '0 2px 8px rgba(0,0,0,0.1)', button: '0 2px 8px rgba(0,0,0,0.2)', banner: '0 4px 12px rgba(0,0,0,0.15)' };
 
-// Styles object
+// ========== STYLES OBJECT: Central export containing all page layout, component, and interactive element styles ==========
 export const searchResultsStyles = {
-  // Page Layout
+  // ========== PAGE LAYOUT: Main container and layout structure for search results page ==========
   pageContainer: { display: 'flex', flexDirection: 'column', minHeight: '100vh' },
   pageInner: { flex: 1 },
   pageMain: { maxWidth: '1200px', margin: '0 auto', width: '100%', padding: `${SPACING.xl}px ${SPACING.lg}px` },
 
-  // Banner Section
+  // ========== BANNER SECTION: Fixed sidebar banner showing selected filters and controls ==========
   bannerContainer: {
     position: 'fixed',
     right: SPACING.xl,
@@ -64,7 +72,7 @@ export const searchResultsStyles = {
     transition: `background 0.2s ease`
   },
 
-  // Title Section
+  // ========== TITLE SECTION: Search query/description section at top of results ==========
   titleContainer: { marginBottom: SPACING.xxl },
   titleBox: {
     padding: `${SPACING.md}px ${SPACING.lg}px`,
@@ -76,11 +84,12 @@ export const searchResultsStyles = {
   },
   titleText: { ...TYPOGRAPHY.title, color: COLORS.text.muted, letterSpacing: 0.5, textTransform: 'uppercase' },
 
+  // Loading and empty state styles
   loadingContainer: { marginTop: SPACING.xxl },
   emptyMessage: { textAlign: 'center' },
   noResults: { display: 'flex', flexDirection: 'column', gap: 0 },
 
-  // Results Container
+  // ========== RESULTS CONTAINER: Wrapper and sections for works and users results ==========
   resultsContainer: { display: 'flex', flexDirection: 'column', gap: 0 },
   worksSection: { marginBottom: SPACING.xxxxl },
   usersSection: { marginBottom: SPACING.xxxxl },
@@ -94,7 +103,7 @@ export const searchResultsStyles = {
   },
   itemsGrid: { display: 'flex', flexDirection: 'column', gap: SPACING.lg },
 
-  // Work Items
+  // ========== WORK ITEMS: Individual work card layout with cover image, details, and action buttons ==========
   workItem: { width: '100%', display: 'flex', gap: SPACING.lg, alignItems: 'flex-start', position: 'relative' },
   coverImage: {
     width: 120, height: 170,
@@ -110,7 +119,7 @@ export const searchResultsStyles = {
   },
   coverImageInner: { width: '100%', height: '100%', objectFit: 'cover' },
 
-  // Dynamic factories for button states based on processing status
+  // Dynamic style factories for button states based on processing status
   heartButton: (isProcessing) => ({
     position: 'absolute',
     top: SPACING.sm, right: SPACING.sm,
@@ -144,6 +153,7 @@ export const searchResultsStyles = {
     opacity: isProcessing ? 0.6 : 1
   }),
 
+  // Work metadata and text content
   workInfo: { flex: 1, display: 'flex', flexDirection: 'column', gap: SPACING.md },
   workTitle: { margin: 0, ...TYPOGRAPHY.workTitle, cursor: 'pointer', color: COLORS.text.dark },
   workMeta: { display: 'flex', gap: SPACING.xl, alignItems: 'center' },
@@ -160,7 +170,7 @@ export const searchResultsStyles = {
   },
   ratingInfo: { ...TYPOGRAPHY.ratingInfo, color: COLORS.text.muted },
 
-  // User Items
+  // ========== USER ITEMS: Individual user profile card layout with avatar and details ==========
   userItem: { display: 'flex', gap: SPACING.xl, alignItems: 'center' },
   userAvatar: { width: 80, height: 80, borderRadius: RADII.full, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', background: COLORS.bg.card, transition: 'all 0.2s ease', flexShrink: 0 },
   userAvatarImage: { width: '100%', height: '100%', objectFit: 'cover' },
@@ -171,6 +181,6 @@ export const searchResultsStyles = {
   userRatings: { margin: 0, color: COLORS.text.dimmed, ...TYPOGRAPHY.userDetails },
   userLabel: { margin: 0, color: COLORS.text.dimmed, ...TYPOGRAPHY.userDetails },
 
-  // Divider
+  // ========== DIVIDERS: Section separators between work and user result sections ==========
   divider: { marginTop: SPACING.xxxl - 2, borderBottom: `2px solid ${COLORS.border.dark}`, paddingBottom: SPACING.sm, marginBottom: SPACING.lg },
 };

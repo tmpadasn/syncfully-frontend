@@ -1,6 +1,10 @@
 import { DEFAULT_AVATAR_URL } from '../config/constants';
 
-// Helper to extract ID from objects with various ID field names
+/* ========== NORMALIZATION UTILITIES ==========
+ * Standardizes API responses into consistent object structures.
+ * Different endpoints may use different field names, these helpers ensure consistency. */
+
+// Extract ID from objects supporting multiple ID field names
 const id = (obj) => obj?.id || obj?.workId || obj?._id || obj?.entityId;
 
 // Normalize a single work object, handles various API response formats
@@ -20,9 +24,11 @@ export const normalizeWork = (work) => {
   };
 };
 
+// Batch normalize works array, filtering out invalid entries
 export const normalizeWorks = (works) =>
   Array.isArray(works) ? works.map(normalizeWork).filter(Boolean) : [];
 
+// Normalize work with flattened metadata for list/card display
 export const normalizeWorkWithMeta = (work) => {
   const n = normalizeWork(work);
   if (!n) return null;
@@ -30,6 +36,7 @@ export const normalizeWorkWithMeta = (work) => {
   return {...n, genre: g, meta: `${n.year || 'Unknown Year'} • ${n.type || 'Unknown Type'} • ${g}`, subtitle: n.creator};
 };
 
+// Normalize work as searchable entity with lowercase genres and rich metadata
 export const normalizeWorkEntity = (item) => {
   if (!item || !id(item)) return null;
   const g = normalizeGenres(item.genres || item.genre),
@@ -47,34 +54,42 @@ export const normalizeWorkEntity = (item) => {
   };
 };
 
+// Parse genres from arrays, CSV, or semicolon-delimited strings. Returns lowercase array
 export const normalizeGenres = (genres) =>
   Array.isArray(genres) ? genres.filter(Boolean) :
   (typeof genres === 'string' && genres.trim()) ? genres.split(/[,;]/).map(g => g.trim()).filter(Boolean) :
   [];
 
-// Helper to extract array from various API response structures
+// Extract arrays from various API response structures (handles nested, direct, keyed responses)
 const extractFromResponse = (r, k) => {
   const d = r?.data || r;
   return Array.isArray(r) ? r : Array.isArray(d) ? d : Array.isArray(d?.[k]) ? d[k] : [];
 };
+
+// Extract specific data types from API responses, handling multiple nesting patterns
 export const extractWorksFromResponse = r => extractFromResponse(r, 'works');
 export const extractRatingsFromResponse = r => extractFromResponse(r, 'ratings');
 export const extractShelvesFromResponse = r => extractFromResponse(r, 'shelves');
+
+// Extract single work from response (used in detail views)
 export const extractWorkFromResponse = (r) => {
   const d = r?.data || r;
   return Array.isArray(d?.works) ? d.works[0] : d?.work || (d?.workId || d?.id ? d : null);
 };
 
-// User normalization functions
+// ========== USER NORMALIZATION ==========
 export const normalizeUser = (user) =>
   !user || !id(user) ? null : {
     userId: id(user), username: user.username || user.name || 'Unknown User',
     email: user.email || '', profilePictureUrl: user.profilePictureUrl || user.avatar || DEFAULT_AVATAR_URL,
     bio: user.bio || user.description || '', ratedWorks: user.ratedWorks || 0
   };
+
+// Batch normalize users array, filtering out invalid entries
 export const normalizeUsers = (users) => Array.isArray(users) ? users.map(normalizeUser).filter(Boolean) : [];
 
-// Rating normalization - supports both single and bulk rating objects
+// ========== RATING NORMALIZATION ==========
+// Normalize single rating/review object, supporting multiple field name conventions
 export const normalizeRating = (rating) => !rating ? null : {
   ratingId: rating.ratingId || rating.id || rating._id,
   userId: rating.userId || rating.user?.userId,
@@ -83,6 +98,8 @@ export const normalizeRating = (rating) => !rating ? null : {
   comment: rating.comment || rating.review || '',
   ratedAt: rating.ratedAt || rating.createdAt || new Date().toISOString()
 };
+
+// Normalize bulk ratings keyed by work ID (API returns { workId: { score, comment }, ... })
 export const normalizeRatingsObject = (ratingsData) =>
   !ratingsData || typeof ratingsData !== 'object' ? [] :
   Object.entries(ratingsData).map(([wId, r]) => ({
@@ -91,7 +108,7 @@ export const normalizeRatingsObject = (ratingsData) =>
     ratedAt: r.ratedAt ? new Date(r.ratedAt) : new Date()
   }));
 
-// Shelf normalization
+// ========== SHELF NORMALIZATION ==========
 export const normalizeShelf = (shelf) =>
   !shelf || !id(shelf) ? null : {
     shelfId: id(shelf), name: shelf.name || 'Untitled Shelf',
@@ -100,7 +117,8 @@ export const normalizeShelf = (shelf) =>
     createdAt: shelf.createdAt || new Date().toISOString()
   };
 
-// Collection utilities - extract, merge, shuffle work arrays
+// ========== COLLECTION UTILITIES ==========
+// Extract set of work IDs from shelf, handling multiple ID field names
 export const extractWorkIdsFromShelf = (works) => new Set(
   !Array.isArray(works) ? [] : works.map(w =>
     w ? (typeof w === 'string' || typeof w === 'number' ? String(w) :
@@ -109,6 +127,7 @@ export const extractWorkIdsFromShelf = (works) => new Set(
   ).filter(Boolean)
 );
 
+// Merge two work arrays without duplicates (primary array takes precedence)
 export const mergeUniqueWorks = (primary, secondary) => {
   const seen = new Set(primary.map(w => w.entityId || w.workId || w.id)),
     merged = [...primary];
@@ -119,7 +138,7 @@ export const mergeUniqueWorks = (primary, secondary) => {
   return merged;
 };
 
-// Fisher-Yates shuffle algorithm for random array ordering
+// Fisher-Yates shuffle for unbiased random ordering (new array, doesn't mutate)
 export const shuffleArray = (array) => {
   const s = [...array];
   for (let i = s.length - 1; i > 0; i--) {
@@ -128,10 +147,13 @@ export const shuffleArray = (array) => {
   }
   return s;
 };
+
+// Get random sample from array without replacement (handles edge cases)
 export const getRandomItems = (array, count) =>
   !Array.isArray(array) || array.length === 0 ? [] : shuffleArray(array).slice(0, count);
 
-// Apply client-side filters for work type, genre, year, and rating
+// ========== FILTERING UTILITIES ==========
+// Apply client-side filters (type, genre, year, rating) for search refinement
 export const applyWorkFilters = (works, filters) => {
   if (!Array.isArray(works)) return [];
   const {type: t, genre: g, year: y, rating: r} = filters;

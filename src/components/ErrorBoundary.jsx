@@ -1,23 +1,26 @@
-import React from 'react';
-import logger from '../utils/logger';
-import { IS_DEVELOPMENT } from '../config/constants';
-
-/* Unified ErrorBoundary component that catches errors at any level.
- * Supports both nested component errors and page-level errors with configurable UI.
+/**
+ * ErrorBoundary - Unified error handling component for nested and page-level errors.
+ * Catches all unhandled errors in child components and displays appropriate recovery UI.
+ * Features: Configurable UI levels, custom fallback support, development error details, smart recovery actions.
+ *
  * Props:
  *   - children: Component(s) to wrap
  *   - fallback: Custom fallback UI for nested errors (overrides UI level config)
  *   - level: 'page' (full-page UI) or 'nested' (compact UI). Defaults to 'nested'
  */
+import React from 'react';
+import logger from '../utils/logger';
+import { IS_DEVELOPMENT } from '../config/constants';
 
-// Design tokens for consistent styling across UI levels
+// ========== DESIGN TOKENS: Color, spacing, and radius scales for consistent styling across both UI levels ==========
 const COLORS = { primary: '#9a4207', primaryDark: '#7a3406', secondary: '#6c757d', error: '#d32f2f', text: '#666', light: '#999' };
 const SPACING = { xs: 10, sm: 12, md: 16, lg: 20, xl: 30, xxl: 40, xxxl: 60 };
 const RADII = { sm: 8, md: 12 };
 
 const baseBtn = { padding: `${SPACING.sm}px ${SPACING.md * 1.5}px`, border: 'none', borderRadius: RADII.sm, cursor: 'pointer', fontSize: '15px', fontWeight: '600', transition: 'all 0.2s ease' };
 
-// Styles for nested-level errors (component-scoped)
+// ========== NESTED ERROR STYLES: Compact component-level error UI for caught exceptions ==========
+// Minimal layout suitable for errors within larger components - shows brief message and recovery actions
 const nestedStyles = {
   errorContainer: { padding: `${SPACING.xxl}px ${SPACING.md}px`, maxWidth: '600px', margin: '0 auto', textAlign: 'center' },
   errorBox: { background: '#fff3cd', border: '1px solid #ffc107', borderRadius: RADII.sm, padding: SPACING.xxl, marginBottom: SPACING.md },
@@ -28,7 +31,8 @@ const nestedStyles = {
   secondaryButton: { ...baseBtn, background: COLORS.secondary, color: 'white' },
 };
 
-// Styles for page-level errors (full-page UI with more detail)
+// ========== PAGE ERROR STYLES: Full-page error UI with detailed messaging and comprehensive recovery options ==========
+// Rich layout for page-level crashes - includes emoji, full description, multiple action buttons, dev details
 const pageStyles = {
   errorWrapper: { padding: `${SPACING.xxxl}px ${SPACING.md}px`, textAlign: 'center', maxWidth: '700px', margin: '0 auto' },
   errorBox: { background: 'linear-gradient(135deg, #fff5f5 0%, #ffe8e8 100%)', border: `2px solid ${COLORS.error}`, borderRadius: RADII.md, padding: SPACING.xxl, boxShadow: '0 4px 12px rgba(0,0,0,0.1)' },
@@ -46,23 +50,33 @@ const pageStyles = {
   footerText: { marginTop: SPACING.xl, color: COLORS.light, fontSize: '14px' },
 };
 
+// ========== ERROR BOUNDARY CLASS: React.Component lifecycle methods for error catching and state management ==========
+// Implements getDerivedStateFromError and componentDidCatch to catch all errors in child component tree
 class ErrorBoundaryClass extends React.Component {
+  // Initialize state: track error flag, error object, and component stack for debugging
   constructor(props) {
     super(props);
     this.state = { hasError: false, error: null, errorInfo: null };
   }
 
+  // ========== LIFECYCLE METHODS: React error boundary hooks for catching and handling errors ==========
+  // Update state to display error UI when child component throws
   static getDerivedStateFromError() {
     return { hasError: true };
   }
 
+  // Log error details for monitoring and save error info to state for debugging display
   componentDidCatch(error, errorInfo) {
     logger.error('ErrorBoundary caught an error:', error, errorInfo);
     this.setState({ error, errorInfo });
   }
 
+  // ========== STATE RESET: Clear error state to allow user to retry or navigate ==========
+  // Reset error boundary to attempt re-rendering children (user triggered via "Try Again" button)
   reset = () => this.setState({ hasError: false, error: null, errorInfo: null });
 
+  // ========== HELPER METHOD: Render interactive button with hover effects and smooth transitions ==========
+  // Creates styled button with dynamic background color changes on hover and vertical translate effect
   renderButton(label, style, onClick, bgColor, bgColorHover) {
     return (
       <button
@@ -76,6 +90,8 @@ class ErrorBoundaryClass extends React.Component {
     );
   }
 
+  // ========== RENDER NESTED ERROR: Compact component-level error UI with inline details for dev mode ==========
+  // Displays warning message, recovery buttons (Try Again, Go Home), and expandable error stack in development
   renderNestedError() {
     // For custom fallback, return as-is
     if (this.props.fallback) return this.props.fallback;
@@ -102,6 +118,8 @@ class ErrorBoundaryClass extends React.Component {
     );
   }
 
+  // ========== RENDER PAGE ERROR: Full-page error UI with emoji, detailed message, and comprehensive options ==========
+  // Displays sympathetic error message, three action buttons (Reload, Home, Back), and expandable dev error details
   renderPageError() {
     return (
       <div className="page-container">
@@ -139,6 +157,8 @@ class ErrorBoundaryClass extends React.Component {
     );
   }
 
+  // ========== MAIN RENDER: Choose UI level and return error or children based on error state ==========
+  // Routes to page or nested error UI based on level prop, or returns children if no error
   render() {
     if (this.state.hasError) {
       return this.props.level === 'page' ? this.renderPageError() : this.renderNestedError();

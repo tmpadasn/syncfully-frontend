@@ -134,11 +134,13 @@ export default function WorkDetails() {
             {work.type && <span style={workDetailsStyles.typeTag}>{String(work.type)}</span>}
             {work.genres?.map((g, i) => <span key={i} style={workDetailsStyles.genreTag}>{g}</span>)}
           </div>
+          {/* Description Section */}
           <section style={workDetailsStyles.descriptionSection}>
             <h3 style={workDetailsStyles.descriptionTitle}>Description</h3>
             {work.description ? <p style={workDetailsStyles.descriptionText}>{work.description}</p> :
              <p style={workDetailsStyles.descriptionPlaceholder}>No description available for this work yet.</p>}
           </section>
+          {/* Recommendation Section */}
           <section style={workDetailsStyles.recommendationsSection}>
             <div style={{ display: 'inline-block', width: '100%' }}><h3 className="section-title">YOU MAY ALSO LIKE</h3></div>
             {recommended.length > 0 ? (
@@ -150,7 +152,7 @@ export default function WorkDetails() {
             ) : <div style={workDetailsStyles.emptyRecommendations}><p>No similar works found for this item.</p></div>}
           </section>
         </main>
-
+        {/* Right Part */}
         <aside style={workDetailsStyles.rightColumn}>
           {!isGuest && shelves.length > 0 && <div style={{ marginBottom: 24 }}><AddToShelfBtn workId={parseInt(workId)} userId={user?.userId} shelves={shelves} onSuccess={() => {}} /></div>}
           <div style={{ display: 'inline-block', marginBottom: 16 }}><h3 className="section-title">RATINGS</h3></div>

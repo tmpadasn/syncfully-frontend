@@ -1,9 +1,10 @@
 /**
- * Skeleton: Loading placeholder component with shimmer animation
- * Used across app to show loading states with proper visual feedback
+ * Skeleton - Loading placeholder components with shimmer animation.
+ * Provides various skeleton layouts for different page sections (work cards, profiles, search results, etc.).
+ * Used across app to show loading states with proper visual feedback during data fetching.
  */
 
-// Design tokens for consistent styling across all skeleton variants
+// ========== DESIGN TOKENS: Color palette for skeleton and background elements ==========
 const COLORS = {
   skeletonLight: '#f0f0f0',
   skeletonMid: '#e0e0e0',
@@ -16,7 +17,7 @@ const COLORS = {
   gold: '#efe5db'
 };
 
-// Standard spacing values for consistent layout
+// ========== SPACING SCALE: Standard padding, margin, and gap values for consistent layout ==========
 const SPACING = {
   xs: 4,
   sm: 8,
@@ -28,7 +29,7 @@ const SPACING = {
   xxxxl: 48
 };
 
-// Predefined size values for components and spacing
+// ========== SIZE CONSTANTS: Predefined measurements for avatars, cards, and border radius values ==========
 const SIZES = {
   coverSmall: 72,
   avatarSmall: 20,
@@ -42,7 +43,7 @@ const SIZES = {
   borderRadiusLarge: 12
 };
 
-// Reusable style objects for different skeleton layouts
+// ========== STYLE OBJECTS: Reusable CSS-in-JS styles for skeleton layouts across different page sections ==========
 const styles = {
   skeletonBase: {
     background: `linear-gradient(90deg, ${COLORS.skeletonLight} 25%, ${COLORS.skeletonMid} 50%, ${COLORS.skeletonLight} 75%)`,
@@ -112,26 +113,31 @@ const styles = {
   profileRatingHistoryItem: { marginBottom: SPACING.lg, padding: SPACING.lg, background: COLORS.textBg, borderRadius: SIZES.borderRadiusMedium },
 };
 
-// Helper function to generate grid of skeleton elements
+// ========== HELPER UTILITIES: Functions for generating skeleton grids and animation keyframes ==========
+// Generate array of Skeleton components for creating multiple placeholder elements
 const createSkeletonGrid = (count, width = '100%', height = '80px') =>
   Array.from({ length: count }).map((_, i) => <Skeleton key={i} width={width} height={height} borderRadius={SIZES.borderRadiusLarge} />);
 
-// CSS animation for shimmer effect
+// CSS animation keyframes for shimmer loading effect - creates left-to-right gradient shift across element
 const skeletonKeyframes = `@keyframes skeleton-loading { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }`;
 
-// Base skeleton component with shimmer animation
+// ========== BASE SKELETON COMPONENT: Generic animated placeholder with configurable dimensions ==========
+// Renders animated gray gradient bar - primary building block for all skeleton layouts
 export function Skeleton({ width = '100%', height = '20px', borderRadius = SIZES.borderRadiusSmall, style = {} }) {
   return (
     <div style={{ ...styles.skeletonBase, width, height, borderRadius, ...style }}>
+      {/* Inject shimmer animation keyframes for this skeleton element */}
       <style>{skeletonKeyframes}</style>
     </div>
   );
 }
 
-// Grid of work card skeletons with configurable columns and count
+// ========== WORK GRID SKELETON: Multiple work card placeholders with shimmer - for search/browse pages ==========
+// Renders grid of card-height skeleton blocks - shows loading state for work listings
 export function WorkGridSkeleton({ count = 6, columns = 'repeat(auto-fit, minmax(160px, 1fr))' }) {
   return (
     <div style={{ ...styles.workGridContainer, gridTemplateColumns: columns }}>
+      {/* Create individual skeleton cards matching work card dimensions with subtle shadow */}
       {Array.from({ length: count }).map((_, i) => (
         <div key={i}>
           <Skeleton
@@ -146,36 +152,44 @@ export function WorkGridSkeleton({ count = 6, columns = 'repeat(auto-fit, minmax
   );
 }
 
-// Single friend card skeleton (avatar, name, bio)
+// ========== FRIEND CARD SKELETON: Individual friend/user card placeholder with avatar and name ==========
+// Shows loading state for user cards - includes cover image area, small avatar, and name skeleton
 export function FriendCardSkeleton() {
   return (
     <div style={styles.friendCardSkeleton}>
+      {/* Cover image area (full width, no border radius) */}
       <Skeleton width="100%" height={`${SIZES.cardHeightSmall}px`} borderRadius="0" />
       <div style={styles.friendCardPadding}>
+        {/* Avatar (circular) and user name */}
         <div style={styles.friendCardHeader}>
           <Skeleton width={`${SIZES.avatarSmall}px`} height={`${SIZES.avatarSmall}px`} borderRadius="50%" />
           <Skeleton width="80px" height="13px" />
         </div>
+        {/* User bio/description text line */}
         <Skeleton width="90%" height="12px" />
       </div>
     </div>
   );
 }
 
-// Grid layout for multiple friend card skeletons
+// ========== FRIEND GRID SKELETON: Multiple friend cards grid - for user/friend browsing pages ==========
+// Renders responsive grid of friend card skeletons with configurable count
 export function FriendGridSkeleton({ count = 4 }) {
   return (
     <div style={styles.friendGridContainer}>
+      {/* Map over count to render individual friend card skeletons */}
       {Array.from({ length: count }).map((_, i) => <FriendCardSkeleton key={i} />)}
     </div>
   );
 }
 
-// Detailed work page skeleton (cover, title, description, ratings, similar works)
+// ========== WORK DETAILS SKELETON: Full work page layout - cover, description, ratings, recommendations ==========
+// Three-column layout matching work details page: left (cover), center (description), right (ratings)
 export function WorkDetailsSkeleton() {
   return (
     <div style={styles.detailsContainer}>
       <div style={styles.detailsGrid}>
+        {/* Left sidebar: work cover image and action button */}
         <aside>
           <Skeleton
             width="180px"
@@ -185,13 +199,18 @@ export function WorkDetailsSkeleton() {
           />
           <Skeleton width="180px" height="48px" borderRadius={SIZES.borderRadiusLarge} />
         </aside>
+
+        {/* Main content: title, creator, tags, description, recommendations */}
         <main>
+          {/* Title skeleton (wider) and creator info (narrower) */}
           <Skeleton width="60%" height="32px" style={{ marginBottom: SPACING.md }} />
           <Skeleton width="40%" height="16px" style={{ marginBottom: SPACING.xl }} />
+          {/* Genre/type tags */}
           <div style={styles.detailsMainSection}>
             <Skeleton width="80px" height="24px" borderRadius={SIZES.borderRadiusLarge} />
             <Skeleton width="100px" height="24px" borderRadius={SIZES.borderRadiusLarge} />
           </div>
+          {/* Description section header and paragraph */}
           <Skeleton width="30%" height="24px" style={{ marginBottom: SPACING.md }} />
           <Skeleton
             width="100%"
@@ -205,21 +224,29 @@ export function WorkDetailsSkeleton() {
             borderRadius={SIZES.borderRadiusSmall}
             style={{ marginLeft: 'auto', display: 'block', marginBottom: SPACING.xxl }}
           />
+          {/* "You May Also Like" recommendations section with similar works grid */}
           <Skeleton width="40%" height="24px" style={{ marginBottom: SPACING.md }} />
           <div style={styles.detailsSimilarWorks}>{createSkeletonGrid(5, '140px', '200px')}</div>
         </main>
+
+        {/* Right sidebar: ratings and distribution */}
         <aside style={styles.detailsRightSidebar}>
+          {/* Add to shelf button */}
           <Skeleton
             width="100%"
             height="40px"
             borderRadius={SIZES.borderRadiusMedium}
             style={{ marginBottom: SPACING.xxl }}
           />
+          {/* Your rating section header and star buttons */}
           <Skeleton width="60%" height="20px" style={{ marginBottom: SPACING.lg }} />
           <div style={styles.detailsRatingStars}>
+            {/* 5 star rating buttons */}
             {createSkeletonGrid(5, `${SIZES.ratingStart}px`, `${SIZES.ratingStart}px`)}
           </div>
+          {/* Rating distribution header and histogram rows */}
           <Skeleton width="70%" height="16px" style={{ marginBottom: SPACING.md }} />
+          {/* 5-row rating distribution (5★ through 1★) */}
           {Array.from({ length: 5 }).map((_, i) => (
             <div key={i} style={styles.detailsRatingRow}>
               <Skeleton width="28px" height="20px" />
@@ -233,21 +260,25 @@ export function WorkDetailsSkeleton() {
   );
 }
 
-// Search page skeleton with filter bar and work results grid
+// ========== SEARCH RESULTS SKELETON: Search page layout - filter bar and work grid ==========
+// Shows loading state for search results with filter placeholder bar and card grid
 export function SearchResultsSkeleton({ count = 12 }) {
   return (
     <div>
+      {/* Filter bar with placeholder filter buttons */}
       <div style={styles.searchFilterBar}>
         {Array.from({ length: 4 }).map((_, i) => (
           <Skeleton key={i} width="120px" height="36px" borderRadius={SIZES.borderRadiusSmall} />
         ))}
       </div>
+      {/* Grid of work card skeletons matching search results layout */}
       <WorkGridSkeleton count={count} columns="repeat(auto-fill, minmax(180px, 1fr))" />
     </div>
   );
 }
 
-// User profile page skeleton (avatar, stats, rating breakdown, history)
+// ========== PROFILE SKELETON: User profile page layout - avatar, stats, ratings, history ==========
+// Complex profile page skeleton with header (avatar + info), stats section (breakdown + genres), and rating history
 export function ProfileSkeleton() {
   return (
     <div className="page-container">
@@ -256,6 +287,7 @@ export function ProfileSkeleton() {
           <div style={styles.profileContainer}>
             <div style={styles.profileHeaderSection}>
               <div style={styles.profileHeaderGrid}>
+                {/* User avatar (large circular placeholder) */}
                 <div style={styles.profileAvatar}>
                   <Skeleton
                     width={`${SIZES.avatarMedium}px`}
@@ -264,7 +296,7 @@ export function ProfileSkeleton() {
                     style={{ flexShrink: 0 }}
                   />
                 </div>
-                {/* User info section */}
+                {/* User name, email, and action buttons (edit profile, follow) */}
                 <div style={styles.profileUserInfo}>
                   <Skeleton width="200px" height="32px" style={{ marginBottom: SPACING.md }} />
                   <Skeleton width="300px" height="16px" style={{ marginBottom: SPACING.xl }} />
@@ -274,15 +306,19 @@ export function ProfileSkeleton() {
                   </div>
                 </div>
               </div>
-              {/* Stats and breakdown section */}
+              {/* Stats section: rating breakdown (grid) and top genres (list) */}
               <div style={styles.profileStatsSection}>
+                {/* Stats section header */}
+                {/* Stats section header */}
                 <Skeleton width="100px" height="28px" style={{ marginBottom: SPACING.xs }} />
+                {/* Rating breakdown by type (grid of 4 cards) */}
                 <div>
                   <Skeleton width="150px" height="16px" style={{ marginBottom: SPACING.lg }} />
                   <div style={styles.profileRatingBreakdown}>
                     {createSkeletonGrid(4, '100%', '80px')}
                   </div>
                 </div>
+                {/* Top genres/categories list (5 rows with icon and label) */}
                 <div>
                   <Skeleton width="150px" height="16px" style={{ marginBottom: SPACING.lg }} />
                   {Array.from({ length: 5 }).map((_, i) => (
@@ -294,7 +330,7 @@ export function ProfileSkeleton() {
                 </div>
               </div>
             </div>
-            {/* Rating history section */}
+            {/* User rating history section with 3 sample entries */}
             <section style={styles.profileRatingHistory}>
               <Skeleton width="200px" height="28px" style={{ marginBottom: SPACING.xxl }} />
               {Array.from({ length: 3 }).map((_, i) => (
