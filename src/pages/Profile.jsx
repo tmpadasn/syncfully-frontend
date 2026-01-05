@@ -22,7 +22,7 @@ export default function Profile() {
   const navigate = useNavigate();
   const location = useLocation();
   const { user: currentUser } = useAuth();
-  
+
   const prevSearch = location.state?.prevSearch || '';
 
   const [profileUser, setProfileUser] = useState(null);
@@ -43,7 +43,7 @@ export default function Profile() {
       setRatings({});
       setWorks([]);
       setLoading(true);
-      
+
       try {
         const [u, ratingsResponse, allWorks] = await Promise.all([
           getUserById(userId),
@@ -65,10 +65,10 @@ export default function Profile() {
             ]);
 
             // Check if current user is following the profile user
-            const isCurrentUserFollowing = currentUserFollowing.following?.some(f => 
+            const isCurrentUserFollowing = currentUserFollowing.following?.some(f =>
               (f.userId || f.id) === parseInt(userId)
             );
-            
+
             // Check if profile user is following the current user
             const isProfileUserFollowing = profileUserFollowers.followers?.some(f =>
               (f.userId || f.id) === currentUser.userId
@@ -143,7 +143,7 @@ export default function Profile() {
     pageContainer: {
       minHeight: "100vh",
       padding: "40px 20px",
-      background: "linear-gradient(135deg, #faf8f5 0%, #f5f0ea 100%)",
+      background: "var(--bg)",
     },
     profileCard: {
       background: "#fff",

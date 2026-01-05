@@ -169,7 +169,7 @@ export default function Account() {
     pageContainer: {
       minHeight: "100vh",
       padding: "40px 20px",
-      background: "linear-gradient(135deg, #faf8f5 0%, #f5f0ea 100%)",
+      background: "var(--bg)",
     },
 
     // Profile section

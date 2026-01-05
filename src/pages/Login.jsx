@@ -15,7 +15,7 @@ const styles = {
     paddingBottom: "40px",
     paddingLeft: "20px",
     paddingRight: "20px",
-    background: "linear-gradient(135deg, #faf8f5 0%, #f5f0ea 100%)",
+    background: "var(--bg)",
   },
   cardWrapper: {
     width: "100%",
@@ -484,8 +484,8 @@ export default function Login() {
           {/* Toggle Between Login and Signup */}
           <div style={styles.toggleWrapper}>
             {isLogin ? "New here?" : "Already have an account?"}
-            <span 
-              onClick={switchMode} 
+            <span
+              onClick={switchMode}
               style={styles.toggleLink}
               role="button"
               tabIndex={0}

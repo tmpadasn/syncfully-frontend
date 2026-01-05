@@ -2,6 +2,9 @@
 export { useEffect, useState } from 'react';
 export { Link, useNavigate } from 'react-router-dom';
 
+// Styles
+import '../styles/recommendationModules.css';
+
 // Custom hooks
 export { default as useAuth } from '../hooks/useAuth';
 export { default as useNavigationWithClearFilters } from '../hooks/useNavigationWithClearFilters';
