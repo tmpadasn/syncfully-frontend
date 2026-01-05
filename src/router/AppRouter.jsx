@@ -1,7 +1,7 @@
 /* AppRouter: route table composing top-level pages within a consistent header and error boundary. */
 import { Routes, Route } from 'react-router-dom';
 import Header from '../components/Header';
-import PageErrorBoundary from '../components/PageErrorBoundary';
+import ErrorBoundary from '../components/ErrorBoundary';
 import Home from '../pages/Home';
 import Recommendations from '../pages/Recommendations';
 import SearchResults from '../pages/SearchResults';
@@ -23,15 +23,15 @@ export default function AppRouter() {
       <Header />
       <main style={{ padding: 20 }}>
         <Routes>
-          <Route path="/" element={<PageErrorBoundary><Home /></PageErrorBoundary>} />
-          <Route path="/recommendations" element={<PageErrorBoundary><Recommendations /></PageErrorBoundary>} />
-          <Route path="/search" element={<PageErrorBoundary><SearchResults /></PageErrorBoundary>} />
-          <Route path="/works/:workId" element={<PageErrorBoundary><WorkDetails /></PageErrorBoundary>} />
-          <Route path="/profile/:userId" element={<PageErrorBoundary><Profile /></PageErrorBoundary>} />
-          <Route path="/login" element={<PageErrorBoundary><GuestRoute><Login /></GuestRoute></PageErrorBoundary>} />
-          <Route path="/account" element={<PageErrorBoundary><ProtectedRoute><Account /></ProtectedRoute></PageErrorBoundary>} />
-          <Route path="/account/edit" element={<PageErrorBoundary><ProtectedRoute><EditAccount /></ProtectedRoute></PageErrorBoundary>} />
-          <Route path="/shelves" element={<PageErrorBoundary><ProtectedRoute><Shelves /></ProtectedRoute></PageErrorBoundary>} />
+          <Route path="/" element={<ErrorBoundary level="page"><Home /></ErrorBoundary>} />
+          <Route path="/recommendations" element={<ErrorBoundary level="page"><Recommendations /></ErrorBoundary>} />
+          <Route path="/search" element={<ErrorBoundary level="page"><SearchResults /></ErrorBoundary>} />
+          <Route path="/works/:workId" element={<ErrorBoundary level="page"><WorkDetails /></ErrorBoundary>} />
+          <Route path="/profile/:userId" element={<ErrorBoundary level="page"><Profile /></ErrorBoundary>} />
+          <Route path="/login" element={<ErrorBoundary level="page"><GuestRoute><Login /></GuestRoute></ErrorBoundary>} />
+          <Route path="/account" element={<ErrorBoundary level="page"><ProtectedRoute><Account /></ProtectedRoute></ErrorBoundary>} />
+          <Route path="/account/edit" element={<ErrorBoundary level="page"><ProtectedRoute><EditAccount /></ProtectedRoute></ErrorBoundary>} />
+          <Route path="/shelves" element={<ErrorBoundary level="page"><ProtectedRoute><Shelves /></ProtectedRoute></ErrorBoundary>} />
         </Routes>
       </main>
     </div>

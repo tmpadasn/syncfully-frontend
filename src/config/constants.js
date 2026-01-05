@@ -52,19 +52,6 @@ export const SHELF_NAMES = {
 
 // Display Limits
 export const HOME_CAROUSEL_LIMIT = 10;
-export const MAX_RECOMMENDATIONS = 5;
-
-// UI Timing & Animation
-export const RATING_TOAST_TIMEOUT = 2000;
-export const EDIT_ACCOUNT_TOAST_TIMEOUT = 2000;
-
-// Style Constants
-export const EXTERNAL_LINK_HOVER_SHADOW = '0 6px 16px rgba(154, 66, 7, 0.4)';
-export const EXTERNAL_LINK_DEFAULT_SHADOW = '0 4px 12px rgba(154, 66, 7, 0.3)';
-export const SEARCH_RESULTS_PAGE_MAX_WIDTH = 1200;
-export const SEARCH_RESULTS_BANNER_WIDTH = 320;
-export const SEARCH_RESULTS_GRID_COLS = 5;
-export const EDIT_ACCOUNT_CARD_MAX_WIDTH = 600;
 
 // Environment Flags
 export const IS_DEBUG_ENABLED = process.env.REACT_APP_ENABLE_DEBUG_LOGS === 'true';
