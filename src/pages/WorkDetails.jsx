@@ -47,6 +47,9 @@ const processWorkData = (workResponse) => {
   };
 };
 
+// Normalization helper: convert varied API work responses into a
+// stable, UI-friendly shape that rendering code can depend on.
+
 const processRatingsData = (ratingsResponse) => {
   return extractRatingsFromResponse(ratingsResponse);
 };
@@ -379,8 +382,12 @@ export default function WorkDetails() {
     },
   };
 
-  // Central fetch: retrieves work metadata, ratings, and similar works,
-  // normalizes results and updates loading state in one predictable place.
+  //  Single-entry point for fetching and normalizing remote data.
+  // Centralizes side-effects so retry logic and loading state are predictable.
+  // Fetch strategy: centralizing fetches makes retries and stale-state
+  // handling straightforward and keeps rendering logic declarative.
+  // Central fetch: group related remote calls to keep loading and retry
+  // handling consistent across the component.
   const loadWorkData = useCallback(async () => {
     if (!isMountedRef.current) return;
 
@@ -408,6 +415,8 @@ export default function WorkDetails() {
 
       const processedSimilarWorks = processSimilarWorksData(similarWorksResponse);
 
+      // Recommendation trimming: keep only the top 5 results to reduce
+      // cognitive load and DOM complexity for the recommendations UI.
       setRecommended(processedSimilarWorks.slice(0, 5));
     } catch (error) {
       logger.error('Error loading work details:', error);
@@ -458,6 +467,8 @@ export default function WorkDetails() {
   }, [ratings, loggedUserId, isGuest]);
 
   const submitRating = async (overrideScore) => {
+    // Submit flow: block guests, post a rating, then refresh ratings
+    // and (optionally) recommendations to keep the UI in sync.
     if (isGuest) {
       navigate('/login', {
         state: { message: 'You must log in to rate this work.' },
@@ -517,10 +528,15 @@ export default function WorkDetails() {
     ).length,
   }));
 
+  // Distribution rationale: compute aggregates once here to avoid
+  // repeated computation during render and to keep components fast.
+
   // Check if current user has already rated this work
   const userRating = !isGuest && ratings.find((r) => r.userId === loggedUserId);
   const userRatingScore = userRating ? Math.round(Number(userRating.score) || 0) : null;
 
+  // Render guards: handle loading and missing resources early so the
+  // main JSX focuses on the full, ready-to-read UI state.
   if (loading) return <WorkDetailsSkeleton />;
   if (!work) return <p>Work not found.</p>;
 
@@ -766,6 +782,8 @@ export default function WorkDetails() {
       </div>
 
       {/* Toast notification for new recommendations */}
+      {/* // Recommendation toast: surface backend model/version changes
+      // after user actions so users notice updated suggestions. */}
       {showRecommendationToast && (
         <Toast
           message="You have new recommendations!"
