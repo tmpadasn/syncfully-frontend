@@ -444,8 +444,8 @@ export default function Login() {
             {/* Password guidance: a short client-side check prevents trivial mistakes
                and improves form completion rates before submission. */}
 
-            //  Brief inline guidance reduces common input errors.
-            //  Keep client-side checks lightweight to avoid false negatives.
+            {/* /*  Brief inline guidance reduces common input errors.
+            //  Keep client-side checks lightweight to avoid false negatives. */}
 
             {/* Submit Button */}
             <button

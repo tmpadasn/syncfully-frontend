@@ -107,19 +107,27 @@ export default function Profile() {
       return;
     }
 
+    // Optimistic UI update: flip local follow state immediately to
+    // provide instant feedback, then call the API and roll back on error.
+    const prevFollowing = isFollowing;
+    const prevStatus = followStatus;
     setFollowLoading(true);
     try {
       if (isFollowing) {
-        await unfollowUser(currentUser.userId, parseInt(userId));
+        // optimistic: show unfollow in-progress by clearing state immediately
         setIsFollowing(false);
-        setFollowStatus(followStatus === 'both' ? 'followers' : null);
+        setFollowStatus(prevStatus === 'both' ? 'followers' : null);
+        await unfollowUser(currentUser.userId, parseInt(userId));
       } else {
-        await followUser(currentUser.userId, parseInt(userId));
         setIsFollowing(true);
-        setFollowStatus(followStatus === 'followers' ? 'both' : 'following');
+        setFollowStatus(prevStatus === 'followers' ? 'both' : 'following');
+        await followUser(currentUser.userId, parseInt(userId));
       }
     } catch (err) {
       logger.error('Follow action failed:', err);
+      // rollback UI to previous state on failure
+      setIsFollowing(prevFollowing);
+      setFollowStatus(prevStatus);
     } finally {
       setFollowLoading(false);
     }
@@ -356,7 +364,8 @@ export default function Profile() {
                   </div>
                   <div style={styles.genresContainer}>
                     {(() => {
-                      // Count genres from the user's rated works.
+                      // Compute top genres by counting genres in the user's rated works.
+                      // This is client-side aggregation to avoid extra backend calls.
                       const genreStats = {};
                       Object.keys(ratings).forEach(workId => {
                         const work = works.find(w => (w.id || w.workId) === Number(workId));

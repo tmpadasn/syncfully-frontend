@@ -267,6 +267,9 @@ export default function FilterBar() {
     );
   }
 
+  // Keep URL params as the single source of truth for filter state.
+  // Perform in-place navigation to avoid creating extra history entries.
+
   return (
     <div style={styles.outer} >
       <div style={styles.bar}>
@@ -354,6 +357,8 @@ export default function FilterBar() {
   );
 }
 
+/* MenuControl: accessible dropdown used by FilterBar to choose a single value.
+  Rationale: isolates keyboard, grouping and selection logic so URL-sync stays simple. */
 function MenuControl({ label, options, onSelect, currentValue = '', disabled = false, showIcons = false }) {
   const [open, setOpen] = useState(false);
   const [focusedIndex, setFocusedIndex] = useState(-1);
@@ -361,6 +366,8 @@ function MenuControl({ label, options, onSelect, currentValue = '', disabled = f
   const buttonRef = useRef(null);
   const menuRef = useRef(null);
 
+  /* Close on outside click to preserve a focused/isolated interaction model.
+     Rationale: avoids lingering open menus when the user interacts elsewhere. */
   useEffect(() => {
     function onDoc(e) {
       if (ref.current && !ref.current.contains(e.target)) {
@@ -371,7 +378,8 @@ function MenuControl({ label, options, onSelect, currentValue = '', disabled = f
     return () => document.removeEventListener('mousedown', onDoc);
   }, []);
 
-  // Keyboard navigation for dropdown
+  /* Keyboard navigation: Arrow/Enter/Home/End/Escape support for listbox semantics.
+     Rationale: mirrors native controls so assistive tech and power-users behave predictably. */
   useEffect(() => {
     if (!open) return;
 
@@ -418,7 +426,8 @@ function MenuControl({ label, options, onSelect, currentValue = '', disabled = f
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [open, focusedIndex, options, onSelect, showIcons]);
 
-  // Reset focused index when opening
+  /* Reset focused index when opening so keyboard navigation begins from neutral state.
+     Rationale: prevents surprising immediate selection when the menu first opens. */
   useEffect(() => {
     if (open) {
       setFocusedIndex(-1);
@@ -431,7 +440,8 @@ function MenuControl({ label, options, onSelect, currentValue = '', disabled = f
   const displayLabel = (selectedOption && currentValue !== '') ? selectedOption.label : label;
   const isSelected = currentValue && currentValue !== '';
   
-  // Helper to get icon for a type
+    /* Helper to get icon for a type.
+      Rationale: keeps icon mapping compact and colocated with render logic. */
   const getIcon = (type) => {
     switch(type) {
       case 'book':
@@ -445,7 +455,8 @@ function MenuControl({ label, options, onSelect, currentValue = '', disabled = f
     }
   };
   
-  // Group options by type if showIcons is true
+  /* Grouping logic: cluster options by type for iconized menus.
+     Rationale: enables section headers while preserving a flat keyboard map. */
   const groupedOptions = showIcons ? (() => {
     const groups = { book: [], music: [], movie: [], other: [] };
     
@@ -470,7 +481,8 @@ function MenuControl({ label, options, onSelect, currentValue = '', disabled = f
     ...styles.labelButton(isSelected, disabled, open),
   };
 
-  // Helper to render a single option element while keeping a running index
+  /* makeOption: renders a single option and updates running index for focus mapping.
+     Rationale: centralizes click/hover behavior so styling and focus stay consistent. */
   let idxCounter = -1;
   const makeOption = (opt) => {
     idxCounter += 1;
@@ -505,7 +517,8 @@ function MenuControl({ label, options, onSelect, currentValue = '', disabled = f
     );
   };
 
-  // Flat array of options used for keyboard navigation when grouped
+  /* flatOptions: linearized option list for keyboard navigation when groups present.
+     Rationale: maps visual grouping to a single index space for keyboard handlers. */
   const flatOptions = showIcons
     ? (() => {
         const arr = [];

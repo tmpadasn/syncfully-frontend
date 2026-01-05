@@ -31,6 +31,8 @@ export default function EditAccount() {
   // Load user
     /* Lifecycle: preload current user fields into local form state so the
       edit form operates purely as a controlled component. */
+    // Purpose: Initialize form state from authoritative server data to avoid drift.
+    // Purpose: Keep component purely controlled to simplify parent integration.
     useEffect(() => {
     if (authLoading || !user) return;
 
@@ -52,8 +54,8 @@ export default function EditAccount() {
 
   const handleSave = async () => {
     if (isSaving) return; // Prevent duplicate submissions
-    // Client-side email validation: provide immediate, test-detectable feedback
-    // and avoid making the update API call when the email format is invalid.
+    // Purpose: Prevent duplicate submissions and reduce accidental double-posts.
+    // Purpose: Validate obvious client-side errors before invoking network calls.
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (form.email && !emailRegex.test(String(form.email).trim())) {
       setMessage('Invalid email address');
@@ -90,6 +92,9 @@ export default function EditAccount() {
 
   /* Update flow: apply optimistic UI by updating local auth context after server success.
      This separates server validation errors from local form state management. */
+
+  // Note: Auth context update occurs only after server confirms changes to avoid inconsistency.
+  // Note: Navigation after a short delay allows the user to see success feedback.
 
   const handleCancel = () => {
     navigate('/account');

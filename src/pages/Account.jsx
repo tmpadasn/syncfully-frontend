@@ -45,6 +45,8 @@ export default function Account() {
   // Fetch user data on mount
     /* Data loading strategy: batch API calls to minimize latency and avoid
       redundant requests, then normalize results for the UI. */
+    // Rationale: Group related API calls to reduce round-trips and improve perceived speed.
+    // Rationale: Normalize responses early to simplify downstream rendering logic.
     useEffect(() => {
     if (authLoading || !user) return;
     // Load user and lists in one request. This reduces wait time.
@@ -159,9 +161,8 @@ export default function Account() {
       logger.error("Delete account failed:", err);
     }
   };
-
-  /* Account deletion: explicit confirmation required to prevent accidental data loss.
-     Server-side delete is irreversible and UI immediately clears session on success. */
+  // Rationale: Require explicit confirmation to prevent accidental destructive actions.
+  // Rationale: Clearing client session immediately avoids lingering auth state after deletion.
 
   /* ===================== UI STYLES ===================== */
   const styles = {
@@ -370,6 +371,8 @@ export default function Account() {
   };
 
   // RETURN ACCOUNT PAGE LAYOUT
+  // Rationale: Split profile, stats, and lists into visually distinct sections.
+  // Rationale: Keeps markup predictable for testing and screen-reader navigation.
   return (
     <div style={styles.pageContainer}>
       <div className="page-container">

@@ -480,6 +480,9 @@ export default function Shelves() {
     /* Ratings caching: fetch ratings once and store as a map to
       enable O(1) lookups when rendering many work cards. */
 
+  // Cache ratings as a map to allow constant-time lookups in render loops.
+  // Reduces re-renders when rendering many work cards on the page.
+
   useEffect(() => {
     isMountedRef.current = true;
     loadUserRatings();
@@ -496,6 +499,8 @@ export default function Shelves() {
 
     // Load works for this shelf if expanded and not already loaded
     if (newState && !shelfWorks[shelfId]) {
+      // Bind network load to explicit user interaction to save bandwidth.
+      // Keep per-shelf cached results to avoid repeated fetches on toggle.
       setLoadingWorks({ ...loadingWorks, [shelfId]: true });
       try {
         const shelf = shelves.find(s => s.shelfId === shelfId);
@@ -768,6 +773,8 @@ export default function Shelves() {
                   </div>
                 </div>
 
+                // Rationale: Action buttons are separated from header click handling
+                // Rationale: stopPropagation ensures header toggles remain independent of actions
                 <div style={styles.shelfActions} onClick={(e) => e.stopPropagation()}>
                   {!isFavourites && (
                     <>
@@ -807,6 +814,8 @@ export default function Shelves() {
               </div>
 
               {/* Shelf content - works grid */}
+              // Rationale: Contents are rendered only when the shelf is expanded to save resources
+              // Rationale: Carousel input is derived from cached per-shelf work details for stability
               {expandedShelves[shelf.shelfId] && (
                 <div style={styles.shelfContent}>
                   {loadingWorks[shelf.shelfId] ? (
@@ -842,6 +851,8 @@ export default function Shelves() {
                         };
                       }).filter(Boolean)}
                       emptyMessage="This shelf is empty"
+                      // Rationale: Extra card UI handles a two-step removal pattern (mark then confirm)
+                      // Rationale: Showing controls only on hover reduces visual noise while preserving accessibility
                       renderCardExtras={(card, { isHovered }) => {
                         if (!card?.data) return null;
                         const { shelfId: cardShelfId, workId: cardWorkId, isMarkedForRemoval } = card.data;

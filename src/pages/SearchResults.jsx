@@ -406,6 +406,8 @@ export default function SearchResults() {
 
   // Load user's Favourites shelf and check which works are already in it
   const loadFavourites = useCallback(async () => {
+    // Rationale: Guard against unmounted updates and missing auth state.
+    // Rationale: Keep favourites loading idempotent and safe for rapid navigations.
     if (!user || !isMountedRef.current) return;
 
     try {
@@ -689,6 +691,8 @@ export default function SearchResults() {
   }, [fetchResults]);
 
   const handleAddToShelf = async (workId) => {
+    // Rationale: Toggle membership idempotently to keep UI consistent on retries.
+    // Rationale: Use local sets for O(1) membership checks and fast feedback.
     if (!addToShelfId) return;
     const workIdStr = String(workId);
     const isInShelf = addedWorks.has(workIdStr);
@@ -714,6 +718,8 @@ export default function SearchResults() {
   };
 
   const handleAddToFavourites = async (workId) => {
+    // Rationale: Ensure favourites shelf exists before toggling to avoid failures.
+    // Rationale: Maintain local Set state for efficient lookups and optimistic UI.
     if (!user) {
       return;
     }
@@ -770,6 +776,8 @@ export default function SearchResults() {
 
   /* Favourites flow: ensure the favourites shelf exists before toggling,
      and perform idempotent operations so repeated clicks are safe. */
+  // Rationale: Make toggle operations idempotent so repeated actions have no side-effects.
+  // Rationale: Defer heavy reconciliation to subsequent loads to keep interactions snappy.
 
   const closeBanner = () => {
     // Remove shelf params from URL
