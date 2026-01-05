@@ -1,48 +1,26 @@
-import { useEffect, useRef, useState } from 'react';
+/* WorkCardCarousel: carousel specialized for work cards; preserves hover and badge presentation. */
+import { useState } from 'react';
+import HorizontalCarousel from './HorizontalCarousel';
+import { carouselWrapper, scrollContainer, scrollButton } from '../utils/carouselUI';
 import { Link } from 'react-router-dom';
 import ErrorBoundary from './ErrorBoundary';
 
 /* ===================== UI STYLES ===================== */
 const styles = {
   /* ===================== CAROUSEL WRAPPER ===================== */
-  carouselWrapper: {
-    position: 'relative',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '12px',
-  },
+  carouselWrapper: carouselWrapper,
 
   /* ===================== SCROLL BUTTON ===================== */
+  // Slightly smaller buttons for work cards to reduce visual weight
   scrollButton: (isEnabled) => ({
-    flexShrink: 0,
-    background: isEnabled ? 'rgba(70, 40, 20, 0.9)' : 'rgba(70, 40, 20, 0.3)',
-    color: 'white',
-    border: '2px solid rgba(255, 255, 255, 0.2)',
-    borderRadius: '50%',
+    ...scrollButton(isEnabled),
     width: '48px',
     height: '48px',
-    cursor: isEnabled ? 'pointer' : 'not-allowed',
     fontSize: '24px',
-    fontWeight: 'bold',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    transition: 'all 0.3s ease',
-    boxShadow: isEnabled ? '0 4px 12px rgba(0, 0, 0, 0.2)' : 'none',
-    opacity: isEnabled ? 1 : 0.5,
   }),
 
   /* ===================== SCROLL CONTAINER ===================== */
-  scrollContainer: {
-    display: 'flex',
-    gap: 16,
-    overflowX: 'auto',
-    scrollbarWidth: 'none',
-    msOverflowStyle: 'none',
-    padding: '16px 0',
-    flex: 1,
-    scrollBehavior: 'smooth',
-  },
+  scrollContainer: scrollContainer,
 
   /* ===================== EMPTY STATE ===================== */
   emptyState: {
@@ -189,9 +167,7 @@ const styles = {
 };
 
 /* ===================== ANIMATIONS ===================== */
-const hideScrollbarCSS = `
-  div::-webkit-scrollbar { display: none; }
-`;
+/* Inner: manages hover state. HorizontalCarousel attaches scroll hook. */
 function WorkCardCarouselInner({
   cards = [],
   emptyMessage = 'No items yet.',
@@ -199,43 +175,7 @@ function WorkCardCarouselInner({
   scrollChunk = 3,
   onCardMouseLeave
 }) {
-  const scrollContainerRef = useRef(null);
-  const [canScrollLeft, setCanScrollLeft] = useState(false);
-  const [canScrollRight, setCanScrollRight] = useState(false);
   const [hoveredCardId, setHoveredCardId] = useState(null);
-
-  const checkScrollPosition = () => {
-    if (!scrollContainerRef.current) return;
-    const { scrollLeft, scrollWidth, clientWidth } = scrollContainerRef.current;
-    setCanScrollLeft(scrollLeft > 0);
-    setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 1);
-  };
-
-  useEffect(() => {
-    checkScrollPosition();
-    const container = scrollContainerRef.current;
-
-    if (!container) return;
-
-    container.addEventListener('scroll', checkScrollPosition);
-    window.addEventListener('resize', checkScrollPosition);
-
-    return () => {
-      container.removeEventListener('scroll', checkScrollPosition);
-      window.removeEventListener('resize', checkScrollPosition);
-    };
-  }, [cards.length]);
-
-  const scroll = (direction) => {
-    if (!scrollContainerRef.current) return;
-    const cardWidth = 180;
-    const gap = 16;
-    const scrollAmount = (cardWidth + gap) * scrollChunk;
-    scrollContainerRef.current.scrollBy({
-      left: direction === 'left' ? -scrollAmount : scrollAmount,
-      behavior: 'smooth'
-    });
-  };
 
   if (!cards || cards.length === 0) {
     return (
@@ -246,31 +186,14 @@ function WorkCardCarouselInner({
   }
 
   return (
-    <div style={styles.carouselWrapper}>
-      <button
-        onClick={() => scroll('left')}
-        disabled={!canScrollLeft}
-        aria-label="Scroll left"
-        style={styles.scrollButton(canScrollLeft)}
-        onMouseEnter={(e) => {
-          if (canScrollLeft) {
-            e.currentTarget.style.background = 'rgba(70, 40, 20, 1)';
-            e.currentTarget.style.transform = 'scale(1.1)';
-          }
-        }}
-        onMouseLeave={(e) => {
-          if (canScrollLeft) {
-            e.currentTarget.style.background = 'rgba(70, 40, 20, 0.9)';
-            e.currentTarget.style.transform = 'scale(1)';
-          }
-        }}
-      >
-        ‹
-      </button>
-
-      <div ref={scrollContainerRef} style={styles.scrollContainer}>
-        <style>{hideScrollbarCSS}</style>
-        {cards.map((card) => {
+    <HorizontalCarousel
+      scrollChunk={scrollChunk}
+      wrapperStyle={styles.carouselWrapper}
+      containerStyle={styles.scrollContainer}
+      buttonStyle={styles.scrollButton}
+      deps={[cards.length]}
+    >
+      {cards.map((card) => {
           if (!card) return null;
           const Wrapper = card.link ? Link : 'div';
           const wrapperProps = card.link ? { to: card.link } : {};
@@ -347,33 +270,14 @@ function WorkCardCarouselInner({
             </div>
           );
         })}
-      </div>
-
-      <button
-        onClick={() => scroll('right')}
-        disabled={!canScrollRight}
-        aria-label="Scroll right"
-        style={styles.scrollButton(canScrollRight)}
-        onMouseEnter={(e) => {
-          if (canScrollRight) {
-            e.currentTarget.style.background = 'rgba(70, 40, 20, 1)';
-            e.currentTarget.style.transform = 'scale(1.1)';
-          }
-        }}
-        onMouseLeave={(e) => {
-          if (canScrollRight) {
-            e.currentTarget.style.background = 'rgba(70, 40, 20, 0.9)';
-            e.currentTarget.style.transform = 'scale(1)';
-          }
-        }}
-      >
-        ›
-      </button>
-    </div>
+    </HorizontalCarousel>
   );
 }
 
-// Wrap with ErrorBoundary to prevent carousel crashes from breaking the entire page
+/**
+ * Public wrapper that protects the carousel with an ErrorBoundary.
+ * This prevents a failing card render from crashing the entire page.
+ */
 export default function WorkCardCarousel(props) {
   return (
     <ErrorBoundary

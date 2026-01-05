@@ -1,3 +1,14 @@
+/*
+ Shelves page component.
+ Shows the user's shelves.
+ Each shelf can expand to show its works.
+ Work details load when a shelf opens.
+ Supports create, edit, and delete actions.
+*/
+// Quick note: shelves are user-scoped and editable.
+// Keep UI actions optimistic to provide instant feedback.
+// Component pieces: headers, action controls, and lazy content areas
+// are separated so each responsibility is clear and testable.
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import useAuth from '../hooks/useAuth';
@@ -6,13 +17,37 @@ import { getWork } from '../api/works';
 import { getUserRatings } from '../api/users';
 import { removeWorkFromShelf } from '../api/shelves';
 import { FiPlus, FiTrash2, FiEdit2, FiX, FiChevronDown, FiHeart } from 'react-icons/fi';
+import { modalStyles } from '../styles/modal';
 import WorkCardCarousel from '../components/WorkCardCarousel';
 import { Skeleton } from '../components/Skeleton';
 import logger from '../utils/logger';
 
 /* ===================== UI STYLES ===================== */
-// Styles for the Shelves page
+/* Centralized styling: local `styles` groups visual tokens so
+  layout and theme adjustments remain colocated for maintainability. */
+// Styles are grouped to make visual tweaks simple and local.
+// This reduces the likelihood of cascading layout regressions.
 const styles = {
+
+    shelfSection: {
+    marginBottom: 24,
+    background: '#fff',
+    borderRadius: 16,
+    boxShadow: '0 8px 24px rgba(0,0,0,0.08)',
+    border: '1px solid #e0e0e0',
+    overflow: 'hidden',
+  },
+
+  favouritesShelf: {
+    marginBottom: 32,
+    background: '#fff',
+    borderRadius: 18,
+    boxShadow: '0 10px 28px rgba(154, 66, 7, 0.18)',
+    border: '2px solid #9a4207c8',
+    overflow: 'hidden',
+  },
+
+
   container: {
     maxWidth: 1200,
     margin: '0 auto',
@@ -26,11 +61,6 @@ const styles = {
     paddingBottom: 20,
     borderBottom: '2px solid #9a4207c8'
   },
-  title: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: '#392c2c'
-  },
   createButton: {
     display: 'flex',
     alignItems: 'center',
@@ -43,21 +73,6 @@ const styles = {
     cursor: 'pointer',
     fontSize: 16,
     fontWeight: 'bold'
-  },
-  shelfSection: {
-    marginBottom: 30,
-    background: '#f9f9f9',
-    borderRadius: 12,
-    border: '1px solid #e0e0e0',
-    overflow: 'hidden'
-  },
-  favouritesShelf: {
-    marginBottom: 30,
-    background: 'linear-gradient(135deg, #fff5e6 0%, #ffe8cc 100%)',
-    borderRadius: 12,
-    border: '2px solid #9a4207c8',
-    overflow: 'hidden',
-    boxShadow: '0 4px 12px rgba(154, 66, 7, 0.15)'
   },
   shelfHeader: {
     display: 'flex',
@@ -147,7 +162,7 @@ const styles = {
   },
   workCard: {
     background: '#9a4207c8',
-    borderRadius: 8,
+    borderRadius: 12,
     padding: 12,
     overflow: 'hidden',
     transition: 'transform 0.12s ease, box-shadow 0.12s ease',
@@ -262,39 +277,7 @@ const styles = {
     marginBottom: 20,
     border: '1px solid #66bb6a'
   },
-  modal: {
-    position: 'fixed',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    background: 'rgba(0,0,0,0.5)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    zIndex: 1000
-  },
-  modalContent: {
-    background: 'white',
-    borderRadius: 12,
-    padding: 30,
-    maxWidth: 500,
-    width: '90%',
-    boxShadow: '0 4px 20px rgba(0,0,0,0.3)'
-  },
-  modalHeader: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 20,
-    paddingBottom: 15,
-    borderBottom: '1px solid #eee'
-  },
-  modalTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#392c2c'
-  },
+  
   closeButton: {
     background: 'none',
     border: 'none',
@@ -415,8 +398,29 @@ const styles = {
   }
 };
 
-/* ===================== SHELVES FUNCTION ===================== */
+/* Shelves page behaviour:
+  The page enumerates user shelves and lazily loads shelf contents when a
+  shelf is expanded. This pattern reduces initial load cost and binds
+  work-level fetching to explicit user intent (expansion).
+*/
 
+// UX rationale: shelves load lazily to prioritize first paint and keep
+// network usage proportional to user interactions (expand actions).
+               
+// Note: remove/add actions are optimistic by design; UI updates immediately
+// and network failures roll back state to preserve user intent semantics.
+
+// reuse shared modal styles
+styles.modal = modalStyles.modal;
+styles.modalContent = modalStyles.modalContent;
+styles.modalHeader = modalStyles.modalHeader;
+styles.modalTitle = modalStyles.modalTitle;
+
+/* ===================== SHELVES FUNCTION ===================== */
+/*
+ Shelves page component.
+ Manages user's shelves and lazy-loads shelf contents when opened.
+*/
 export default function Shelves() {
   const { user, isGuest } = useAuth();
   const { shelves, loading, error, createNewShelf, updateExistingShelf, deleteExistingShelf, getOrCreateFavourites } = useShelves(user?.userId);
@@ -436,6 +440,9 @@ export default function Shelves() {
   const [removingWork, setRemovingWork] = useState(null); // { shelfId, workId }
   const [deleteConfirmation, setDeleteConfirmation] = useState(null); // { shelfId, shelfName }
 
+  // Per-shelf cache: stores loaded work details keyed by `shelfId` to
+  // avoid refetching when users toggle shelves repeatedly.
+
   // Auto-create Favourites shelf on first load
   useEffect(() => {
     if (!loading && !isGuest && shelves.length === 0 && isMountedRef.current) {
@@ -445,7 +452,7 @@ export default function Shelves() {
     }
   }, [loading, shelves, isGuest, getOrCreateFavourites]);
 
-  // Sort shelves to keep Favourites at the top and remove duplicates
+  // Put Favourites shelf first and remove duplicates
   const sortedShelves = [...shelves]
     .filter((shelf, index, self) => {
       // Remove duplicate Favourites shelves (keep only the first one)
@@ -464,7 +471,10 @@ export default function Shelves() {
       return 0;
     });
 
-  // Load user ratings once
+  /* Shelves ordering rationale: keep 'Favourites' prominent and
+     remove accidental duplicates to present a predictable list. */
+
+  // Load user's ratings once to avoid extra calls
   const loadUserRatings = useCallback(async () => {
     if (!user?.userId || !isMountedRef.current) return;
     
@@ -482,6 +492,12 @@ export default function Shelves() {
     }
   }, [user?.userId]);
 
+    /* Ratings caching: fetch ratings once and store as a map to
+      enable O(1) lookups when rendering many work cards. */
+
+  // Cache ratings as a map to allow constant-time lookups in render loops.
+  // Reduces re-renders when rendering many work cards on the page.
+
   useEffect(() => {
     isMountedRef.current = true;
     loadUserRatings();
@@ -491,12 +507,17 @@ export default function Shelves() {
     };
   }, [loadUserRatings]);
 
+  // Open shelf. Load works when the shelf is opened.
+  // Toggle expansion and lazy-load works for the shelf to limit network usage.
+  // Keeps initial load small and binds detailed fetches to user intent.
   const toggleShelf = async (shelfId) => {
     const newState = !expandedShelves[shelfId];
     setExpandedShelves({ ...expandedShelves, [shelfId]: newState });
 
     // Load works for this shelf if expanded and not already loaded
     if (newState && !shelfWorks[shelfId]) {
+      // Bind network load to explicit user interaction to save bandwidth.
+      // Keep per-shelf cached results to avoid repeated fetches on toggle.
       setLoadingWorks({ ...loadingWorks, [shelfId]: true });
       try {
         const shelf = shelves.find(s => s.shelfId === shelfId);
@@ -548,12 +569,18 @@ export default function Shelves() {
     }
   };
 
+    /* Lazy-load rationale: shelf contents are loaded on demand to reduce
+      initial page load and bind network requests to explicit user intent. */
+
   const handleOpenCreateModal = () => {
     setModalMode('create');
     setFormData({ name: '', description: '' });
     setEditingShelf(null);
     setShowModal(true);
   };
+
+    /* Modal control: `modalMode` toggles create/edit semantics while
+      `formData` holds transient values until submission. */
 
   const handleOpenEditModal = (shelf) => {
     setModalMode('edit');
@@ -567,6 +594,9 @@ export default function Shelves() {
     setFormData({ name: '', description: '' });
     setEditingShelf(null);
   };
+
+  // Modal handlers: clear transient modal state and submit create/update.
+  // Deletions set a confirmation to avoid accidental removal.
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -598,6 +628,9 @@ export default function Shelves() {
     setDeleteConfirmation({ shelfId, shelfName });
   };
 
+  /* Deletion flow: deletion is gated by a confirmation UI to prevent
+     accidental data loss and to communicate permanence to users. */
+
   const handleAddWorks = (shelfId, shelfName) => {
     // Navigate to search page with shelf context
     navigate(`/search?addToShelf=${shelfId}&shelfName=${encodeURIComponent(shelfName)}`);
@@ -621,7 +654,10 @@ export default function Shelves() {
   };
 
   const handleRemoveFromShelf = async (shelfId, workId) => {
-    // If this work is already marked for removal, confirm and remove it
+  // Two-step removal: mark then confirm to reduce accidental deletions
+  // and provide a clear affordance for users to reconsider.
+    // First click marks for removal.
+    // Second click removes the work.
     if (removingWork?.shelfId === shelfId && removingWork?.workId === workId) {
       try {
         await removeWorkFromShelf(shelfId, workId);
@@ -643,6 +679,9 @@ export default function Shelves() {
       setRemovingWork({ shelfId, workId });
     }
   };
+
+    /* Two-step remove pattern: marking then confirming reduces accidental
+       removals and gives a clear affordance for undo-like behavior. */
 
   // RETURN SHELVES PAGE LAYOUT
   return (
@@ -714,7 +753,8 @@ export default function Shelves() {
         </div>
       )}
 
-      {/* Shelves as expandable rows */}
+     { /* Render shelves as expandable rows; Favourites are prioritized and duplicates removed. */
+      /* Action buttons call stopPropagation so header clicks toggle expansion while actions remain interactive. */}
       {!loading && shelves.length > 0 && (
         <div>
           {sortedShelves.map(shelf => {
@@ -741,7 +781,7 @@ export default function Shelves() {
                   >
                     <FiChevronDown size={24} color="#9a4207c8" />
                   </div>
-                  <div style={styles.shelfInfo}>
+                    <div style={styles.shelfInfo}>
                     <div style={isFavourites ? styles.favouritesShelfName : styles.shelfName}>
                       {isFavourites && <FiHeart size={20} style={{ color: '#9a4207', fill: '#9a4207' }} />}
                       {shelf.name}
@@ -755,6 +795,8 @@ export default function Shelves() {
                   </div>
                 </div>
 
+                //  Action buttons are separated from header click handling
+                //  stopPropagation ensures header toggles remain independent of actions
                 <div style={styles.shelfActions} onClick={(e) => e.stopPropagation()}>
                   {!isFavourites && (
                     <>
@@ -794,6 +836,8 @@ export default function Shelves() {
               </div>
 
               {/* Shelf content - works grid */}
+              //  Contents are rendered only when the shelf is expanded to save resources
+              //  Carousel input is derived from cached per-shelf work details for stability
               {expandedShelves[shelf.shelfId] && (
                 <div style={styles.shelfContent}>
                   {loadingWorks[shelf.shelfId] ? (
@@ -805,6 +849,8 @@ export default function Shelves() {
                   ) : !shelfWorks[shelf.shelfId] || shelfWorks[shelf.shelfId].length === 0 ? (
                     <div style={styles.emptyShelf}>This shelf is empty</div>
                   ) : (
+                    // Map cached work details into carousel `cards` shape.
+                    // Include user rating and removal marker for UI affordances.
                     <WorkCardCarousel
                       cards={shelfWorks[shelf.shelfId].map(work => {
                         if (!work) return null;
@@ -829,6 +875,8 @@ export default function Shelves() {
                         };
                       }).filter(Boolean)}
                       emptyMessage="This shelf is empty"
+                      //  Extra card UI handles a two-step removal pattern (mark then confirm)
+                      //  Showing controls only on hover reduces visual noise while preserving accessibility
                       renderCardExtras={(card, { isHovered }) => {
                         if (!card?.data) return null;
                         const { shelfId: cardShelfId, workId: cardWorkId, isMarkedForRemoval } = card.data;
@@ -886,7 +934,8 @@ export default function Shelves() {
         </div>
       )}
 
-      {/* Modal */}
+      {/* Modal dialog: isolates create/edit form from page context.
+          Outer overlay closes the modal while inner content stops propagation so form interactions remain contained. */}
       {showModal && (
         <div style={styles.modal} onClick={handleCloseModal}>
           <div style={styles.modalContent} onClick={(e) => e.stopPropagation()}>
@@ -944,6 +993,8 @@ export default function Shelves() {
       )}
 
       {/* Delete Confirmation Dialog */}
+          {/* // Confirmation UI: explicit confirmation prevents accidental data loss
+          // by making destructive actions an intentional step. */}
       {deleteConfirmation && (
         <div style={styles.confirmOverlay} onClick={cancelDelete}>
           <div style={styles.confirmDialog} onClick={(e) => e.stopPropagation()}>

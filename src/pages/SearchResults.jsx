@@ -1,3 +1,8 @@
+/*
+ Search results page.
+ Shows works and users that match the search query.
+ Supports adding works to shelves and quick actions.
+*/
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useLocation, useNavigate} from 'react-router-dom';
 import { getAllWorks } from '../api/works';
@@ -17,15 +22,63 @@ import {
   extractWorksFromResponse,
   extractWorkIdsFromShelf,
 } from '../utils/normalize';
+// Normalization helpers: canonicalize varied API shapes into a single
+// UI-friendly work entity and merge duplicates while preserving shelf metadata.
+// Small reusable header for result items (title + subtitle/meta)
+function ResultHeader({ title, subtitle, meta, onClick }) {
+  return (
+    <>
+      <h3
+        onClick={onClick}
+        style={{
+          margin: 0,
+          fontSize: 16,
+          fontWeight: 600,
+          cursor: 'pointer',
+          display: 'inline-block',
+          width: 'fit-content'
+        }}
+        onMouseEnter={(e) => { e.currentTarget.style.textDecoration = 'underline'; }}
+        onMouseLeave={(e) => { e.currentTarget.style.textDecoration = 'none'; }}
+      >
+        {title}
+      </h3>
+      <div style={{ display: 'flex', gap: 16, alignItems: 'baseline' }}>
+        <p style={{ margin: 0, color: '#666', fontSize: 14 }}>{subtitle}</p>
+        <span style={{ margin: 0, color: '#888', fontSize: 12 }}>{meta}</span>
+      </div>
+    </>
+  );
+}
 
+// ResultHeader shows a compact title and meta info.
+// Click the title to go to the item.
+/* Result header reuse: keeps item headings consistent and keyboard-accessible,
+   reducing duplication across results lists. */
+
+// Small UX note: ResultHeader intentionally keeps the title as an inline
+// element to preserve keyboard focus order inside result cards.
+
+// Filter semantics: the `FilterBar` provides a declarative set of params
+// that downstream logic applies via pure filter helpers for predictability.
+
+/* SearchResults: performs server-side search, normalizes results, and applies client-side filters and shelf merging. */
+/* Caches normalized entities to provide a stable, performant results list. */
 /* ===================== SEARCH RESULTS FUNCTION ===================== */
 
+// Search results page component.
+// Performs server-side search then applies client-side filtering and shelf
+// state merging. The component caches and normalizes work entities to present
+// a unified results list with fast client-side filtering.
 export default function SearchResults() {
   const { search } = useLocation();
   const navigate = useNavigate();
   const { navigateAndClearFilters } = useNavigationWithClearFilters();
   const { user } = useAuth();
   const isMountedRef = useRef(true);
+
+  /* Normalization and caching: results are normalized into a stable shape
+     and merged with shelf state to provide consistent client-side filtering. */
 
   /* ===================== UI STYLES ===================== */
   const styles = {
@@ -330,6 +383,15 @@ export default function SearchResults() {
     },
   };
 
+  // Main search logic loads either a search result or a full catalog
+  // depending on query parameters. Results merge and are filtered.
+  
+  // Performance note: results are normalized once and merged with shelf
+  // state to avoid re-computing filters on every render.
+  // Merge rationale: annotating works with shelf membership keeps the
+  // UI coherent when users add/remove items without full reloads.
+  // URL-driven params: derive query and filter values from `location.search`
+  // so the component remains predictable and easy to reproduce/share.
   const params = new URLSearchParams(search);
   const query = params.get('q') || '';
   const typeFilter = params.get('type') || '';        // TYPE filter (movie, book, music, user, etc.)
@@ -348,9 +410,21 @@ export default function SearchResults() {
   const [favouritedWorks, setFavouritedWorks] = useState(new Set());
   const [favouritingWork, setFavouritingWork] = useState(null);
   const [favouritesShelfId, setFavouritesShelfId] = useState(null);
+  // State note: results are kept as a single object to simplify merges
+  // and to make optimistic updates easier to apply and roll back.
+  // Component parts: the page composes FilterBar, result lists and
+  // shelf-action controls so responsibilities stay focused and testable.
+
+    /* URL-driven filters: parsing `search` into params keeps the UI state
+      aligned with shareable URLs and browser history (deep links). */
+
+    /* State shapes: `results` stores normalized entities while `Set`s
+      provide O(1) membership checks for add/favourite status. */
 
   // Load user's Favourites shelf and check which works are already in it
   const loadFavourites = useCallback(async () => {
+    //  Guard against unmounted updates and missing auth state.
+    //  Keep favourites loading idempotent and safe for rapid navigations.
     if (!user || !isMountedRef.current) return;
 
     try {
@@ -385,6 +459,7 @@ export default function SearchResults() {
     }
   }, [user]);
 
+  // Load the user's favourites on mount (uses mounted flag)
   useEffect(() => {
     isMountedRef.current = true;
     loadFavourites();
@@ -447,6 +522,9 @@ export default function SearchResults() {
     }
   }, [addToShelfId]);
 
+    /* Shelf-mode loading: when the page is opened with shelf context,
+      load the shelf contents once to annotate the results list. */
+
   useEffect(() => {
     loadShelfContents();
   }, [loadShelfContents]);
@@ -472,6 +550,8 @@ export default function SearchResults() {
   };
 
   // Memoized fetch results function
+  // Fetches data, applies client-side filters, and normalizes results.
+  // Designed to avoid duplicate backend calls by using memoization.
   const fetchResults = useCallback(async () => {
     if (!isMountedRef.current) return;
 
@@ -595,10 +675,13 @@ export default function SearchResults() {
           const normalizedFromAll = worksArray
             .map(normalizeWorkEntity)
             .filter(Boolean);
-
+          // Merge strategy: combine server and client work lists while
+          // preserving shelf annotations and avoiding duplicate render items.
           mappedWorks = mergeUniqueWorks(mappedWorks, normalizedFromAll);
         }
 
+        // Client-side filters: pure transformer that narrows results without
+        // mutating input, enabling deterministic unit tests and predictable UI.
         const clientFilteredWorks = applyWorkFilters(mappedWorks, {
           type: filters.type || '',
           genre: filters.genre || '',
@@ -619,11 +702,17 @@ export default function SearchResults() {
     }
   }, [query, typeFilter, yearFilter, genreFilter, ratingFilter]);
 
+  /* Fetch strategy: prefer backend search for heavy lifting and use
+     client-side filters to provide immediate responsiveness and unified UI shapes. */
+
+  // Fetch search results when filters or query change
   useEffect(() => {
     fetchResults();
   }, [fetchResults]);
 
   const handleAddToShelf = async (workId) => {
+    //  Toggle membership idempotently to keep UI consistent on retries.
+    //  Use local sets for O(1) membership checks and fast feedback.
     if (!addToShelfId) return;
     const workIdStr = String(workId);
     const isInShelf = addedWorks.has(workIdStr);
@@ -649,6 +738,8 @@ export default function SearchResults() {
   };
 
   const handleAddToFavourites = async (workId) => {
+    //  Ensure favourites shelf exists before toggling to avoid failures.
+    //  Maintain local Set state for efficient lookups and optimistic UI.
     if (!user) {
       return;
     }
@@ -702,6 +793,9 @@ export default function SearchResults() {
       setFavouritingWork(null);
     }
   };
+
+  /* Favourites flow: ensure the favourites shelf exists before toggling,
+     and perform idempotent operations so repeated clicks are safe. */
 
   const closeBanner = () => {
     // Remove shelf params from URL
@@ -969,27 +1063,12 @@ export default function SearchResults() {
                                 </div>
                               </div>
                               <div style={{ flex: 1, padding: '8px 0', display: 'flex', flexDirection: 'column', gap: 4 }}>
-                                <h3
+                                <ResultHeader
+                                  title={entity.title}
+                                  subtitle={entity.subtitle}
+                                  meta={`★ ${entity.rating.toFixed(1)}`}
                                   onClick={() => navigateAndClearFilters(`/works/${entity.entityId}`)}
-                                  style={{
-                                    margin: 0,
-                                    fontSize: 16,
-                                    fontWeight: 600,
-                                    cursor: 'pointer',
-                                    display: 'inline-block',
-                                    width: 'fit-content'
-                                  }}
-                                  onMouseEnter={(e) => {
-                                    e.currentTarget.style.textDecoration = 'underline';
-                                  }}
-                                  onMouseLeave={(e) => {
-                                    e.currentTarget.style.textDecoration = 'none';
-                                  }}
-                                >{entity.title}</h3>
-                                <div style={{ display: 'flex', gap: 16, alignItems: 'baseline' }}>
-                                  <p style={{ margin: 0, color: '#666', fontSize: 14 }}>{entity.subtitle}</p>
-                                  <span style={{ margin: 0, color: '#888', fontSize: 12 }}>★ {entity.rating.toFixed(1)}</span>
-                                </div>
+                                />
                                 <p style={{ margin: 0, color: '#888', fontSize: 13 }}>{entity.meta}</p>
                                 {entity.description && (
                                   <p style={{ margin: 0, color: '#555', fontSize: 13, lineHeight: 1.4, marginTop: 4 }}>{entity.description}</p>
@@ -1062,27 +1141,12 @@ export default function SearchResults() {
                                 </div>
                               </div>
                               <div style={{ flex: 1, padding: '8px 0', display: 'flex', flexDirection: 'column', gap: 4 }}>
-                                <h3
+                                <ResultHeader
+                                  title={entity.title}
+                                  subtitle={entity.subtitle}
+                                  meta={entity.meta}
                                   onClick={() => navigate(`/profile/${entity.entityId}`, { state: { prevSearch: search } })}
-                                  style={{
-                                    margin: 0,
-                                    fontSize: 16,
-                                    fontWeight: 600,
-                                    cursor: 'pointer',
-                                    display: 'inline-block',
-                                    width: 'fit-content'
-                                  }}
-                                  onMouseEnter={(e) => {
-                                    e.currentTarget.style.textDecoration = 'underline';
-                                  }}
-                                  onMouseLeave={(e) => {
-                                    e.currentTarget.style.textDecoration = 'none';
-                                  }}
-                                >{entity.title}</h3>
-                                <div style={{ display: 'flex', gap: 16, alignItems: 'baseline' }}>
-                                  <p style={{ margin: 0, color: '#666', fontSize: 14 }}>{entity.subtitle}</p>
-                                  <span style={{ margin: 0, color: '#888', fontSize: 12 }}>{entity.meta}</span>
-                                </div>
+                                />
                                 <p style={{ margin: 0, color: '#888', fontSize: 13 }}>User Account</p>
                               </div>
                             </div>

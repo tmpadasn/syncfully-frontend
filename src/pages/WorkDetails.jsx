@@ -18,6 +18,9 @@ import {
   normalizeGenres,
 } from '../utils/normalize';
 
+/* WorkDetails helpers: parsing and normalization helpers used to keep rendering logic concise. */
+/* These helpers isolate non-trivial mapping between API responses and UI-friendly shapes. */
+
 /* ===================== HELPER FUNCTIONS ===================== */
 
 const processWorkData = (workResponse) => {
@@ -44,6 +47,9 @@ const processWorkData = (workResponse) => {
   };
 };
 
+// Normalization helper: convert varied API work responses into a
+// stable, UI-friendly shape that rendering code can depend on.
+
 const processRatingsData = (ratingsResponse) => {
   return extractRatingsFromResponse(ratingsResponse);
 };
@@ -53,9 +59,23 @@ const processSimilarWorksData = (similarWorksResponse) => {
   return normalizeWorks(similarWorksResponse);
 };
 
+//  Keep helpers small and pure to simplify unit testing and reuse.
+//  Helpers normalize API responses so the component focuses on rendering.
+
+// Note: these helpers deliberately avoid side-effects so the component can
+// re-use them during optimistic UI updates without extra network calls.
+
+// Error handling: API errors are surfaced to `message` so the UI can
+// present consistent feedback without duplicating try/catch logic.
+
 /* ===================== WORK DETAILS FUNCTION ===================== */
 
 export default function WorkDetails() {
+
+  // Work details page behavior:
+  // Fetches work metadata, rating summaries, and similar/recommended works.
+  // Data is normalized via helper functions to keep presentation logic simple
+  // and to avoid duplicating extraction/parsing across the component.
 
   // FETCH HOOKS AND STATES
   useNavigationWithClearFilters();
@@ -79,6 +99,9 @@ export default function WorkDetails() {
   const [ratingSubmittedMessage, setRatingSubmittedMessage] = useState(false);
   const [showRecommendationToast, setShowRecommendationToast] = useState(false);
   const [recommendationVersion, setRecommendationVersion] = useState(null);
+
+  // Rating UX: score/hoverScore represent optimistic UI state so clicks
+  // immediately reflect intent while the network request completes.
 
   /* ===================== UI STYLES ===================== */
   const styles = {
@@ -359,6 +382,12 @@ export default function WorkDetails() {
     },
   };
 
+  //  Single-entry point for fetching and normalizing remote data.
+  // Centralizes side-effects so retry logic and loading state are predictable.
+  // Fetch strategy: centralizing fetches makes retries and stale-state
+  // handling straightforward and keeps rendering logic declarative.
+  // Central fetch: group related remote calls to keep loading and retry
+  // handling consistent across the component.
   const loadWorkData = useCallback(async () => {
     if (!isMountedRef.current) return;
 
@@ -386,6 +415,8 @@ export default function WorkDetails() {
 
       const processedSimilarWorks = processSimilarWorksData(similarWorksResponse);
 
+      // Recommendation trimming: keep only the top 5 results to reduce
+      // cognitive load and DOM complexity for the recommendations UI.
       setRecommended(processedSimilarWorks.slice(0, 5));
     } catch (error) {
       logger.error('Error loading work details:', error);
@@ -396,6 +427,10 @@ export default function WorkDetails() {
     }
   }, [workId]);
 
+    /* Mounted check: avoid state updates after unmount by tracking a ref.
+      This prevents React warnings and race conditions from overlapping requests. */
+
+  // Load work details, ratings, and similar works on mount
   useEffect(() => {
     isMountedRef.current = true;
     loadWorkData();
@@ -405,7 +440,8 @@ export default function WorkDetails() {
     };
   }, [loadWorkData]);
 
-  // Fetch initial recommendation version for logged-in users
+  // Fetch initial recommendation version for logged-in users.
+  // This lets the UI show which recommendation model/version the backend uses.
   useEffect(() => {
     if (!isGuest && loggedUserId && isMountedRef.current) {
       getUserRecommendations(loggedUserId)
@@ -431,6 +467,8 @@ export default function WorkDetails() {
   }, [ratings, loggedUserId, isGuest]);
 
   const submitRating = async (overrideScore) => {
+    // Submit flow: block guests, post a rating, then refresh ratings
+    // and (optionally) recommendations to keep the UI in sync.
     if (isGuest) {
       navigate('/login', {
         state: { message: 'You must log in to rate this work.' },
@@ -480,6 +518,8 @@ export default function WorkDetails() {
   };
 
   // Rating buckets
+  //  Derive aggregates once to avoid repeated compute during render.
+  //  Keep presentation-layer calculations pure and memoizable later.
   const totalRatings = ratings.length;
   const bucketCounts = [5, 4, 3, 2, 1].map((star) => ({
     star,
@@ -488,14 +528,23 @@ export default function WorkDetails() {
     ).length,
   }));
 
+  // Distribution rationale: compute aggregates once here to avoid
+  // repeated computation during render and to keep components fast.
+
   // Check if current user has already rated this work
   const userRating = !isGuest && ratings.find((r) => r.userId === loggedUserId);
   const userRatingScore = userRating ? Math.round(Number(userRating.score) || 0) : null;
 
+  // Render guards: handle loading and missing resources early so the
+  // main JSX focuses on the full, ready-to-read UI state.
   if (loading) return <WorkDetailsSkeleton />;
   if (!work) return <p>Work not found.</p>;
 
+  
+
   // RETURN WORK DETAILS PAGE LAYOUT
+  //  Layout composes left/middle/right concerns separately for clarity.
+  //  Encourages selective hydration and easier accessibility audits.
   return (
     <div style={styles.pageContainer}>
       {message && (
@@ -550,7 +599,8 @@ export default function WorkDetails() {
           </div>
         </aside>
 
-        {/* MIDDLE column */}
+          {/* // Main column: title, meta, tags and description (primary readable content).
+          // Centralized for accessibility and SEO. */}
         <main>
           <h1 style={styles.workTitle}>{work.title}</h1>
           <p style={styles.workMeta}>
@@ -572,7 +622,8 @@ export default function WorkDetails() {
             ))}
           </div>
 
-          {/* DESCRIPTION */}
+          {/* // Description block: shows `work.description` or a friendly placeholder
+          // when no description is available to keep layout consistent. */}
           <section style={styles.descriptionSection}>
             <h3 style={styles.descriptionTitle}>
               Description
@@ -682,7 +733,9 @@ export default function WorkDetails() {
             </div>
           </div>
 
-          {/* DISTRIBUTION */}
+           {/* Rating distribution visualization.
+             Uses per-bucket percentages and counts so the UI reflects relative feedback without extra API calls. */}
+           {/* DISTRIBUTION */}
           <div style={styles.distributionContainer}>
             <h4 style={styles.distributionTitle}>
               Rating Distribution
@@ -729,6 +782,8 @@ export default function WorkDetails() {
       </div>
 
       {/* Toast notification for new recommendations */}
+      {/* // Recommendation toast: surface backend model/version changes
+      // after user actions so users notice updated suggestions. */}
       {showRecommendationToast && (
         <Toast
           message="You have new recommendations!"

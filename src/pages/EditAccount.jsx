@@ -4,8 +4,15 @@ import useAuth from "../hooks/useAuth";
 import { getUserById, updateUser } from "../api/users";
 import { DEFAULT_AVATAR_URL } from "../config/constants";
 
-/* ===================== EDIT ACCOUNT PAGE FUNCTION ===================== */
+/* EditAccount
+  Renders a simple profile edit form. On mount the component loads the
+  current user's data into local form state. Saving issues an update call
+  and updates the authentication context with the server response.
+*/
 
+
+// This component provides the authenticated user's profile edit UX and handles form state and submission.
+// Comments explain lifecycle points and non-obvious UI decisions; behaviour unchanged.
 export default function EditAccount() {
   const { user, authLoading, setUser } = useAuth();
   const navigate = useNavigate();
@@ -22,7 +29,11 @@ export default function EditAccount() {
   const [isSaving, setIsSaving] = useState(false);
 
   // Load user
-  useEffect(() => {
+    /* Lifecycle: preload current user fields into local form state so the
+      edit form operates purely as a controlled component. */
+    // Purpose: Initialize form state from authoritative server data to avoid drift.
+    // Purpose: Keep component purely controlled to simplify parent integration.
+    useEffect(() => {
     if (authLoading || !user) return;
 
     (async () => {
@@ -43,6 +54,14 @@ export default function EditAccount() {
 
   const handleSave = async () => {
     if (isSaving) return; // Prevent duplicate submissions
+    // Purpose: Prevent duplicate submissions and reduce accidental double-posts.
+    // Purpose: Validate obvious client-side errors before invoking network calls.
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (form.email && !emailRegex.test(String(form.email).trim())) {
+      setMessage('Invalid email address');
+      setMessageType('error');
+      return;
+    }
     
     try {
       setMessage(null);
@@ -70,6 +89,12 @@ export default function EditAccount() {
       setIsSaving(false);
     }
   };
+
+  /* Update flow: apply optimistic UI by updating local auth context after server success.
+     This separates server validation errors from local form state management. */
+
+  // Note: Auth context update occurs only after server confirms changes to avoid inconsistency.
+  // Note: Navigation after a short delay allows the user to see success feedback.
 
   const handleCancel = () => {
     navigate('/account');

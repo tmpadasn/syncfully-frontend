@@ -1,3 +1,4 @@
+/* WorkCard: presentational component for a single work (cover, meta, link). */
 import { Link } from 'react-router-dom';
 import ErrorBoundary from './ErrorBoundary';
 
@@ -46,3 +47,6 @@ export default function WorkCard(props) {
     </ErrorBoundary>
   );
 }
+
+// The component is wrapped with an ErrorBoundary to contain rendering failures
+// to a single card; this prevents a single failure from affecting the parent view.

@@ -1,6 +1,8 @@
 import WorkCardCarousel from '../WorkCardCarousel';
 import ErrorBoundary from '../ErrorBoundary';
 
+// UserRatings: renders a user's rating history as a carousel of work cards.
+// Maps rating objects to `WorkCardCarousel` card models and sorts by date.
 /* ===================== UI STYLES ===================== */
 const styles = {
   /* ===================== ERROR FALLBACK ===================== */

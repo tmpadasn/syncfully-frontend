@@ -1,3 +1,5 @@
+/* FilterBar: derives client-side filter controls from backend catalogue and exposes keyboard-friendly dropdowns. */
+/* Synchronizes filter state into URL params to preserve navigation and shareability. */
 import { useRef, useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { FiChevronDown, FiBook, FiMusic, FiFilm } from 'react-icons/fi';
@@ -151,6 +153,8 @@ const styles = {
 };
 
 export default function FilterBar() {
+  /* URL-sync and derived options: filter controls reflect backend catalogue
+     and persist selections via URL params so results are shareable. */
   const location = useLocation();
   const navigate = useNavigate();
   const params = new URLSearchParams(location.search);
@@ -167,12 +171,16 @@ export default function FilterBar() {
   
   // Load filter options from backend on component mount
   useEffect(() => {
+    // Derive filters robustly from backend data so controls reflect real catalogue shape.
+    // This ensures UX and shareable URLs match actual server-side content.
     const loadFilterOptions = async () => {
       try {
         const worksData = await getAllWorks();
         const works = worksData?.works || worksData?.data || [];
         
         if (works.length > 0) {
+          // Derive filter options from backend data so the controls reflect the
+          // actual catalogue (types, genres, year ranges)
           // Extract unique types from backend data
           const types = [...new Set(
             works.map(work => work.type)
@@ -220,8 +228,8 @@ export default function FilterBar() {
             genresByType: genresByType,
             ratings: ['5','4','3','2','1'] // Standard rating scale
           });
-        } else {
-          logger.warn('⚠️ FilterBar: No works found in backend, using empty arrays');
+          } else {
+            logger.warn('⚠️ FilterBar: No works found in backend, using empty arrays');
           // Use empty arrays when no backend data
           setFilterOptions({
             types: [],
@@ -259,8 +267,11 @@ export default function FilterBar() {
     );
   }
 
+  // Keep URL params as the single source of truth for filter state.
+  // Perform in-place navigation to avoid creating extra history entries.
+
   return (
-    <div style={styles.outer}>
+    <div style={styles.outer} >
       <div style={styles.bar}>
         {!optionsLoaded ? (
           <div style={{ ...styles.container, justifyContent: 'center', ...styles.loading }}>
@@ -346,6 +357,8 @@ export default function FilterBar() {
   );
 }
 
+/* MenuControl: accessible dropdown used by FilterBar to choose a single value.
+  Rationale: isolates keyboard, grouping and selection logic so URL-sync stays simple. */
 function MenuControl({ label, options, onSelect, currentValue = '', disabled = false, showIcons = false }) {
   const [open, setOpen] = useState(false);
   const [focusedIndex, setFocusedIndex] = useState(-1);
@@ -353,6 +366,8 @@ function MenuControl({ label, options, onSelect, currentValue = '', disabled = f
   const buttonRef = useRef(null);
   const menuRef = useRef(null);
 
+  /* Close on outside click to preserve a focused/isolated interaction model.
+     Rationale: avoids lingering open menus when the user interacts elsewhere. */
   useEffect(() => {
     function onDoc(e) {
       if (ref.current && !ref.current.contains(e.target)) {
@@ -363,7 +378,8 @@ function MenuControl({ label, options, onSelect, currentValue = '', disabled = f
     return () => document.removeEventListener('mousedown', onDoc);
   }, []);
 
-  // Keyboard navigation for dropdown
+  /* Keyboard navigation: Arrow/Enter/Home/End/Escape support for listbox semantics.
+     Rationale: mirrors native controls so assistive tech and power-users behave predictably. */
   useEffect(() => {
     if (!open) return;
 
@@ -410,7 +426,8 @@ function MenuControl({ label, options, onSelect, currentValue = '', disabled = f
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [open, focusedIndex, options, onSelect, showIcons]);
 
-  // Reset focused index when opening
+  /* Reset focused index when opening so keyboard navigation begins from neutral state.
+     Rationale: prevents surprising immediate selection when the menu first opens. */
   useEffect(() => {
     if (open) {
       setFocusedIndex(-1);
@@ -423,7 +440,8 @@ function MenuControl({ label, options, onSelect, currentValue = '', disabled = f
   const displayLabel = (selectedOption && currentValue !== '') ? selectedOption.label : label;
   const isSelected = currentValue && currentValue !== '';
   
-  // Helper to get icon for a type
+    /* Helper to get icon for a type.
+      Rationale: keeps icon mapping compact and colocated with render logic. */
   const getIcon = (type) => {
     switch(type) {
       case 'book':
@@ -437,7 +455,8 @@ function MenuControl({ label, options, onSelect, currentValue = '', disabled = f
     }
   };
   
-  // Group options by type if showIcons is true
+  /* Grouping logic: cluster options by type for iconized menus.
+     Rationale: enables section headers while preserving a flat keyboard map. */
   const groupedOptions = showIcons ? (() => {
     const groups = { book: [], music: [], movie: [], other: [] };
     
@@ -461,6 +480,56 @@ function MenuControl({ label, options, onSelect, currentValue = '', disabled = f
     ...styles.labelBase,
     ...styles.labelButton(isSelected, disabled, open),
   };
+
+  /* makeOption: renders a single option and updates running index for focus mapping.
+     Rationale: centralizes click/hover behavior so styling and focus stay consistent. */
+  let idxCounter = -1;
+  const makeOption = (opt) => {
+    idxCounter += 1;
+    const idx = idxCounter;
+    return (
+      <div
+        key={opt.label + opt.value}
+        style={{
+          ...styles.option,
+          backgroundColor: focusedIndex === idx ? '#f5f5f5' : 'transparent',
+        }}
+        onClick={() => {
+          onSelect(opt.value);
+          setOpen(false);
+          buttonRef.current?.focus();
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.backgroundColor = '#f5f5f5';
+          setFocusedIndex(idx);
+        }}
+        onMouseLeave={(e) => {
+          if (focusedIndex !== idx) {
+            e.currentTarget.style.backgroundColor = 'transparent';
+          }
+        }}
+        role="option"
+        aria-selected={opt.value === currentValue}
+      >
+        {showIcons && opt.type ? getIcon(opt.type) : null}
+        <span>{opt.label}</span>
+      </div>
+    );
+  };
+
+  /* flatOptions: linearized option list for keyboard navigation when groups present.
+     Rationale: maps visual grouping to a single index space for keyboard handlers. */
+  const flatOptions = showIcons
+    ? (() => {
+        const arr = [];
+        arr.push(...options.filter(o => o.value === ''));
+        arr.push(...(groupedOptions.book || []));
+        arr.push(...(groupedOptions.music || []));
+        arr.push(...(groupedOptions.movie || []));
+        arr.push(...(groupedOptions.other || []));
+        return arr;
+      })()
+    : options;
 
   return (
     <div style={styles.menuWrapper} ref={ref}>
@@ -491,196 +560,37 @@ function MenuControl({ label, options, onSelect, currentValue = '', disabled = f
         {!disabled && <FiChevronDown style={{ transform: open ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s ease' }} aria-hidden="true" />}
       </button>
       {open && !disabled && (
-        <div 
+        <div
           ref={menuRef}
-          style={styles.menu} 
+          style={styles.menu}
           role="listbox"
           aria-label={`${label} options`}
         >
           {!showIcons ? (
-            // Regular options without grouping
-            options.map((opt, idx) => (
-              <div
-                key={opt.label + opt.value}
-                style={{
-                  ...styles.option,
-                  backgroundColor: focusedIndex === idx ? '#f5f5f5' : 'transparent',
-                }}
-                onClick={() => {
-                  onSelect(opt.value);
-                  setOpen(false);
-                  buttonRef.current?.focus();
-                }}
-                onMouseEnter={(e) => {
-                  e.target.style.backgroundColor = '#f5f5f5';
-                  setFocusedIndex(idx);
-                }}
-                onMouseLeave={(e) => {
-                  if (focusedIndex !== idx) {
-                    e.target.style.backgroundColor = 'transparent';
-                  }
-                }}
-                role="option"
-                aria-selected={opt.value === currentValue}
-              >
-                {opt.label}
-              </div>
-            ))
+            options.map(opt => makeOption(opt))
           ) : (
-            // Grouped options with icons
             <>
-              {/* ALL option */}
-              {options.filter(opt => opt.value === '').map((opt, idx) => (
-                <div
-                  key={opt.label + opt.value}
-                  style={{
-                    ...styles.option, 
-                    ...styles.optionSeparator,
-                    backgroundColor: focusedIndex === idx ? '#f5f5f5' : 'transparent',
-                  }}
-                  onClick={() => {
-                    onSelect(opt.value);
-                    setOpen(false);
-                    buttonRef.current?.focus();
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.backgroundColor = '#f5f5f5';
-                    setFocusedIndex(idx);
-                  }}
-                  onMouseLeave={(e) => {
-                    if (focusedIndex !== idx) {
-                      e.currentTarget.style.backgroundColor = 'transparent';
-                    }
-                  }}
-                  role="option"
-                  aria-selected={opt.value === currentValue}
-                >
-                  {opt.label}
+              {/* ALL option(s) */}
+              {options.filter(opt => opt.value === '').map(opt => (
+                <div key={opt.label + opt.value} style={{ ...styles.option, ...styles.optionSeparator }}>
+                  {makeOption(opt)}
                 </div>
               ))}
-              
-              {/* Book genres */}
-              {groupedOptions.book.length > 0 && (
-                <>
-                  <div style={{ ...styles.groupHeader }}>
-                    Books
-                  </div>
-                  {groupedOptions.book.map(opt => (
-                    <div
-                      key={opt.label + opt.value}
-                      style={{...styles.option, ...styles.groupedOption}}
-                      onClick={() => {
-                        onSelect(opt.value);
-                        setOpen(false);
-                        buttonRef.current?.focus();
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.backgroundColor = '#f5f5f5';
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.backgroundColor = 'transparent';
-                      }}
-                      role="option"
-                      aria-selected={opt.value === currentValue}
-                    >
-                      {getIcon('book')}
-                      <span>{opt.label}</span>
+
+              {/* Render grouped sections in a loop to avoid duplicating code */}
+              {['book', 'music', 'movie', 'other'].map(type => {
+                const group = groupedOptions[type];
+                if (!group || group.length === 0) return null;
+
+                const headerLabel = type === 'other' ? 'Other' : type.charAt(0).toUpperCase() + type.slice(1) + 's';
+
+                  return (
+                    <div key={type}>
+                      <div style={{ ...styles.groupHeader }}>{headerLabel}</div>
+                      {group.map(opt => makeOption(opt))}
                     </div>
-                  ))}
-                </>
-              )}
-              
-              {/* Music genres */}
-              {groupedOptions.music.length > 0 && (
-                <>
-                  <div style={{ ...styles.groupHeader }}>
-                    Music
-                  </div>
-                  {groupedOptions.music.map(opt => (
-                    <div
-                      key={opt.label + opt.value}
-                      style={{...styles.option, ...styles.groupedOption}}
-                      onClick={() => {
-                        onSelect(opt.value);
-                        setOpen(false);
-                        buttonRef.current?.focus();
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.backgroundColor = '#f5f5f5';
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.backgroundColor = 'transparent';
-                      }}
-                      role="option"
-                      aria-selected={opt.value === currentValue}
-                    >
-                      {getIcon('music')}
-                      <span>{opt.label}</span>
-                    </div>
-                  ))}
-                </>
-              )}
-              
-              {/* Movie genres */}
-              {groupedOptions.movie.length > 0 && (
-                <>
-                  <div style={{ ...styles.groupHeader }}>
-                    Movies
-                  </div>
-                  {groupedOptions.movie.map(opt => (
-                    <div
-                      key={opt.label + opt.value}
-                      style={{...styles.option, ...styles.groupedOption}}
-                      onClick={() => {
-                        onSelect(opt.value);
-                        setOpen(false);
-                        buttonRef.current?.focus();
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.backgroundColor = '#f5f5f5';
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.backgroundColor = 'transparent';
-                      }}
-                      role="option"
-                      aria-selected={opt.value === currentValue}
-                    >
-                      {getIcon('movie')}
-                      <span>{opt.label}</span>
-                    </div>
-                  ))}
-                </>
-              )}
-              
-              {/* Other genres (if any) */}
-              {groupedOptions.other.length > 0 && (
-                <>
-                  <div style={{ ...styles.groupHeader }}>
-                    Other
-                  </div>
-                  {groupedOptions.other.map(opt => (
-                    <div
-                      key={opt.label + opt.value}
-                      style={styles.option}
-                      onClick={() => {
-                        onSelect(opt.value);
-                        setOpen(false);
-                        buttonRef.current?.focus();
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.backgroundColor = '#f5f5f5';
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.backgroundColor = 'transparent';
-                      }}
-                      role="option"
-                      aria-selected={opt.value === currentValue}
-                    >
-                      {opt.label}
-                    </div>
-                  ))}
-                </>
-              )}
+                  );
+              })}
             </>
           )}
         </div>

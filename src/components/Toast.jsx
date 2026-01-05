@@ -76,13 +76,20 @@ const keyframes = `
 export default function Toast({ message, onClose, duration = 4000, link }) {
   const navigate = useNavigate();
 
-  useEffect(() => {
+  /* Toast: transient, non-blocking notification that auto-dismisses after a duration. */
+  /* Optionally navigates to linked content when the icon is clicked. */
+
+    /* Auto-dismiss behavior: keeps notifications transient and avoids stacking.
+      The effect ensures the toast is removed after `duration` milliseconds. */
+    useEffect(() => {
     const timer = setTimeout(() => {
       onClose();
     }, duration);
 
     return () => clearTimeout(timer);
   }, [onClose, duration]);
+
+  // Auto-dismiss toast after `duration` milliseconds to keep notifications transient.
 
   const handleIconClick = (e) => {
     e.stopPropagation();
@@ -91,6 +98,7 @@ export default function Toast({ message, onClose, duration = 4000, link }) {
       onClose();
     }
   };
+  // Icon click navigates to the linked content and dismisses the toast immediately.
 
   return (
     <>

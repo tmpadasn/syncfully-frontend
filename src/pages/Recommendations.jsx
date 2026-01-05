@@ -1,3 +1,8 @@
+/*
+ Recommendations page.
+ Shows personalized picks and fallback lists.
+ Uses backend recommendations when available.
+*/
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import useAuth from '../hooks/useAuth';
@@ -15,6 +20,8 @@ import {
 
 /* ===================== RECOMMENDATIONS FUNCTION ===================== */
 
+// Recommendations page component.
+// Shows personalized picks and fallbacks when no backend data present.
 export default function Recommendations() {
   useNavigationWithClearFilters();
   const navigate = useNavigate();
@@ -134,7 +141,7 @@ const WorkCard = ({ item }) => (
 
   // MAIN LOGIC
   useEffect(() => {
-    // If guest, redirect to login immediately
+    // If guest, redirect to login
     if (isGuest) {
       navigate('/login', {
         state: { message: 'Log in to see your personalized recommendations.' },
@@ -165,7 +172,7 @@ const WorkCard = ({ item }) => (
         const staticFriends = shuffled.slice(10, 20);
         const staticExplore = shuffled.slice(20, 30);
 
-        // Try personalized recommendations for section 1
+        // Try backend recommendations first
         let currentRecommendations = [];
         try {
           const recommendationsData = await getUserRecommendations(userId);

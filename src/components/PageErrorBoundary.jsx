@@ -2,6 +2,10 @@ import React from 'react';
 import logger from '../utils/logger';
 import { IS_DEVELOPMENT } from '../config/constants';
 
+/* PageErrorBoundary: catches uncaught errors at the page level and renders a
+  recovery UI while recording diagnostic details. This containment prevents
+  a single page failure from rendering the entire SPA unusable. */
+
 /* ===================== UI STYLES ===================== */
 const styles = {
   /* ===================== ERROR WRAPPER ===================== */
@@ -144,6 +148,8 @@ class PageErrorBoundaryClass extends React.Component {
   }
 
   componentDidCatch(error, errorInfo) {
+    // Capture diagnostics for server-side reporting and local debugging.
+    // Storing error details here helps operators triage production issues faster.
     logger.error('Page Error Boundary caught an error:', error, errorInfo);
 
     this.setState({
@@ -179,6 +185,8 @@ class PageErrorBoundaryClass extends React.Component {
                   Don't worry – your data is safe, and you can try one of the options below.
                 </p>
 
+                /* Recovery actions: provide immediate ways to recover from page-level failures. */
+                /* Buttons reset error state or navigate to safe views to restore a usable application state. */
                 <div style={styles.buttonContainer}>
                   <button
                     onClick={this.handleReset}

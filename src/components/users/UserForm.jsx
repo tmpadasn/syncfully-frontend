@@ -1,6 +1,10 @@
 import { useState } from "react";
 
+// UserForm: small controlled form used for editing basic user fields.
+// It manages local form state and emits a single `onSubmit` event with the form payload.
 /* ===================== UI STYLES ===================== */
+// Keep styling colocated to make visual tweaks fast and reviewable.
+// Separates presentation concerns so logic remains focused on state.
 const styles = {
   /* ===================== FORM CONTAINER ===================== */
   form: {
@@ -56,11 +60,19 @@ export default function UserForm({ initial = {}, onSubmit }) {
     profilePictureUrl: initial.profilePictureUrl || ""
   });
 
+  /* Controlled form pattern: keep inputs local and emit a single payload
+     to allow parent components to handle validation and side effects. */
+
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
+// Single generic change handler avoids repetitive per-field logic.
+// Ensures uniform state updates and simpler debugging across inputs.
+
   const handleSubmit = (e) => {
+    // Prevent default submission and emit the form payload to the parent.
+    // This controlled pattern keeps validation and side-effects outside the component.
     e.preventDefault();
     onSubmit(form);
   };

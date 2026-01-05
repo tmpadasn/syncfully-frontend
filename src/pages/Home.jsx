@@ -1,3 +1,8 @@
+/*
+ Home page.
+ Shows popular works, recent activity, and carousels.
+ Loads data on mount and keeps UI responsive.
+*/
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { getPopularWorks, getAllWorks } from '../api/works';
 import { getUserRatings, getUserFollowing } from '../api/users';
@@ -7,6 +12,7 @@ import useNavigationWithClearFilters from '../hooks/useNavigationWithClearFilter
 import useAuth from '../hooks/useAuth';
 import { WorkGridSkeleton, FriendGridSkeleton } from '../components/Skeleton';
 import HomeCarousel from '../components/HomeCarousel';
+import FeatureIcon from '../components/FeatureIcon';
 import logger from '../utils/logger';
 import {
   extractWorksFromResponse,
@@ -30,6 +36,56 @@ const processPopularWorks = (data) => {
   return normalizeWorks(works);
 };
 
+const processFriendsData = async (users, allWorks, currentUserId, isMountedRef) => {
+  const friendsWithActivity = [];
+
+  if (!currentUserId) return []; // If not logged in → no friends
+
+  const eligibleUsers = users.filter(
+    user => user.userId !== currentUserId && user.ratedWorks > 0
+  );
+
+  for (const user of eligibleUsers) {
+    if (!isMountedRef.current) break; // Stop if component unmounted
+    
+      try {
+        // Fetch ratings for this friend and pick the most recent rated work
+      const ratingsResponse = await getUserRatings(user.userId);
+      
+      if (!isMountedRef.current) break; // Check again after async call
+      
+      const ratingsData = ratingsResponse?.data || ratingsResponse || {};
+
+      const entries = normalizeRatingsObject(ratingsData);
+      if (entries.length === 0) continue;
+
+      const mostRecentRating = entries
+        .sort((a, b) => b.ratedAt - a.ratedAt)[0];
+
+      const ratedWork = allWorks.find(w =>
+        (w.id || w.workId) === mostRecentRating.workId
+      );
+
+      if (ratedWork) {
+        const normalizedWork = normalizeWork(ratedWork);
+        friendsWithActivity.push({
+          id: user.userId,
+          name: user.username,
+          avatar: user.profilePictureUrl || DEFAULT_AVATAR_URL,
+          likedAlbum: {
+            title: normalizedWork.title,
+            coverUrl: normalizedWork.coverUrl,
+            workId: normalizedWork.workId
+          }
+        });
+      }
+    } catch (error) {
+      logger.error('Failed to fetch ratings for user:', user.userId, error);
+    }
+  }
+
+  return friendsWithActivity;
+};
 
 const processFollowingData = async (following, allWorks, isMountedRef) => {
   const followingWithActivity = [];
@@ -86,7 +142,7 @@ const processFollowingData = async (following, allWorks, isMountedRef) => {
     }
   }
 
-  // Alternate between followed users - take one work from each in round-robin fashion
+  // Round-robin: take one work per followed user to mix the feed
   let maxWorks = Math.max(...followingRatings.map(f => f.length));
   for (let i = 0; i < maxWorks; i++) {
     for (let j = 0; j < followingRatings.length; j++) {
@@ -173,9 +229,50 @@ const PopularWorkCard = ({ work }) => (
     </div>
   </Link>
 );
+/**
+ * Reusable carousel section for works with loading and empty states.
+ */
+const SectionCarousel = ({
+  title,
+  loading,
+  items,
+  emptyMessage,
+  variant = 'default',
+}) => (
+  <>
+    <h3 className="section-title" style={{ marginTop: 40 }}>
+      {title}
+    </h3>
+
+    {loading ? (
+      <WorkGridSkeleton
+        count={6}
+        columns="repeat(auto-fill, minmax(180px, 1fr))"
+      />
+    ) : items.length === 0 ? (
+    emptyMessage ? <p>{emptyMessage}</p> : null
+    ) : (
+      <HomeCarousel scrollChunk={3}>
+        {items.map(w => (
+          <div
+            key={w.workId}
+            className={`home-card ${variant}`}
+            style={{ flexShrink: 0, width: '180px' }}
+        >
+             <PopularWorkCard work={w} />
+          </div>
+
+        ))}
+      </HomeCarousel>
+    )}
+  </>
+);
 
 /* ===================== HOME PAGE FUNCTION ===================== */
 
+// Home page component.
+// Aggregates multiple feeds (popular, friends, following) on one page.
+// Loads several endpoints in a controlled way to keep UI responsive.
 export default function Home() {
   useNavigationWithClearFilters();
 
@@ -203,10 +300,13 @@ export default function Home() {
   }, []);
 
   // Memoized load page function
+  // Loads popular works and optional social feeds in parallel.
+  // Uses `isMountedRef` to avoid state updates after unmount.
   const loadPage = useCallback(async () => {
     if (!isMountedRef.current) return;
 
-    try {
+      try {
+        // Reset lists and show loading UI while fetching
       // Reset state immediately to prevent flash of old content
       setPopular([]);
       setFollowing([]);
@@ -407,83 +507,28 @@ export default function Home() {
                 </div>
 
                 {/* Feature highlights */}
-                <div style={{
-                  display: 'flex',
-                  gap: 64,
-                  justifyContent: 'center',
-                  marginTop: 40,
-                  flexWrap: 'wrap'
-                }}>
-                  <div style={{ textAlign: 'center', maxWidth: 200 }}>
-                    <div style={{
-                      fontSize: 36,
-                      marginBottom: 12,
-                      width: 60,
-                      height: 60,
-                      margin: '0 auto 12px',
-                      background: 'rgba(255, 255, 255, 0.2)',
-                      borderRadius: '50%',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      color: '#fff'
-                    }}>
-                      <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="currentColor" />
-                      </svg>
-                    </div>
-                    <div style={{ color: '#fff', fontSize: 14, fontWeight: 600 }}>
-                      Personalized Recommendations
-                    </div>
-                  </div>
-                  <div style={{ textAlign: 'center', maxWidth: 200 }}>
-                    <div style={{
-                      fontSize: 36,
-                      marginBottom: 12,
-                      width: 60,
-                      height: 60,
-                      margin: '0 auto 12px',
-                      background: 'rgba(255, 255, 255, 0.2)',
-                      borderRadius: '50%',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      color: '#fff'
-                    }}>
-                      <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
-                        <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
-                      </svg>
-                    </div>
-                    <div style={{ color: '#fff', fontSize: 14, fontWeight: 600 }}>
-                      Track Your Collection
-                    </div>
-                  </div>
-                  <div style={{ textAlign: 'center', maxWidth: 200 }}>
-                    <div style={{
-                      fontSize: 36,
-                      marginBottom: 12,
-                      width: 60,
-                      height: 60,
-                      margin: '0 auto 12px',
-                      background: 'rgba(255, 255, 255, 0.2)',
-                      borderRadius: '50%',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      color: '#fff'
-                    }}>
-                      <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-                        <circle cx="9" cy="7" r="4" />
-                        <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-                        <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-                      </svg>
-                    </div>
-                    <div style={{ color: '#fff', fontSize: 14, fontWeight: 600 }}>
-                      See Friends' Favorites
-                    </div>
-                  </div>
+                <div style={{ display: 'flex', gap: 64, justifyContent: 'center', marginTop: 40, flexWrap: 'wrap' }}>
+                  <FeatureIcon label="Personalized Recommendations">
+                    <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="currentColor" />
+                    </svg>
+                  </FeatureIcon>
+
+                  <FeatureIcon label="Track Your Collection">
+                    <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+                      <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+                    </svg>
+                  </FeatureIcon>
+
+                  <FeatureIcon label="See Friends' Favorites">
+                    <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                      <circle cx="9" cy="7" r="4" />
+                      <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                      <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                    </svg>
+                  </FeatureIcon>
                 </div>
               </div>
             </div>
@@ -512,67 +557,46 @@ export default function Home() {
           )}
 
           {/* Popular Works */}
-          <h3 className="section-title" style={{ marginTop: 20 }}>
-            WEEK'S TOP 10
-          </h3>
+          <SectionCarousel
+  title="WEEK'S TOP 10"
+  loading={loading}
+  items={popular}
+  emptyMessage="No popular works available."
+  variant="popular"
+/>
 
-          {loading ? (
-            <WorkGridSkeleton count={6} columns="repeat(auto-fill, minmax(180px, 1fr))" />
-          ) : (
-            <HomeCarousel scrollChunk={3}>
-              {popular.map(w => (
-                <div key={w.workId} style={{ flexShrink: 0, width: '180px' }}>
-                  <PopularWorkCard work={w} />
-                </div>
-              ))}
-            </HomeCarousel>
-          )}
 
           {/* Recently Watched */}
-          {user && (
+          
             <>
-              <h3 className="section-title" style={{ marginTop: 40 }}>
-                RECENTLY WATCHED
-              </h3>
+              {user && (
+  <SectionCarousel
+    title="RECENTLY WATCHED"
+    loading={recentLoading}
+    items={recentMovies}
+    emptyMessage="No recently rated movies yet."
+    variant="movie"
+  />
+)}
 
-              {recentLoading ? (
-                <WorkGridSkeleton count={6} columns="repeat(auto-fill, minmax(180px, 1fr))" />
-              ) : recentMovies.length === 0 ? (
-                <p>No recently rated movies yet.</p>
-              ) : (
-                <HomeCarousel scrollChunk={3}>
-                  {recentMovies.map(w => (
-                    <div key={w.workId} style={{ flexShrink: 0, width: '180px' }}>
-                      <PopularWorkCard work={w} />
-                    </div>
-                  ))}
-                </HomeCarousel>
-              )}
             </>
-          )}
+          
 
           {/* Recently Played */}
-          {user && (
+          
             <>
-              <h3 className="section-title" style={{ marginTop: 40 }}>
-                RECENTLY PLAYED
-              </h3>
+              {user && (
+  <SectionCarousel
+    title="RECENTLY PLAYED"
+    loading={recentLoading}
+    items={recentMusic}
+    emptyMessage="No recently rated music yet."
+    variant="music"
+  />
+)}
 
-              {recentLoading ? (
-                <WorkGridSkeleton count={6} columns="repeat(auto-fill, minmax(180px, 1fr))" />
-              ) : recentMusic.length === 0 ? (
-                <p>No recently rated music yet.</p>
-              ) : (
-                <HomeCarousel scrollChunk={3}>
-                  {recentMusic.map(w => (
-                    <div key={w.workId} style={{ flexShrink: 0, width: '180px' }}>
-                      <PopularWorkCard work={w} />
-                    </div>
-                  ))}
-                </HomeCarousel>
-              )}
             </>
-          )}
+          
         </main>
       </div>
     </div>

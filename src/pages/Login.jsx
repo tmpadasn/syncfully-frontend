@@ -156,9 +156,19 @@ const styles = {
   },
 };
 
+//Styles are scoped to this file to enable quick visual adjustments.
+// Co-locating styles reduces cognitive overhead when modifying layout.
+
 /* ===================== LOGIN FUNCTION ===================== */
 
+// Login component
+// Responsible for presenting login/signup UI, validating simple inputs,
+// and delegating auth calls to the Auth hook. Keeps local form state
+// and sets a short-lived flag on successful auth so other pages can show
+// a welcome message.
 export default function Login() {
+  // Component state & routing: keeps local form inputs, loading and error flags.
+  // Separates UI state from Auth hook so side-effects and navigation remain explicit.
   const { login, signup } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
@@ -197,6 +207,9 @@ export default function Login() {
     setError(null);
     setLoading(true);
 
+    // Submit handler: validate locally, delegate to Auth hook, and handle navigation.
+    // Maintains a loading flag for optimistic UX and sets a session marker on success.
+    // Note: client-side checks are defensive only; server enforces final validation.
     try {
       if (isLogin) {
         // Validate login inputs
@@ -213,7 +226,7 @@ export default function Login() {
 
         await login(identifier, password);
       } else {
-        // Validate signup inputs
+        // Basic signup validation — ensure required fields are present
         if (!username.trim()) {
           setError("Please enter a username.");
           setLoading(false);
@@ -224,7 +237,7 @@ export default function Login() {
           setLoading(false);
           return;
         }
-        // Email format validation
+        // Simple email format check to catch obvious typos early
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(email.trim())) {
           setError("Please enter a valid email address.");
@@ -237,10 +250,14 @@ export default function Login() {
           return;
         }
 
+        // Auth hook handles server calls and error translation
         await signup({ username, email, password });
       }
 
-      // Set flag for fresh login
+      // Mark that the user just logged in so the landing page can show
+      // a brief welcome message. This avoids coupling the auth flow with
+      // the global UI directly.
+      // This flag is ephemeral and used only to trigger a one-time toast.
       sessionStorage.setItem(STORAGE_KEY_JUST_LOGGED_IN, 'true');
       navigate("/");
     } catch (err) {
@@ -259,6 +276,8 @@ export default function Login() {
   const passwordTooShort = password && password.length < 4;
 
   // RETURN LOGIN PAGE LAYOUT
+  // Render: conditional fields based on `mode` with accessible attributes and inline feedback.
+  // Keeps markup simple so tests and E2E flows can reliably query inputs and errors.
   return (
     <div style={styles.pageContainer}>
       <div style={styles.cardWrapper}>
@@ -279,11 +298,21 @@ export default function Login() {
             </div>
           )}
 
+          {/*
+            Server responses are rendered as alerts; role and aria-live
+            ensure assistive tech conveys errors/prompts immediately.
+          */}
+
           {error && (
             <div style={styles.errorBox} role="alert" aria-live="assertive">
               {error}
             </div>
           )}
+
+          {/*
+            Form fields use aria-describedby and aria-invalid to help
+            screen readers present validation state precisely.
+          */}
 
           <form onSubmit={handleSubmit} style={styles.form} noValidate>
             {!isLogin && (
@@ -423,6 +452,12 @@ export default function Login() {
                 </div>
               )}
             </div>
+
+            {/* Password guidance: a short client-side check prevents trivial mistakes
+               and improves form completion rates before submission. */}
+
+            {/* /*  Brief inline guidance reduces common input errors.
+            //  Keep client-side checks lightweight to avoid false negatives. */}
 
             {/* Submit Button */}
             <button

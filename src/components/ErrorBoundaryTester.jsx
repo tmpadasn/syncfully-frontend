@@ -1,5 +1,8 @@
 import { useState } from 'react';
 
+/* ErrorBoundaryTester: developer utility that intentionally throws an error to validate error-boundary behavior. */
+/* Use only during development to verify logging and recovery UI. */
+
 /* ===================== UI STYLES ===================== */
 const styles = {
   /* ===================== TESTER CONTAINER ===================== */
