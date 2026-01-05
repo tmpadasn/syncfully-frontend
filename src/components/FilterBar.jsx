@@ -158,7 +158,7 @@ export default function FilterBar() {
   const location = useLocation();
   const navigate = useNavigate();
   const params = new URLSearchParams(location.search);
-  
+
   // Dynamic filter options from backend
   const [filterOptions, setFilterOptions] = useState({
     types: [],
@@ -168,7 +168,7 @@ export default function FilterBar() {
     ratings: ['5','4','3','2','1'] // Standard rating scale
   });
   const [optionsLoaded, setOptionsLoaded] = useState(false);
-  
+
   // Load filter options from backend on component mount
   useEffect(() => {
     // Derive filters robustly from backend data so controls reflect real catalogue shape.
@@ -177,7 +177,7 @@ export default function FilterBar() {
       try {
         const worksData = await getAllWorks();
         const works = worksData?.works || worksData?.data || [];
-        
+
         if (works.length > 0) {
           // Derive filter options from backend data so the controls reflect the
           // actual catalogue (types, genres, year ranges)
@@ -186,28 +186,28 @@ export default function FilterBar() {
             works.map(work => work.type)
               .filter(Boolean)
           )].sort();
-          
+
           // Generate year range from 1850 to current year
           const currentYear = new Date().getFullYear();
           const years = [];
           for (let year = currentYear; year >= 1850; year--) {
             years.push(String(year));
           }
-          
+
           // Extract unique genres from backend data
           const genresByType = {}; // Map genre -> type
           const genresSet = new Set();
-          
+
           works.forEach(work => {
             const workType = work.type; // book, music, movie
             let workGenres = [];
-            
+
             if (Array.isArray(work.genres)) {
               workGenres = work.genres;
             } else if (work.genre) {
               workGenres = work.genre.split(/[,;]/).map(g => g.trim());
             }
-            
+
             workGenres.forEach(genre => {
               if (genre) {
                 genresSet.add(genre);
@@ -218,9 +218,9 @@ export default function FilterBar() {
               }
             });
           });
-          
+
           const genres = Array.from(genresSet).sort();
-          
+
           setFilterOptions({
             types: types,
             years: years,
@@ -253,7 +253,7 @@ export default function FilterBar() {
         setOptionsLoaded(true);
       }
     };
-    
+
     loadFilterOptions();
   }, []);
 
@@ -290,9 +290,9 @@ export default function FilterBar() {
                   let displayLabel = t.toUpperCase();
                   if (t === 'book') displayLabel = 'BOOKS';
                   else if (t === 'movie') displayLabel = 'MOVIES';
-                  return { 
-                    label: displayLabel, 
-                    value: t 
+                  return {
+                    label: displayLabel,
+                    value: t
                   };
                 }),
               ]}
@@ -307,9 +307,9 @@ export default function FilterBar() {
               currentValue={params.get('year') || ''}
               options={[
                 { label: 'ALL', value: '' },
-                ...filterOptions.years.map(y => ({ 
-                  label: `${y}+`, 
-                  value: y 
+                ...filterOptions.years.map(y => ({
+                  label: `${y}+`,
+                  value: y
                 })),
               ]}
               onSelect={v => updateParam('year', v)}
@@ -323,8 +323,8 @@ export default function FilterBar() {
               currentValue={params.get('genre') || ''}
               options={[
                 { label: 'ALL', value: '' },
-                ...filterOptions.genres.map(g => ({ 
-                  label: g.toUpperCase(), 
+                ...filterOptions.genres.map(g => ({
+                  label: g.toUpperCase(),
                   value: g,
                   type: filterOptions.genresByType[g]
                 })),
@@ -384,8 +384,8 @@ function MenuControl({ label, options, onSelect, currentValue = '', disabled = f
     if (!open) return;
 
     const handleKeyDown = (e) => {
-      const flatOptions = !showIcons 
-        ? options 
+      const flatOptions = !showIcons
+        ? options
         : options; // In case of grouped options, we still navigate through all
 
       switch (e.key) {
@@ -439,7 +439,7 @@ function MenuControl({ label, options, onSelect, currentValue = '', disabled = f
   // Show category name when no filter is selected (empty currentValue) or when "ALL" is selected
   const displayLabel = (selectedOption && currentValue !== '') ? selectedOption.label : label;
   const isSelected = currentValue && currentValue !== '';
-  
+
     /* Helper to get icon for a type.
       Rationale: keeps icon mapping compact and colocated with render logic. */
   const getIcon = (type) => {
@@ -454,12 +454,12 @@ function MenuControl({ label, options, onSelect, currentValue = '', disabled = f
         return null;
     }
   };
-  
+
   /* Grouping logic: cluster options by type for iconized menus.
      Rationale: enables section headers while preserving a flat keyboard map. */
   const groupedOptions = showIcons ? (() => {
     const groups = { book: [], music: [], movie: [], other: [] };
-    
+
     options.forEach(opt => {
       if (opt.value === '') {
         // ALL option stays at top
@@ -472,7 +472,7 @@ function MenuControl({ label, options, onSelect, currentValue = '', disabled = f
         groups.other.push(opt);
       }
     });
-    
+
     return groups;
   })() : null;
 
@@ -516,20 +516,6 @@ function MenuControl({ label, options, onSelect, currentValue = '', disabled = f
       </div>
     );
   };
-
-  /* flatOptions: linearized option list for keyboard navigation when groups present.
-     Rationale: maps visual grouping to a single index space for keyboard handlers. */
-  const flatOptions = showIcons
-    ? (() => {
-        const arr = [];
-        arr.push(...options.filter(o => o.value === ''));
-        arr.push(...(groupedOptions.book || []));
-        arr.push(...(groupedOptions.music || []));
-        arr.push(...(groupedOptions.movie || []));
-        arr.push(...(groupedOptions.other || []));
-        return arr;
-      })()
-    : options;
 
   return (
     <div style={styles.menuWrapper} ref={ref}>
