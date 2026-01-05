@@ -22,7 +22,8 @@ import {
   extractWorksFromResponse,
   extractWorkIdsFromShelf,
 } from '../utils/normalize';
-
+// Normalization helpers: canonicalize varied API shapes into a single
+// UI-friendly work entity and merge duplicates while preserving shelf metadata.
 // Small reusable header for result items (title + subtitle/meta)
 function ResultHeader({ title, subtitle, meta, onClick }) {
   return (
@@ -389,6 +390,8 @@ export default function SearchResults() {
   // state to avoid re-computing filters on every render.
   // Merge rationale: annotating works with shelf membership keeps the
   // UI coherent when users add/remove items without full reloads.
+  // URL-driven params: derive query and filter values from `location.search`
+  // so the component remains predictable and easy to reproduce/share.
   const params = new URLSearchParams(search);
   const query = params.get('q') || '';
   const typeFilter = params.get('type') || '';        // TYPE filter (movie, book, music, user, etc.)
@@ -672,10 +675,13 @@ export default function SearchResults() {
           const normalizedFromAll = worksArray
             .map(normalizeWorkEntity)
             .filter(Boolean);
-
+          // Merge strategy: combine server and client work lists while
+          // preserving shelf annotations and avoiding duplicate render items.
           mappedWorks = mergeUniqueWorks(mappedWorks, normalizedFromAll);
         }
 
+        // Client-side filters: pure transformer that narrows results without
+        // mutating input, enabling deterministic unit tests and predictable UI.
         const clientFilteredWorks = applyWorkFilters(mappedWorks, {
           type: filters.type || '',
           genre: filters.genre || '',

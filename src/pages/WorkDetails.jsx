@@ -379,10 +379,8 @@ export default function WorkDetails() {
     },
   };
 
-  //  Single-entry point for fetching and normalizing remote data.
-  // Centralizes side-effects so retry logic and loading state are predictable.
-  // Fetch strategy: centralizing fetches makes retries and stale-state
-  // handling straightforward and keeps rendering logic declarative.
+  // Central fetch: retrieves work metadata, ratings, and similar works,
+  // normalizes results and updates loading state in one predictable place.
   const loadWorkData = useCallback(async () => {
     if (!isMountedRef.current) return;
 
@@ -608,8 +606,8 @@ export default function WorkDetails() {
             ))}
           </div>
 
-          // Description block: shows `work.description` or a friendly placeholder
-          // when no description is available to keep layout consistent.
+          {/* // Description block: shows `work.description` or a friendly placeholder
+          // when no description is available to keep layout consistent. */}
           <section style={styles.descriptionSection}>
             <h3 style={styles.descriptionTitle}>
               Description

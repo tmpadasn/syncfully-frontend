@@ -440,6 +440,9 @@ export default function Shelves() {
   const [removingWork, setRemovingWork] = useState(null); // { shelfId, workId }
   const [deleteConfirmation, setDeleteConfirmation] = useState(null); // { shelfId, shelfName }
 
+  // Per-shelf cache: stores loaded work details keyed by `shelfId` to
+  // avoid refetching when users toggle shelves repeatedly.
+
   // Auto-create Favourites shelf on first load
   useEffect(() => {
     if (!loading && !isGuest && shelves.length === 0 && isMountedRef.current) {
@@ -505,6 +508,8 @@ export default function Shelves() {
   }, [loadUserRatings]);
 
   // Open shelf. Load works when the shelf is opened.
+  // Toggle expansion and lazy-load works for the shelf to limit network usage.
+  // Keeps initial load small and binds detailed fetches to user intent.
   const toggleShelf = async (shelfId) => {
     const newState = !expandedShelves[shelfId];
     setExpandedShelves({ ...expandedShelves, [shelfId]: newState });
@@ -649,6 +654,8 @@ export default function Shelves() {
   };
 
   const handleRemoveFromShelf = async (shelfId, workId) => {
+  // Two-step removal: mark then confirm to reduce accidental deletions
+  // and provide a clear affordance for users to reconsider.
     // First click marks for removal.
     // Second click removes the work.
     if (removingWork?.shelfId === shelfId && removingWork?.workId === workId) {
@@ -774,7 +781,7 @@ export default function Shelves() {
                   >
                     <FiChevronDown size={24} color="#9a4207c8" />
                   </div>
-                  <div style={styles.shelfInfo}>
+                    <div style={styles.shelfInfo}>
                     <div style={isFavourites ? styles.favouritesShelfName : styles.shelfName}>
                       {isFavourites && <FiHeart size={20} style={{ color: '#9a4207', fill: '#9a4207' }} />}
                       {shelf.name}
@@ -842,6 +849,8 @@ export default function Shelves() {
                   ) : !shelfWorks[shelf.shelfId] || shelfWorks[shelf.shelfId].length === 0 ? (
                     <div style={styles.emptyShelf}>This shelf is empty</div>
                   ) : (
+                    // Map cached work details into carousel `cards` shape.
+                    // Include user rating and removal marker for UI affordances.
                     <WorkCardCarousel
                       cards={shelfWorks[shelf.shelfId].map(work => {
                         if (!work) return null;
@@ -984,6 +993,8 @@ export default function Shelves() {
       )}
 
       {/* Delete Confirmation Dialog */}
+          {/* // Confirmation UI: explicit confirmation prevents accidental data loss
+          // by making destructive actions an intentional step. */}
       {deleteConfirmation && (
         <div style={styles.confirmOverlay} onClick={cancelDelete}>
           <div style={styles.confirmDialog} onClick={(e) => e.stopPropagation()}>
