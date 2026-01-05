@@ -209,6 +209,7 @@ export default function Login() {
 
     // Submit handler: validate locally, delegate to Auth hook, and handle navigation.
     // Maintains a loading flag for optimistic UX and sets a session marker on success.
+    // Note: client-side checks are defensive only; server enforces final validation.
     try {
       if (isLogin) {
         // Validate login inputs
@@ -256,6 +257,7 @@ export default function Login() {
       // Mark that the user just logged in so the landing page can show
       // a brief welcome message. This avoids coupling the auth flow with
       // the global UI directly.
+      // This flag is ephemeral and used only to trigger a one-time toast.
       sessionStorage.setItem(STORAGE_KEY_JUST_LOGGED_IN, 'true');
       navigate("/");
     } catch (err) {
@@ -296,11 +298,21 @@ export default function Login() {
             </div>
           )}
 
+          {/*
+            Server responses are rendered as alerts; role and aria-live
+            ensure assistive tech conveys errors/prompts immediately.
+          */}
+
           {error && (
             <div style={styles.errorBox} role="alert" aria-live="assertive">
               {error}
             </div>
           )}
+
+          {/*
+            Form fields use aria-describedby and aria-invalid to help
+            screen readers present validation state precisely.
+          */}
 
           <form onSubmit={handleSubmit} style={styles.form} noValidate>
             {!isLogin && (

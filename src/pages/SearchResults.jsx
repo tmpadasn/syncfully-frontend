@@ -55,6 +55,9 @@ function ResultHeader({ title, subtitle, meta, onClick }) {
 /* Result header reuse: keeps item headings consistent and keyboard-accessible,
    reducing duplication across results lists. */
 
+// Small UX note: ResultHeader intentionally keeps the title as an inline
+// element to preserve keyboard focus order inside result cards.
+
 /* SearchResults: performs server-side search, normalizes results, and applies client-side filters and shelf merging. */
 /* Caches normalized entities to provide a stable, performant results list. */
 /* ===================== SEARCH RESULTS FUNCTION ===================== */
@@ -379,6 +382,10 @@ export default function SearchResults() {
   // Main search logic loads either a search result or a full catalog
   // depending on query parameters. Results merge and are filtered.
   
+  // Performance note: results are normalized once and merged with shelf
+  // state to avoid re-computing filters on every render.
+  // Merge rationale: annotating works with shelf membership keeps the
+  // UI coherent when users add/remove items without full reloads.
   const params = new URLSearchParams(search);
   const query = params.get('q') || '';
   const typeFilter = params.get('type') || '';        // TYPE filter (movie, book, music, user, etc.)
@@ -406,8 +413,8 @@ export default function SearchResults() {
 
   // Load user's Favourites shelf and check which works are already in it
   const loadFavourites = useCallback(async () => {
-    // Rationale: Guard against unmounted updates and missing auth state.
-    // Rationale: Keep favourites loading idempotent and safe for rapid navigations.
+    //  Guard against unmounted updates and missing auth state.
+    //  Keep favourites loading idempotent and safe for rapid navigations.
     if (!user || !isMountedRef.current) return;
 
     try {
@@ -691,8 +698,8 @@ export default function SearchResults() {
   }, [fetchResults]);
 
   const handleAddToShelf = async (workId) => {
-    // Rationale: Toggle membership idempotently to keep UI consistent on retries.
-    // Rationale: Use local sets for O(1) membership checks and fast feedback.
+    //  Toggle membership idempotently to keep UI consistent on retries.
+    //  Use local sets for O(1) membership checks and fast feedback.
     if (!addToShelfId) return;
     const workIdStr = String(workId);
     const isInShelf = addedWorks.has(workIdStr);
@@ -718,8 +725,8 @@ export default function SearchResults() {
   };
 
   const handleAddToFavourites = async (workId) => {
-    // Rationale: Ensure favourites shelf exists before toggling to avoid failures.
-    // Rationale: Maintain local Set state for efficient lookups and optimistic UI.
+    //  Ensure favourites shelf exists before toggling to avoid failures.
+    //  Maintain local Set state for efficient lookups and optimistic UI.
     if (!user) {
       return;
     }
@@ -776,8 +783,6 @@ export default function SearchResults() {
 
   /* Favourites flow: ensure the favourites shelf exists before toggling,
      and perform idempotent operations so repeated clicks are safe. */
-  // Rationale: Make toggle operations idempotent so repeated actions have no side-effects.
-  // Rationale: Defer heavy reconciliation to subsequent loads to keep interactions snappy.
 
   const closeBanner = () => {
     // Remove shelf params from URL

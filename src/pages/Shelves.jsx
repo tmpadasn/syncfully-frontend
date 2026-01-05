@@ -5,6 +5,8 @@
  Work details load when a shelf opens.
  Supports create, edit, and delete actions.
 */
+// Quick note: shelves are user-scoped and editable.
+// Keep UI actions optimistic to provide instant feedback.
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import useAuth from '../hooks/useAuth';
@@ -21,6 +23,8 @@ import logger from '../utils/logger';
 /* ===================== UI STYLES ===================== */
 /* Centralized styling: local `styles` groups visual tokens so
   layout and theme adjustments remain colocated for maintainability. */
+// Styles are grouped to make visual tweaks simple and local.
+// This reduces the likelihood of cascading layout regressions.
 const styles = {
 
     shelfSection: {
@@ -398,6 +402,12 @@ const styles = {
   work-level fetching to explicit user intent (expansion).
 */
 
+// UX rationale: shelves load lazily to prioritize first paint and keep
+// network usage proportional to user interactions (expand actions).
+
+// Note: remove/add actions are optimistic by design; UI updates immediately
+// and network failures roll back state to preserve user intent semantics.
+
 // reuse shared modal styles
 styles.modal = modalStyles.modal;
 styles.modalContent = modalStyles.modalContent;
@@ -773,8 +783,8 @@ export default function Shelves() {
                   </div>
                 </div>
 
-                // Rationale: Action buttons are separated from header click handling
-                // Rationale: stopPropagation ensures header toggles remain independent of actions
+                //  Action buttons are separated from header click handling
+                //  stopPropagation ensures header toggles remain independent of actions
                 <div style={styles.shelfActions} onClick={(e) => e.stopPropagation()}>
                   {!isFavourites && (
                     <>
@@ -814,8 +824,8 @@ export default function Shelves() {
               </div>
 
               {/* Shelf content - works grid */}
-              // Rationale: Contents are rendered only when the shelf is expanded to save resources
-              // Rationale: Carousel input is derived from cached per-shelf work details for stability
+              //  Contents are rendered only when the shelf is expanded to save resources
+              //  Carousel input is derived from cached per-shelf work details for stability
               {expandedShelves[shelf.shelfId] && (
                 <div style={styles.shelfContent}>
                   {loadingWorks[shelf.shelfId] ? (
@@ -851,8 +861,8 @@ export default function Shelves() {
                         };
                       }).filter(Boolean)}
                       emptyMessage="This shelf is empty"
-                      // Rationale: Extra card UI handles a two-step removal pattern (mark then confirm)
-                      // Rationale: Showing controls only on hover reduces visual noise while preserving accessibility
+                      //  Extra card UI handles a two-step removal pattern (mark then confirm)
+                      //  Showing controls only on hover reduces visual noise while preserving accessibility
                       renderCardExtras={(card, { isHovered }) => {
                         if (!card?.data) return null;
                         const { shelfId: cardShelfId, workId: cardWorkId, isMarkedForRemoval } = card.data;

@@ -59,6 +59,9 @@ const processSimilarWorksData = (similarWorksResponse) => {
 //  Keep helpers small and pure to simplify unit testing and reuse.
 //  Helpers normalize API responses so the component focuses on rendering.
 
+// Note: these helpers deliberately avoid side-effects so the component can
+// re-use them during optimistic UI updates without extra network calls.
+
 /* ===================== WORK DETAILS FUNCTION ===================== */
 
 export default function WorkDetails() {
@@ -372,6 +375,8 @@ export default function WorkDetails() {
 
   //  Single-entry point for fetching and normalizing remote data.
   // Centralizes side-effects so retry logic and loading state are predictable.
+  // Fetch strategy: centralizing fetches makes retries and stale-state
+  // handling straightforward and keeps rendering logic declarative.
   const loadWorkData = useCallback(async () => {
     if (!isMountedRef.current) return;
 

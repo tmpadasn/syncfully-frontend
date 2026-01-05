@@ -137,6 +137,8 @@ export default function Header() {
   useEffect(() => {
     // Initialize search input from URL when on the search route.
     // Synchronizing the input with the URL preserves history navigation behavior.
+    // Small note: this keeps the input controlled by URL state so
+    // back/forward behave as users expect when navigating search results.
     if (location.pathname.startsWith('/search')) {
       const params = new URLSearchParams(location.search);
       const urlQuery = params.get('q') || '';
@@ -154,6 +156,9 @@ export default function Header() {
       }
     };
   }, []);
+
+  // Debounce rationale: short delay reduces backend load and UX jitter
+  // while still giving near-instant feedback for most users.
 
   const doSearch = () => {
     const q = (term || '').trim();
@@ -290,6 +295,10 @@ export default function Header() {
           }}
           aria-label={isGuest ? 'Login to your account' : `View profile for ${user.username}`}
         >
+          {/*
+            Shows either a login affordance or the signed-in user's avatar.
+            The aria-label communicates intent to screen readers for clarity.
+          */}
           {isGuest ? (
             <FiLogIn size={34} aria-hidden="true" />
           ) : (
