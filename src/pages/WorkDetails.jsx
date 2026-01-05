@@ -62,6 +62,9 @@ const processSimilarWorksData = (similarWorksResponse) => {
 // Note: these helpers deliberately avoid side-effects so the component can
 // re-use them during optimistic UI updates without extra network calls.
 
+// Error handling: API errors are surfaced to `message` so the UI can
+// present consistent feedback without duplicating try/catch logic.
+
 /* ===================== WORK DETAILS FUNCTION ===================== */
 
 export default function WorkDetails() {
@@ -93,6 +96,9 @@ export default function WorkDetails() {
   const [ratingSubmittedMessage, setRatingSubmittedMessage] = useState(false);
   const [showRecommendationToast, setShowRecommendationToast] = useState(false);
   const [recommendationVersion, setRecommendationVersion] = useState(null);
+
+  // Rating UX: score/hoverScore represent optimistic UI state so clicks
+  // immediately reflect intent while the network request completes.
 
   /* ===================== UI STYLES ===================== */
   const styles = {
@@ -579,7 +585,8 @@ export default function WorkDetails() {
           </div>
         </aside>
 
-        {/* MIDDLE column */}
+          {/* // Main column: title, meta, tags and description (primary readable content).
+          // Centralized for accessibility and SEO. */}
         <main>
           <h1 style={styles.workTitle}>{work.title}</h1>
           <p style={styles.workMeta}>
@@ -601,7 +608,8 @@ export default function WorkDetails() {
             ))}
           </div>
 
-          {/* DESCRIPTION */}
+          // Description block: shows `work.description` or a friendly placeholder
+          // when no description is available to keep layout consistent.
           <section style={styles.descriptionSection}>
             <h3 style={styles.descriptionTitle}>
               Description

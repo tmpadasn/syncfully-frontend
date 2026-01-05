@@ -58,6 +58,9 @@ function ResultHeader({ title, subtitle, meta, onClick }) {
 // Small UX note: ResultHeader intentionally keeps the title as an inline
 // element to preserve keyboard focus order inside result cards.
 
+// Filter semantics: the `FilterBar` provides a declarative set of params
+// that downstream logic applies via pure filter helpers for predictability.
+
 /* SearchResults: performs server-side search, normalizes results, and applies client-side filters and shelf merging. */
 /* Caches normalized entities to provide a stable, performant results list. */
 /* ===================== SEARCH RESULTS FUNCTION ===================== */
@@ -404,6 +407,10 @@ export default function SearchResults() {
   const [favouritedWorks, setFavouritedWorks] = useState(new Set());
   const [favouritingWork, setFavouritingWork] = useState(null);
   const [favouritesShelfId, setFavouritesShelfId] = useState(null);
+  // State note: results are kept as a single object to simplify merges
+  // and to make optimistic updates easier to apply and roll back.
+  // Component parts: the page composes FilterBar, result lists and
+  // shelf-action controls so responsibilities stay focused and testable.
 
     /* URL-driven filters: parsing `search` into params keeps the UI state
       aligned with shareable URLs and browser history (deep links). */

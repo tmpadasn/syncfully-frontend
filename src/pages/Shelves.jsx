@@ -7,6 +7,8 @@
 */
 // Quick note: shelves are user-scoped and editable.
 // Keep UI actions optimistic to provide instant feedback.
+// Component pieces: headers, action controls, and lazy content areas
+// are separated so each responsibility is clear and testable.
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import useAuth from '../hooks/useAuth';
@@ -404,7 +406,7 @@ const styles = {
 
 // UX rationale: shelves load lazily to prioritize first paint and keep
 // network usage proportional to user interactions (expand actions).
-
+               
 // Note: remove/add actions are optimistic by design; UI updates immediately
 // and network failures roll back state to preserve user intent semantics.
 
@@ -587,6 +589,9 @@ export default function Shelves() {
     setFormData({ name: '', description: '' });
     setEditingShelf(null);
   };
+
+  // Modal handlers: clear transient modal state and submit create/update.
+  // Deletions set a confirmation to avoid accidental removal.
 
   const handleSubmit = async (e) => {
     e.preventDefault();
