@@ -277,7 +277,7 @@ const styles = {
     marginBottom: 20,
     border: '1px solid #66bb6a'
   },
-  
+
   closeButton: {
     background: 'none',
     border: 'none',
@@ -406,7 +406,7 @@ const styles = {
 
 // UX rationale: shelves load lazily to prioritize first paint and keep
 // network usage proportional to user interactions (expand actions).
-               
+
 // Note: remove/add actions are optimistic by design; UI updates immediately
 // and network failures roll back state to preserve user intent semantics.
 
@@ -426,7 +426,7 @@ export default function Shelves() {
   const { shelves, loading, error, createNewShelf, updateExistingShelf, deleteExistingShelf, getOrCreateFavourites } = useShelves(user?.userId);
   const navigate = useNavigate();
   const isMountedRef = useRef(true);
-  
+
   const [expandedShelves, setExpandedShelves] = useState({});
   const [shelfWorks, setShelfWorks] = useState({});
   const [userRatings, setUserRatings] = useState({});
@@ -477,11 +477,11 @@ export default function Shelves() {
   // Load user's ratings once to avoid extra calls
   const loadUserRatings = useCallback(async () => {
     if (!user?.userId || !isMountedRef.current) return;
-    
+
     try {
       const data = await getUserRatings(user.userId);
       if (!isMountedRef.current) return;
-      
+
       // Backend returns an object map of ratings keyed by workId
       const ratingsObject = data?.ratings || data || {};
       setUserRatings(ratingsObject);
@@ -526,7 +526,7 @@ export default function Shelves() {
             shelf.works.map(async (workId) => {
               try {
                 const workData = await getWork(workId);
-                
+
                 // getWork already handles response extraction, so workData should be the work object directly
                 if (!workData) {
                   return {
@@ -638,7 +638,7 @@ export default function Shelves() {
 
   const confirmDelete = async () => {
     if (!deleteConfirmation) return;
-    
+
     try {
       await deleteExistingShelf(deleteConfirmation.shelfId);
       setMessage({ type: 'success', text: 'Shelf deleted successfully!' });
@@ -661,13 +661,13 @@ export default function Shelves() {
     if (removingWork?.shelfId === shelfId && removingWork?.workId === workId) {
       try {
         await removeWorkFromShelf(shelfId, workId);
-        
+
         // Update local state
         setShelfWorks({
           ...shelfWorks,
           [shelfId]: shelfWorks[shelfId].filter(w => w.workId !== workId)
         });
-        
+
         setMessage({ type: 'success', text: 'Work removed from shelf!' });
         setRemovingWork(null);
       } catch (err) {
@@ -712,10 +712,10 @@ export default function Shelves() {
             </div>
           </div>
           {Array.from({ length: 3 }).map((_, i) => (
-            <div key={i} style={{ 
-              marginBottom: 30, 
-              background: '#f9f9f9', 
-              borderRadius: 12, 
+            <div key={i} style={{
+              marginBottom: 30,
+              background: '#f9f9f9',
+              borderRadius: 12,
               border: '1px solid #e0e0e0',
               overflow: 'hidden'
             }}>
@@ -795,8 +795,8 @@ export default function Shelves() {
                   </div>
                 </div>
 
-                //  Action buttons are separated from header click handling
-                //  stopPropagation ensures header toggles remain independent of actions
+                {/* Action buttons are separated from header click handling */}
+                {/* stopPropagation ensures header toggles remain independent of actions */}
                 <div style={styles.shelfActions} onClick={(e) => e.stopPropagation()}>
                   {!isFavourites && (
                     <>
@@ -836,8 +836,8 @@ export default function Shelves() {
               </div>
 
               {/* Shelf content - works grid */}
-              //  Contents are rendered only when the shelf is expanded to save resources
-              //  Carousel input is derived from cached per-shelf work details for stability
+              {/* Contents are rendered only when the shelf is expanded to save resources */}
+              {/* Carousel input is derived from cached per-shelf work details for stability */}
               {expandedShelves[shelf.shelfId] && (
                 <div style={styles.shelfContent}>
                   {loadingWorks[shelf.shelfId] ? (

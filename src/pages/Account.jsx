@@ -9,7 +9,6 @@ import useAuth from "../hooks/useAuth";
 import { Skeleton } from "../components/Skeleton";
 import logger from "../utils/logger";
 import { DEFAULT_AVATAR_URL } from "../config/constants";
-import { statsStyles } from "../styles/stats";
 
 import {
   getUserById,

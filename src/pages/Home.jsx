@@ -36,57 +36,6 @@ const processPopularWorks = (data) => {
   return normalizeWorks(works);
 };
 
-const processFriendsData = async (users, allWorks, currentUserId, isMountedRef) => {
-  const friendsWithActivity = [];
-
-  if (!currentUserId) return []; // If not logged in → no friends
-
-  const eligibleUsers = users.filter(
-    user => user.userId !== currentUserId && user.ratedWorks > 0
-  );
-
-  for (const user of eligibleUsers) {
-    if (!isMountedRef.current) break; // Stop if component unmounted
-    
-      try {
-        // Fetch ratings for this friend and pick the most recent rated work
-      const ratingsResponse = await getUserRatings(user.userId);
-      
-      if (!isMountedRef.current) break; // Check again after async call
-      
-      const ratingsData = ratingsResponse?.data || ratingsResponse || {};
-
-      const entries = normalizeRatingsObject(ratingsData);
-      if (entries.length === 0) continue;
-
-      const mostRecentRating = entries
-        .sort((a, b) => b.ratedAt - a.ratedAt)[0];
-
-      const ratedWork = allWorks.find(w =>
-        (w.id || w.workId) === mostRecentRating.workId
-      );
-
-      if (ratedWork) {
-        const normalizedWork = normalizeWork(ratedWork);
-        friendsWithActivity.push({
-          id: user.userId,
-          name: user.username,
-          avatar: user.profilePictureUrl || DEFAULT_AVATAR_URL,
-          likedAlbum: {
-            title: normalizedWork.title,
-            coverUrl: normalizedWork.coverUrl,
-            workId: normalizedWork.workId
-          }
-        });
-      }
-    } catch (error) {
-      logger.error('Failed to fetch ratings for user:', user.userId, error);
-    }
-  }
-
-  return friendsWithActivity;
-};
-
 const processFollowingData = async (following, allWorks, isMountedRef) => {
   const followingWithActivity = [];
 
@@ -567,7 +516,7 @@ export default function Home() {
 
 
           {/* Recently Watched */}
-          
+
             <>
               {user && (
   <SectionCarousel
@@ -580,10 +529,10 @@ export default function Home() {
 )}
 
             </>
-          
+
 
           {/* Recently Played */}
-          
+
             <>
               {user && (
   <SectionCarousel
@@ -596,7 +545,7 @@ export default function Home() {
 )}
 
             </>
-          
+
         </main>
       </div>
     </div>
