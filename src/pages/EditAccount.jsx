@@ -1,86 +1,35 @@
 /**
- * Edit Account Page
- *
- * Provides authenticated user's profile edit interface with real-time form validation
- * Loads current user data on mount and updates auth context after successful save
- *
- * Features:
- *   - Live profile information editing (username, email, password)
- *   - User avatar display with username tag
- *   - Email validation with inline error messaging
- *   - Success/error feedback with auto-redirect on success
- *   - Duplicate submission prevention
- *
- * Data Strategy:
- *   - Loads user data on mount into controlled form state
- *   - Validates email format client-side before API call
- *   - Updates auth context optimistically after server confirmation
- *   - Redirects to account page 1.5s after successful save
+ * Edit Account Page - User profile edit interface with form validation
+ * Features: Live editing (username, email, password), avatar display, email validation,
+ * success/error feedback with auto-redirect, duplicate submission prevention
  */
 
-import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import useAuth from '../hooks/useAuth';
-import { getUserById, updateUser } from '../api/users';
-import { DEFAULT_AVATAR_URL } from '../config/constants';
-import { editAccountStyles } from '../styles/editAccountStyles';
+import { useEffect, useState, useNavigate, useAuth, getUserById, updateUser,
+         FormField, ActionButton, ProfileHeader, MessageBox } from '../imports/editAccountImports';
 
-// Helper: Validate email format
+// Style definitions for layout, typography, and spacing
+const styles = {
+  container: { minHeight: '100vh', padding: '40px 20px', background: 'var(--bg)', display: 'flex', justifyContent: 'center', alignItems: 'center' },
+  cardWrapper: { width: '100%', maxWidth: '600px' },
+  pageTitle: { textAlign: 'center', marginBottom: 32, fontSize: 36, fontWeight: 900, color: '#392c2c', letterSpacing: '-0.5px' },
+  card: { width: '100%', background: '#ffffff', padding: '36px 80px', borderRadius: 20,
+          boxShadow: '0 24px 48px rgba(0,0,0,0.1)', border: '1px solid rgba(154, 66, 7, 0.1)', boxSizing: 'border-box' },
+  sectionHeader: { fontSize: 18, fontWeight: 800, color: '#392c2c', marginBottom: 20, marginTop: 32, paddingBottom: 12,
+                   borderBottom: '2px solid rgba(154, 66, 7, 0.25)', textTransform: 'uppercase', letterSpacing: 0.8 },
+  buttonContainer: { marginTop: 36 }
+};
+
+// Validation: Check email format
 const isValidEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(email).trim());
-
-// Helper: Load user data into form state
-const loadUserData = async (userId) => {
-  const data = await getUserById(userId);
-  return { username: data.username, email: data.email, password: "" };
-};
-
-// Helper: Update user and refresh auth context
+// API: Fetch user data from backend
+const loadUserData = async (userId) => { const data = await getUserById(userId);
+                     return { username: data.username, email: data.email, password: "" }; };
+// API: Update user data and refresh auth context
 const handleSaveUser = async (userId, formData, setUser, user) => {
-  const updated = await updateUser(userId, formData);
-  setUser({ ...user, username: updated.username, email: updated.email });
-  return updated;
-};
+      const updated = await updateUser(userId, formData);
+                            setUser({ ...user, username: updated.username, email: updated.email });
+                      return updated; };
 
-// Component: Reusable form field
-const FormField = ({ label, name, type = "text", value, onChange, focused, setFocused, placeholder = "" }) => (
-  <div style={editAccountStyles.fieldGroup}>
-    <label style={editAccountStyles.label}>{label}</label>
-    <input
-      name={name}
-      value={value}
-      onChange={onChange}
-      onFocus={() => setFocused(name)}
-      onBlur={() => setFocused(null)}
-      type={type}
-      placeholder={placeholder}
-      style={{
-        ...editAccountStyles.input,
-        ...(focused === name ? editAccountStyles.inputFocus : {})
-      }}
-    />
-    {type === 'password' && <p style={editAccountStyles.inputPlaceholder}>Only fill this if you want to change your password</p>}
-  </div>
-);
-
-// Component: Reusable button with hover state
-const ActionButton = ({ label, onClick, disabled, hover, setHover, color, marginTop = 0 }) => (
-  <button
-    onClick={onClick}
-    disabled={disabled}
-    onMouseEnter={() => setHover(true)}
-    onMouseLeave={() => setHover(false)}
-    style={{
-      ...editAccountStyles.button(color),
-      marginTop,
-      ...(disabled ? editAccountStyles.buttonDisabled : {}),
-      ...(hover && !disabled ? { transform: "translateY(-2px)", boxShadow: `0 6px 16px ${color === "#9a4207" ? "rgba(154, 66, 7, 0.3)" : "rgba(0, 0, 0, 0.2)"}` } : {})
-    }}
-  >
-    {label}
-  </button>
-);
-
-// Edit Account Page Component
 export default function EditAccount() {
   const { user, authLoading, setUser } = useAuth();
   const navigate = useNavigate();
@@ -96,6 +45,7 @@ export default function EditAccount() {
   // Load user data on mount
   useEffect(() => {
     if (authLoading || !user) return;
+
     (async () => {
       try {
         const formData = await loadUserData(user.userId);
@@ -109,15 +59,20 @@ export default function EditAccount() {
     })();
   }, [authLoading, user]);
 
-  // Handler: Update form field
-  const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
+  // Update form field on input change
+  const handleChange = (e) =>
+    setForm({ ...form, [e.target.name]: e.target.value });
 
-  // Handler: Save changes
+  // Validate and save profile changes
   const handleSave = async () => {
     if (isSaving || !isValidEmail(form.email)) {
-      if (!isValidEmail(form.email)) setMessage('Invalid email address'), setMessageType('error');
+      if (!isValidEmail(form.email)) {
+        setMessage('Invalid email address');
+        setMessageType('error');
+      }
       return;
     }
+
     try {
       setIsSaving(true);
       await handleSaveUser(user.userId, form, setUser, user);
@@ -134,22 +89,77 @@ export default function EditAccount() {
   if (authLoading || loading) return <p>Loading…</p>;
 
   return (
-    <div style={editAccountStyles.container}>
-      <div style={editAccountStyles.cardWrapper}>
-        <h1 style={editAccountStyles.pageTitle}>Edit Profile</h1>
-        {message && <div style={editAccountStyles.messageBox(messageType)}>{messageType === 'success' ? '✓' : '✕'} {message}</div>}
-        <div style={editAccountStyles.card}>
-          <div style={editAccountStyles.avatarContainer}>
-            <img src={user.profilePictureUrl || DEFAULT_AVATAR_URL} alt="Profile" style={editAccountStyles.avatar} />
-            <p style={editAccountStyles.usernameTag}>{form.username}</p>
+    <div style={styles.container}>
+      <div style={styles.cardWrapper}>
+        {/* Page title */}
+        <h1 style={styles.pageTitle}>
+          Edit Profile
+        </h1>
+
+        {/* Feedback message */}
+        <MessageBox message={message} messageType={messageType} />
+
+        <div style={styles.card}>
+          {/* Avatar section */}
+          <ProfileHeader user={user} />
+
+          {/* Form header */}
+          <div style={styles.sectionHeader}>
+            Profile Information
           </div>
-          <div style={editAccountStyles.sectionHeader}>Profile Information</div>
-          <FormField label="Username" name="username" value={form.username} onChange={handleChange} focused={focusedInput} setFocused={setFocusedInput} />
-          <FormField label="Email Address" name="email" type="email" value={form.email} onChange={handleChange} focused={focusedInput} setFocused={setFocusedInput} />
-          <FormField label="New Password" name="password" type="password" value={form.password} onChange={handleChange} focused={focusedInput} setFocused={setFocusedInput} placeholder="Leave blank to keep current password" />
-          <div style={editAccountStyles.buttonContainer}>
-            <ActionButton label={isSaving ? "Saving Changes..." : "Save Changes"} onClick={handleSave} disabled={isSaving} hover={saveHover} setHover={setSaveHover} color="#9a4207" />
-            <ActionButton label="Cancel" onClick={() => navigate('/account')} disabled={isSaving} hover={cancelHover} setHover={setCancelHover} color="#6b6b6b" marginTop={12} />
+
+          {/* Username field */}
+          <FormField
+            label="Username"
+            name="username"
+            value={form.username}
+            onChange={handleChange}
+            focused={focusedInput}
+            setFocused={setFocusedInput}
+          />
+
+          {/* Email field */}
+          <FormField
+            label="Email Address"
+            name="email"
+            type="email"
+            value={form.email}
+            onChange={handleChange}
+            focused={focusedInput}
+            setFocused={setFocusedInput}
+          />
+
+          {/* Password field */}
+          <FormField
+            label="New Password"
+            name="password"
+            type="password"
+            value={form.password}
+            onChange={handleChange}
+            focused={focusedInput}
+            setFocused={setFocusedInput}
+            placeholder="Leave blank to keep current password"
+          />
+
+          {/* Action buttons */}
+          <div style={{ marginTop: 36 }}>
+            <ActionButton
+              label={isSaving ? "Saving Changes..." : "Save Changes"}
+              onClick={handleSave}
+              disabled={isSaving}
+              hover={saveHover}
+              setHover={setSaveHover}
+              color="#9a4207"
+            />
+            <ActionButton
+              label="Cancel"
+              onClick={() => navigate('/account')}
+              disabled={isSaving}
+              hover={cancelHover}
+              setHover={setCancelHover}
+              color="#6b6b6b"
+              marginTop={12}
+            />
           </div>
         </div>
       </div>

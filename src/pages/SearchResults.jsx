@@ -1,66 +1,43 @@
-/**
- * SearchResults Page
- *
- * Main search results page component - displays works and users matching search query
- * Supports filtering (type, year, genre, rating) and shelf operations
- *
- * Architecture:
- *   - Centralizes all imports via searchResultsImports.js
- *   - Uses helper functions for reusable logic
- *   - Delegates rendering to sub-components (WorkCard, UserCard, etc.)
- *   - Manages state for search results and shelf operations
- *
- * Key Features:
- *   - Real-time search with filter support
- *   - Add works to shelves with visual feedback
- *   - Mark works as favourites
- *   - Error handling and loading states
- *   - Responsive grid layout
- */
+// SearchResults - displays works/users matching search query with filtering and shelf operations
+import { useEffect, useState, useCallback, useLocation, useNavigate, addWorkToShelf,
+         removeWorkFromShelf, getOrCreateFavouritesShelf, getUserShelves, FilterBar, WorkGridSkeleton,
+         ResultHeader, WorkCard, UserCard, AddToShelfBanner, SearchResultsHeader, WorksSection, UsersSection,
+         SearchResultsLayout, NoResultsMessage, useNavigationWithClearFilters, useAuth, useFavourites,
+         useAddToShelfWorks, logger, fetchSearchResults, getPageTitle } from '../imports/searchResultsImports';
 
-import { useEffect, useState, useCallback, useLocation, useNavigate } from '../imports/searchResultsImports';
-import { addWorkToShelf, removeWorkFromShelf, getOrCreateFavouritesShelf, getUserShelves, FilterBar } from '../imports/searchResultsImports';
-import { useNavigationWithClearFilters, useAuth, WorkGridSkeleton, logger } from '../imports/searchResultsImports';
-import { useFavourites, useAddToShelfWorks, ResultHeader, WorkCard, UserCard } from '../imports/searchResultsImports';
-import { AddToShelfBanner, SearchResultsHeader, WorksSection, UsersSection } from '../imports/searchResultsImports';
-import { searchResultsStyles, fetchSearchResults, getPageTitle } from '../imports/searchResultsImports';
+// Helper: Toggle work in/out of shelf
+const toggleWorkInShelf = async (workId, isInShelf, shelfId) =>
+  isInShelf ? removeWorkFromShelf(shelfId, workId) : addWorkToShelf(shelfId, workId);
 
-// Helper function: Toggle work in shelf
-const toggleWorkInShelf = async (workId, isInShelf, shelfId) => {
-  return isInShelf
-    ? removeWorkFromShelf(shelfId, workId)
-    : addWorkToShelf(shelfId, workId);
-};
-
-// Helper function: Get or create favourites shelf
+// Helper: Get or create user's favourites shelf
 const getFavouritesShelf = async (userId, favouritesShelfId, shelves) => {
   if (favouritesShelfId) return favouritesShelfId;
-  const response = await getOrCreateFavouritesShelf(userId, shelves);
-  return response.shelfId;
+  const { shelfId } = await getOrCreateFavouritesShelf(userId, shelves);
+  return shelfId;
 };
 
-// Main Search Results Page Component
 export default function SearchResults() {
+  // Router and auth hooks
   const { search } = useLocation();
   const navigate = useNavigate();
   const { navigateAndClearFilters } = useNavigationWithClearFilters();
   const { user } = useAuth();
 
-  // URL parameters: query and filters
+  // Parse URL query and filter parameters
   const params = new URLSearchParams(search);
   const { q: query = '', type: typeFilter = '', year: yearFilter = '', genre: genreFilter = '', rating: ratingFilter = '', addToShelf: addToShelfId = '', shelfName = '' } = Object.fromEntries(params);
 
-  // State: search results and UI
+  // Results and UI state
   const [results, setResults] = useState({ works: [], users: [] });
   const [loading, setLoading] = useState(true);
   const [addingWork, setAddingWork] = useState(null);
   const [favouritingWork, setFavouritingWork] = useState(null);
 
-  // Custom hooks: manage shelf and favourite data
+  // Shelf and favourite tracking hooks
   const { favouritedWorks, favouritesShelfId, isMountedRef, toggleFavourite } = useFavourites(user);
   const { addedWorks } = useAddToShelfWorks(addToShelfId);
 
-  // Load search results
+  // Fetch search results with applied filters
   const loadResults = useCallback(async () => {
     if (!isMountedRef.current) return;
     setResults({ works: [], users: [] });
@@ -77,11 +54,10 @@ export default function SearchResults() {
     }
   }, [query, typeFilter, yearFilter, genreFilter, ratingFilter, isMountedRef]);
 
-  // Fetch results on mount and when query/filters change
   useEffect(() => { loadResults(); }, [loadResults]);
 
-  // Add or remove work from shelf
   const handleAddToShelf = async (workId) => {
+    // Add/remove work from target shelf
     if (!addToShelfId) return;
     const workIdStr = String(workId);
     setAddingWork(workIdStr);
@@ -94,13 +70,12 @@ export default function SearchResults() {
     }
   };
 
-  // Add or remove work from favourites
   const handleAddToFavourites = async (workId) => {
+    // Add/remove work from favourites shelf with optimistic update
     if (!user) return;
     const workIdStr = String(workId);
     setFavouritingWork(workId);
-    // Optimistic update: toggle favourite immediately for instant UI feedback
-    toggleFavourite(workId);
+    toggleFavourite(workId); // Optimistic update for instant UI feedback
     try {
       const shelvesData = await getUserShelves(user.userId);
       const shelves = Array.isArray(shelvesData) ? shelvesData : (shelvesData.data?.shelves || shelvesData.shelves || []);
@@ -109,21 +84,20 @@ export default function SearchResults() {
       setTimeout(() => setFavouritingWork(null), 500);
     } catch (error) {
       logger.error('Failed to toggle favourite:', error);
-      // Revert optimistic update on error
-      toggleFavourite(workId);
+      toggleFavourite(workId); // Revert on error
       setFavouritingWork(null);
     }
   };
 
-  // Close shelf banner
   const closeBanner = () => {
+    // Remove shelf banner from URL params
     const newParams = new URLSearchParams(search);
     newParams.delete('addToShelf');
     newParams.delete('shelfName');
     navigate(`/search?${newParams.toString()}`, { replace: true });
   };
 
-  // Render work card with current state
+  // Render work card with state handlers
   const renderWorkCard = (entity, idx, total) => (
     <WorkCard
       key={entity.entityId}
@@ -152,30 +126,44 @@ export default function SearchResults() {
     />
   );
 
-  // Page title
   const pageTitle = getPageTitle(loading, query, { type: typeFilter, genre: genreFilter, year: yearFilter, rating: ratingFilter });
 
-  // Render
   return (
-    <div className="page-container">
-      <div className="page-inner">
-        <main className="page-main">
-          <SearchResultsHeader title={pageTitle} styles={searchResultsStyles} />
-          <FilterBar onFilterChange={loadResults} pathForNavigation="/search" queryKey="q" includeGenreFilter includeRatingFilter />
-          {loading && !results.works.length && !results.users.length ? (
-            <WorkGridSkeleton count={12} />
-          ) : (
-            <>
-              {results.works.length > 0 && <WorksSection works={results.works} styles={searchResultsStyles} renderWorkCard={renderWorkCard} />}
-              {results.users.length > 0 && <UsersSection users={results.users} styles={searchResultsStyles} renderUserCard={renderUserCard} />}
-              {!results.works.length && !results.users.length && !loading && (
-                <div style={searchResultsStyles.noResults}><p>No results found for your search.</p></div>
-              )}
-            </>
-          )}
-          {addToShelfId && <AddToShelfBanner shelfName={shelfName} onClose={closeBanner} onBack={() => navigate('/shelves')} />}
-        </main>
+    <SearchResultsLayout>
+      <div className="search-results-header">
+        <SearchResultsHeader title={pageTitle} />
       </div>
-    </div>
+      {/* Filter Bar */}
+      <div className="search-results-filter">
+        <FilterBar onFilterChange={loadResults} pathForNavigation="/search" queryKey="q" includeGenreFilter includeRatingFilter />
+      </div>
+      {/* Content Area */}
+      <div className="search-results-content">
+        {loading && !results.works.length && !results.users.length ? (
+          <div className="search-results-loading">
+            <WorkGridSkeleton count={12} />
+          </div>
+        ) : (
+          <>
+            {/* Results Sections */}
+            {results.works.length > 0 && (
+              <WorksSection works={results.works} renderWorkCard={renderWorkCard} />
+            )}
+            {results.users.length > 0 && (
+              <UsersSection users={results.users} renderUserCard={renderUserCard} />
+            )}
+            {!results.works.length && !results.users.length && !loading && (
+              <NoResultsMessage />
+            )}
+          </>
+        )}
+      </div>
+      {/* Shelf addition banner */}
+      {addToShelfId && (
+        <div className="search-results-banner">
+          <AddToShelfBanner shelfName={shelfName} onClose={closeBanner} onBack={() => navigate('/shelves')} />
+        </div>
+      )}
+    </SearchResultsLayout>
   );
 }

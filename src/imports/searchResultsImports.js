@@ -35,8 +35,9 @@ export { ResultHeader } from '../components/SearchResults/ResultHeader';
 export { WorkCard } from '../components/SearchResults/WorkCard';
 export { UserCard } from '../components/SearchResults/UserCard';
 export { AddToShelfBanner } from '../components/SearchResults/AddToShelfBanner';
-export { SearchResultsHeader } from '../components/SearchResults/SearchResultsHeader';
-export { WorksSection, UsersSection } from '../components/SearchResults/ResultSections';
+export { SearchResultsHeader, NoResultsMessage } from '../components/SearchResults/SearchResultsLayout';
+export { WorksSection, UsersSection } from '../components/SearchResults/SearchResultsLayout';
+export { SearchResultsLayout } from '../components/SearchResults/SearchResultsLayout';
 
 // Custom Hooks
 export { default as useNavigationWithClearFilters } from '../hooks/useNavigationWithClearFilters';
@@ -57,8 +58,10 @@ export {
   extractWorksFromResponse,
   extractWorkIdsFromShelf,
 } from '../utils/normalize';
-export { searchResultsStyles } from '../styles/searchResultsStyles';
 export {
   fetchSearchResults,
   getPageTitle,
 } from '../utils/searchUtils';
+
+// Styles
+import '../styles/SearchResults.css';
