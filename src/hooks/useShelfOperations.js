@@ -22,7 +22,6 @@ export function useShelfOperations(
   createNewShelf,
   updateExistingShelf,
   deleteExistingShelf,
-  shelfWorks,
   setShelfWorks,
   setMessage,
   setShowModal,

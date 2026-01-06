@@ -3,163 +3,7 @@ import { useNavigate, useLocation, useSearchParams } from "react-router-dom";
 import useAuth from "../hooks/useAuth";
 import { STORAGE_KEY_JUST_LOGGED_IN } from "../config/constants";
 
-/* ===================== UI STYLES ===================== */
-const styles = {
-  // Page layout
-  pageContainer: {
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "flex-start",
-    minHeight: "100vh",
-    paddingTop: "80px",
-    paddingBottom: "40px",
-    paddingLeft: "20px",
-    paddingRight: "20px",
-    background: "var(--bg)",
-  },
-  cardWrapper: {
-    width: "100%",
-    maxWidth: "500px",
-  },
-  card: {
-    width: "100%",
-    padding: "50px 80px",
-    borderRadius: 16,
-    background: "#ffffff",
-    boxShadow: "0 20px 50px rgba(0, 0, 0, 0.1)",
-    border: "1px solid rgba(0,0,0,0.03)",
-    boxSizing: "border-box",
-  },
-
-  // Headings
-  title: {
-    fontSize: 32,
-    fontWeight: 800,
-    marginBottom: 12,
-    marginTop: 0,
-    color: "#241818",
-    textAlign: "center",
-  },
-  subtitle: {
-    fontSize: 15,
-    color: "#5d4c4c",
-    marginBottom: 32,
-    marginTop: 0,
-    lineHeight: 1.6,
-    textAlign: "center",
-  },
-
-  // Form elements
-  form: {
-    width: "100%",
-  },
-  field: {
-    marginBottom: 20,
-  },
-  label: {
-    display: "block",
-    fontSize: 12,
-    color: "#4a3f3f",
-    fontWeight: 800,
-    marginBottom: 8,
-    textTransform: "uppercase",
-    letterSpacing: 1,
-    opacity: 0.75,
-  },
-  input: {
-    width: "100%",
-    padding: "13px 16px",
-    borderRadius: 9,
-    border: "1.5px solid #e0d5cc",
-    fontSize: 15,
-    outline: "none",
-    background: "#fdfbf8",
-    transition: "border-color 0.2s ease, box-shadow 0.2s ease",
-    boxSizing: "border-box",
-  },
-  inputError: {
-    borderColor: "#e5534b",
-    background: "#fff5f5",
-  },
-  inputFocus: {
-    boxShadow: "0 0 0 3px rgba(154, 66, 7, 0.1)",
-  },
-  errorMessage: {
-    fontSize: 12,
-    color: "#a43939",
-    marginTop: 6,
-  },
-
-  // Alert boxes
-  errorBox: {
-    padding: "16px 18px",
-    marginBottom: 20,
-    borderRadius: 10,
-    border: "1px solid #f5c6cb",
-    background: "#f8d7da",
-    color: "#721c24",
-    fontSize: 14,
-    fontWeight: 500,
-    lineHeight: 1.5,
-    textAlign: "center",
-  },
-  infoBox: {
-    padding: "16px 18px",
-    marginBottom: 20,
-    borderRadius: 10,
-    border: "1px solid #81c784",
-    background: "#e8f5e9",
-    color: "#2e7d32",
-    fontSize: 14,
-    fontWeight: 500,
-    lineHeight: 1.5,
-    textAlign: "center",
-  },
-
-  // Buttons
-  button: {
-    marginTop: 12,
-    width: "100%",
-    background: "linear-gradient(135deg, #9a4207, #b95716)",
-    color: "#fff",
-    padding: "14px 20px",
-    border: "none",
-    borderRadius: 9,
-    fontWeight: 700,
-    fontSize: 15,
-    cursor: "pointer",
-    boxShadow: "0 8px 20px rgba(154,66,7,0.25)",
-    transition: "transform 0.1s ease, box-shadow 0.1s ease, opacity 0.15s",
-    boxSizing: "border-box",
-  },
-  buttonDisabled: {
-    cursor: "default",
-    opacity: 0.7,
-    boxShadow: "none",
-    transform: "none",
-  },
-
-  // Toggle/Links
-  toggleWrapper: {
-    marginTop: 20,
-    fontSize: 14,
-    textAlign: "center",
-    color: "#5d4c4c",
-  },
-  toggleLink: {
-    marginLeft: 4,
-    fontWeight: 600,
-    color: "#9a4207c8",
-    cursor: "pointer",
-    textDecoration: "underline",
-    textDecorationThickness: 1,
-  },
-};
-
-//Styles are scoped to this file to enable quick visual adjustments.
-// Co-locating styles reduces cognitive overhead when modifying layout.
-
-/* ===================== LOGIN FUNCTION ===================== */
+/* ===================== LOGIN COMPONENT ===================== */
 
 // Login component
 // Responsible for presenting login/signup UI, validating simple inputs,
@@ -279,21 +123,21 @@ export default function Login() {
   // Render: conditional fields based on `mode` with accessible attributes and inline feedback.
   // Keeps markup simple so tests and E2E flows can reliably query inputs and errors.
   return (
-    <div style={styles.pageContainer}>
-      <div style={styles.cardWrapper}>
-        <div style={styles.card}>
-          <h1 style={styles.title}>
+    <div style={{ display: "flex", justifyContent: "center", alignItems: "flex-start", minHeight: "100vh", paddingTop: "80px", paddingBottom: "40px", paddingLeft: "20px", paddingRight: "20px", background: "var(--bg)" }}>
+      <div style={{ width: "100%", maxWidth: "500px" }}>
+        <div style={{ width: "100%", padding: "50px 80px", borderRadius: 16, background: "#ffffff", boxShadow: "0 20px 50px rgba(0, 0, 0, 0.1)", border: "1px solid rgba(0,0,0,0.03)", boxSizing: "border-box" }}>
+          <h1 style={{ fontSize: 32, fontWeight: 800, marginBottom: 12, marginTop: 0, color: "#241818", textAlign: "center" }}>
             {isLogin ? "Welcome back" : "Create your account"}
           </h1>
 
-          <p style={styles.subtitle}>
+          <p style={{ fontSize: 15, color: "#5d4c4c", marginBottom: 32, marginTop: 0, lineHeight: 1.6, textAlign: "center" }}>
             {isLogin
               ? "Log in to rate works, save favorites and get recommendations."
               : "Sign up and start rating, saving and discovering."}
           </p>
 
           {redirectMessage && (
-            <div style={styles.infoBox} role="status" aria-live="polite">
+            <div style={{ padding: "16px 18px", marginBottom: 20, borderRadius: 10, border: "1px solid #81c784", background: "#e8f5e9", color: "#2e7d32", fontSize: 14, fontWeight: 500, lineHeight: 1.5, textAlign: "center" }} role="status" aria-live="polite">
               {redirectMessage}
             </div>
           )}
@@ -304,7 +148,7 @@ export default function Login() {
           */}
 
           {error && (
-            <div style={styles.errorBox} role="alert" aria-live="assertive">
+            <div style={{ padding: "16px 18px", marginBottom: 20, borderRadius: 10, border: "1px solid #f5c6cb", background: "#f8d7da", color: "#721c24", fontSize: 14, fontWeight: 500, lineHeight: 1.5, textAlign: "center" }} role="alert" aria-live="assertive">
               {error}
             </div>
           )}
@@ -314,12 +158,12 @@ export default function Login() {
             screen readers present validation state precisely.
           */}
 
-          <form onSubmit={handleSubmit} style={styles.form} noValidate>
+          <form onSubmit={handleSubmit} style={{ width: "100%" }} noValidate>
             {!isLogin && (
               <>
                 {/* Username Field (Signup only) */}
-                <div style={styles.field}>
-                  <label htmlFor="username-input" style={styles.label}>
+                <div style={{ marginBottom: 20 }}>
+                  <label htmlFor="username-input" style={{ display: "block", fontSize: 12, color: "#4a3f3f", fontWeight: 800, marginBottom: 8, textTransform: "uppercase", letterSpacing: 1, opacity: 0.75 }}>
                     Username
                   </label>
                   <input
@@ -332,10 +176,18 @@ export default function Login() {
                       e.target.style.boxShadow = "none";
                     }}
                     style={{
-                      ...styles.input,
-                      ...(touched.username && !username ? styles.inputError : {}),
+                      width: "100%",
+                      padding: "13px 16px",
+                      borderRadius: 9,
+                      border: "1.5px solid #e0d5cc",
+                      fontSize: 15,
+                      outline: "none",
+                      background: "#fdfbf8",
+                      transition: "border-color 0.2s ease, box-shadow 0.2s ease",
+                      boxSizing: "border-box",
+                      ...(touched.username && !username ? { borderColor: "#e5534b", background: "#fff5f5" } : {}),
                     }}
-                    onFocus={(e) => Object.assign(e.target.style, styles.inputFocus)}
+                    onFocus={(e) => Object.assign(e.target.style, { boxShadow: "0 0 0 3px rgba(154, 66, 7, 0.1)" })}
                     required
                     autoComplete="username"
                     aria-required="true"
@@ -343,15 +195,15 @@ export default function Login() {
                     aria-describedby={touched.username && !username ? "username-error" : undefined}
                   />
                   {touched.username && !username && (
-                    <div id="username-error" style={styles.errorMessage} role="alert">
+                    <div id="username-error" style={{ fontSize: 12, color: "#a43939", marginTop: 6 }} role="alert">
                       Username is required
                     </div>
                   )}
                 </div>
 
                 {/* Email Field (Signup only) */}
-                <div style={styles.field}>
-                  <label htmlFor="email-input" style={styles.label}>
+                <div style={{ marginBottom: 20 }}>
+                  <label htmlFor="email-input" style={{ display: "block", fontSize: 12, color: "#4a3f3f", fontWeight: 800, marginBottom: 8, textTransform: "uppercase", letterSpacing: 1, opacity: 0.75 }}>
                     Email Address
                   </label>
                   <input
@@ -364,10 +216,18 @@ export default function Login() {
                       e.target.style.boxShadow = "none";
                     }}
                     style={{
-                      ...styles.input,
-                      ...(touched.email && !email ? styles.inputError : {}),
+                      width: "100%",
+                      padding: "13px 16px",
+                      borderRadius: 9,
+                      border: "1.5px solid #e0d5cc",
+                      fontSize: 15,
+                      outline: "none",
+                      background: "#fdfbf8",
+                      transition: "border-color 0.2s ease, box-shadow 0.2s ease",
+                      boxSizing: "border-box",
+                      ...(touched.email && !email ? { borderColor: "#e5534b", background: "#fff5f5" } : {}),
                     }}
-                    onFocus={(e) => Object.assign(e.target.style, styles.inputFocus)}
+                    onFocus={(e) => Object.assign(e.target.style, { boxShadow: "0 0 0 3px rgba(154, 66, 7, 0.1)" })}
                     required
                     autoComplete="email"
                     aria-required="true"
@@ -375,7 +235,7 @@ export default function Login() {
                     aria-describedby={touched.email && !email ? "email-error" : undefined}
                   />
                   {touched.email && !email && (
-                    <div id="email-error" style={styles.errorMessage} role="alert">
+                    <div id="email-error" style={{ fontSize: 12, color: "#a43939", marginTop: 6 }} role="alert">
                       Email is required
                     </div>
                   )}
@@ -386,8 +246,8 @@ export default function Login() {
             {isLogin && (
               <>
                 {/* Identifier Field (Login only) */}
-                <div style={styles.field}>
-                  <label htmlFor="identifier-input" style={styles.label}>
+                <div style={{ marginBottom: 20 }}>
+                  <label htmlFor="identifier-input" style={{ display: "block", fontSize: 12, color: "#4a3f3f", fontWeight: 800, marginBottom: 8, textTransform: "uppercase", letterSpacing: 1, opacity: 0.75 }}>
                     Email or Username
                   </label>
                   <input
@@ -400,10 +260,18 @@ export default function Login() {
                       e.target.style.boxShadow = "none";
                     }}
                     style={{
-                      ...styles.input,
-                      ...(touched.identifier && !identifier ? styles.inputError : {}),
+                      width: "100%",
+                      padding: "13px 16px",
+                      borderRadius: 9,
+                      border: "1.5px solid #e0d5cc",
+                      fontSize: 15,
+                      outline: "none",
+                      background: "#fdfbf8",
+                      transition: "border-color 0.2s ease, box-shadow 0.2s ease",
+                      boxSizing: "border-box",
+                      ...(touched.identifier && !identifier ? { borderColor: "#e5534b", background: "#fff5f5" } : {}),
                     }}
-                    onFocus={(e) => Object.assign(e.target.style, styles.inputFocus)}
+                    onFocus={(e) => Object.assign(e.target.style, { boxShadow: "0 0 0 3px rgba(154, 66, 7, 0.1)" })}
                     required
                     autoComplete="username email"
                     aria-required="true"
@@ -411,7 +279,7 @@ export default function Login() {
                     aria-describedby={touched.identifier && !identifier ? "identifier-error" : undefined}
                   />
                   {touched.identifier && !identifier && (
-                    <div id="identifier-error" style={styles.errorMessage} role="alert">
+                    <div id="identifier-error" style={{ fontSize: 12, color: "#a43939", marginTop: 6 }} role="alert">
                       Email or username is required
                     </div>
                   )}
@@ -420,8 +288,8 @@ export default function Login() {
             )}
 
             {/* Password Field */}
-            <div style={styles.field}>
-              <label htmlFor="password-input" style={styles.label}>
+            <div style={{ marginBottom: 20 }}>
+              <label htmlFor="password-input" style={{ display: "block", fontSize: 12, color: "#4a3f3f", fontWeight: 800, marginBottom: 8, textTransform: "uppercase", letterSpacing: 1, opacity: 0.75 }}>
                 Password
               </label>
               <input
@@ -434,12 +302,18 @@ export default function Login() {
                   e.target.style.boxShadow = "none";
                 }}
                 style={{
-                  ...styles.input,
-                  ...(touched.password && (passwordTooShort || !password)
-                    ? styles.inputError
-                    : {}),
+                  width: "100%",
+                  padding: "13px 16px",
+                  borderRadius: 9,
+                  border: "1.5px solid #e0d5cc",
+                  fontSize: 15,
+                  outline: "none",
+                  background: "#fdfbf8",
+                  transition: "border-color 0.2s ease, box-shadow 0.2s ease",
+                  boxSizing: "border-box",
+                  ...(touched.password && (passwordTooShort || !password) ? { borderColor: "#e5534b", background: "#fff5f5" } : {}),
                 }}
-                onFocus={(e) => Object.assign(e.target.style, styles.inputFocus)}
+                onFocus={(e) => Object.assign(e.target.style, { boxShadow: "0 0 0 3px rgba(154, 66, 7, 0.1)" })}
                 required
                 autoComplete={isLogin ? "current-password" : "new-password"}
                 aria-required="true"
@@ -447,7 +321,7 @@ export default function Login() {
                 aria-describedby={touched.password && passwordTooShort ? "password-error" : undefined}
               />
               {touched.password && passwordTooShort && (
-                <div id="password-error" style={styles.errorMessage} role="alert">
+                <div id="password-error" style={{ fontSize: 12, color: "#a43939", marginTop: 6 }} role="alert">
                   Password too short (min 4 chars)
                 </div>
               )}
@@ -464,8 +338,21 @@ export default function Login() {
               type="submit"
               disabled={loading}
               style={{
-                ...styles.button,
-                ...(loading ? styles.buttonDisabled : {}),
+                marginTop: 12,
+                width: "100%",
+                background: "linear-gradient(135deg, #9a4207, #b95716)",
+                color: "#fff",
+                padding: "14px 20px",
+                border: "none",
+                borderRadius: 9,
+                fontWeight: 700,
+                fontSize: 15,
+                cursor: loading ? "default" : "pointer",
+                boxShadow: loading ? "none" : "0 8px 20px rgba(154,66,7,0.25)",
+                transition: "transform 0.1s ease, box-shadow 0.1s ease, opacity 0.15s",
+                boxSizing: "border-box",
+                opacity: loading ? 0.7 : 1,
+                transform: loading ? "none" : "translateY(0)",
               }}
               onMouseEnter={(e) => !loading && (e.currentTarget.style.transform = "translateY(-2px)")}
               onMouseLeave={(e) => (e.currentTarget.style.transform = "none")}
@@ -482,11 +369,11 @@ export default function Login() {
           </form>
 
           {/* Toggle Between Login and Signup */}
-          <div style={styles.toggleWrapper}>
+          <div style={{ marginTop: 20, fontSize: 14, textAlign: "center", color: "#5d4c4c" }}>
             {isLogin ? "New here?" : "Already have an account?"}
             <span
               onClick={switchMode}
-              style={styles.toggleLink}
+              style={{ marginLeft: 4, fontWeight: 600, color: "#9a4207c8", cursor: "pointer", textDecoration: "underline", textDecorationThickness: 1 }}
               role="button"
               tabIndex={0}
               onKeyDown={(e) => {

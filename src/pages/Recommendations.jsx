@@ -135,12 +135,6 @@ export default function Recommendations() {
 
   // Define recommendation sections with titles and data
   // Used for mapping and rendering multiple carousels dynamically
-  const sections = [
-    { key: 'current', title: 'BASED ON YOUR LATEST INTEREST', data: lists.current },
-    { key: 'profile', title: 'BASED ON YOUR PROFILE', data: lists.profile },
-    { key: 'friends', title: "BASED ON YOUR FRIEND'S FAVOURITES", data: lists.friends },
-    { key: 'explore', title: 'EXPLORE MORE', data: lists.explore },
-  ];
 
   /* ===================== RENDER ===================== */
   return (
@@ -156,7 +150,12 @@ export default function Recommendations() {
           {error && <div className="error-box">{error}</div>}
 
           {/* Render recommendation sections dynamically */}
-          {sections.map((section, idx) => (
+          {[
+            { key: 'current', title: 'BASED ON YOUR LATEST INTEREST', data: lists.current },
+            { key: 'profile', title: 'BASED ON YOUR PROFILE', data: lists.profile },
+            { key: 'friends', title: "BASED ON YOUR FRIEND'S FAVOURITES", data: lists.friends },
+            { key: 'explore', title: 'EXPLORE MORE', data: lists.explore },
+          ].map((section, idx) => (
             <div key={section.key}>
               {/* Section title with spacing for non-first items */}
               <h3 className={`section-title ${idx > 0 ? 'section-spacing' : ''}`}>{section.title}</h3>
