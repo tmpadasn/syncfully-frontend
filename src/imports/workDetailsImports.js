@@ -7,6 +7,9 @@ export { default as WorkCard } from '../components/WorkCard';
 export { default as Toast } from '../components/Toast';
 export { default as AddToShelfBtn } from '../components/AddToShelfBtn';
 export { WorkDetailsSkeleton } from '../components/Skeleton';
+export { default as WorkDetailsLeftSidebar } from '../components/WorkDetails/WorkDetailsLeftSidebar';
+export { default as WorkDetailsMainContent } from '../components/WorkDetails/WorkDetailsMainContent';
+export { default as WorkDetailsRatings } from '../components/WorkDetails/WorkDetailsRatings';
 
 // Hooks
 export { default as useNavigationWithClearFilters } from '../hooks/useNavigationWithClearFilters';
@@ -18,6 +21,3 @@ export { getWork, getWorkRatings, postWorkRating, getSimilarWorks } from '../api
 export { getUserRecommendations } from '../api/users';
 export { default as logger } from '../utils/logger';
 export { extractWorkFromResponse, extractRatingsFromResponse, normalizeWork, normalizeWorks, normalizeGenres } from '../utils/normalize';
-
-// Styles & Constants
-export { workDetailsStyles, MAX_RECOMMENDATIONS, RATING_TOAST_TIMEOUT, EXTERNAL_LINK_HOVER_SHADOW, EXTERNAL_LINK_DEFAULT_SHADOW } from '../styles/workDetailsStyles';

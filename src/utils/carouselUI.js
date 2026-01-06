@@ -1,24 +1,47 @@
-/* Carousel UI tokens: shared layout and control styles for horizontal carousels. */
-// Shared UI tokens for horizontal carousels (wrapper, buttons, container).
-// Keep these tokens minimal and composable so carousels can override specifics.
+/* Carousel UI Design System - Organized configuration for horizontal carousels */
+
+// Carousel theme and color constants
+const carouselTheme = {
+  dark: 'rgba(70, 40, 20, 0.9)',
+  darkDisabled: 'rgba(70, 40, 20, 0.3)',
+  borderLight: 'rgba(255, 255, 255, 0.2)',
+  white: 'white',
+};
+
+// Button dimensions and sizing
+const buttonDimensions = {
+  width: '48px',
+  height: '48px',
+  fontSize: '24px',
+  borderRadius: '50%',
+};
+
+// Spacing and gap configuration
+const spacing = {
+  buttonGap: '12px',
+  containerGap: 16,
+  padding: '16px 0',
+};
+
+// Carousel wrapper component style
 export const carouselWrapper = {
   position: 'relative',
   display: 'flex',
   alignItems: 'center',
-  gap: '12px',
+  gap: spacing.buttonGap,
 };
 
-/* Scroll button style generator; reflects enabled/disabled affordance. */
+// Scroll button style generator with enabled/disabled states
 export const scrollButton = (isEnabled) => ({
   flexShrink: 0,
-  background: isEnabled ? 'rgba(70, 40, 20, 0.9)' : 'rgba(70, 40, 20, 0.3)',
-  color: 'white',
-  border: '2px solid rgba(255, 255, 255, 0.2)',
-  borderRadius: '50%',
-  width: '48px',
-  height: '48px',
+  background: isEnabled ? carouselTheme.dark : carouselTheme.darkDisabled,
+  color: carouselTheme.white,
+  border: `2px solid ${carouselTheme.borderLight}`,
+  borderRadius: buttonDimensions.borderRadius,
+  width: buttonDimensions.width,
+  height: buttonDimensions.height,
   cursor: isEnabled ? 'pointer' : 'not-allowed',
-  fontSize: '24px',
+  fontSize: buttonDimensions.fontSize,
   fontWeight: 'bold',
   display: 'flex',
   alignItems: 'center',
@@ -28,18 +51,19 @@ export const scrollButton = (isEnabled) => ({
   opacity: isEnabled ? 1 : 0.5,
 });
 
+// Scroll container component style (horizontally scrollable content area)
 export const scrollContainer = {
   display: 'flex',
-  gap: 16,
+  gap: spacing.containerGap,
   overflowX: 'auto',
   scrollbarWidth: 'none',
   msOverflowStyle: 'none',
-  padding: '16px 0',
+  padding: spacing.padding,
   flex: 1,
   scrollBehavior: 'smooth',
 };
 
-/* Inline CSS fragment to suppress WebKit scrollbars (applied locally). */
+// Inline CSS fragment to suppress WebKit scrollbars (applied locally)
 export const hideScrollbarCSS = `
   div::-webkit-scrollbar { display: none; }
 `;
