@@ -3,7 +3,6 @@ import { AddToShelfBtn } from '../../imports/workDetailsImports';
 // Right sidebar component for user ratings, rating submission, and distribution histogram
 export default function WorkDetailsRatings({
   isGuest,
-  user,
   workId,
   shelves,
   ratingSubmittedMessage,

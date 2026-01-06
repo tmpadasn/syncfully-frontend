@@ -11,7 +11,6 @@ import styles from '../../styles/shelvesModules.module.css';
  */
 export default function ShelfContent({
   shelfId,        // Current shelf ID
-  isFavourites,   // Whether this is the Favourites shelf
   works,          // Array of work objects to display
   userRatings,    // Map of user ratings by workId
   isLoading,      // Whether works are still loading
