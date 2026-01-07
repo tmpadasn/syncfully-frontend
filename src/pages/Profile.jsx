@@ -4,7 +4,7 @@ import { getUserById, getUserRatings, getUserFollowers, getUserFollowing, follow
 import useAuth from "../hooks/useAuth";
 import { getAllWorks } from "../api/works";
 import UserRatings from "../components/users/UserRatings";
-import { ProfileSkeleton } from "../components/Skeleton";
+import { ProfileSkeleton } from "../components/SkeletonPages";
 import logger from "../utils/logger";
 import { DEFAULT_AVATAR_URL } from "../config/constants";
 import { statsStyles } from "../styles/stats";

@@ -11,7 +11,7 @@ export { getUserRecommendations } from '../api/users';
 export { getAllWorks } from '../api/works';
 
 // Components
-export { WorkGridSkeleton } from '../components/Skeleton';
+export { WorkGridSkeleton } from '../components/SkeletonCards';
 export { default as Carousel } from '../components/Carousel';
 
 // Utils

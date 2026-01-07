@@ -22,6 +22,7 @@ export function useShelfOperations(
   createNewShelf,
   updateExistingShelf,
   deleteExistingShelf,
+  shelfWorks,
   setShelfWorks,
   setMessage,
   setShowModal,
@@ -88,13 +89,20 @@ export function useShelfOperations(
       try {
         await deleteExistingShelf(deleteConfirmation.shelfId);
         setMessage({ type: 'success', text: 'Shelf deleted successfully!' });
+        // Immediately close the modal, then clear the shelf works cache
         setDeleteConfirmation(null);
+        // Also clear the shelf works from cache
+        setShelfWorks(prev => {
+          const updated = { ...prev };
+          delete updated[deleteConfirmation.shelfId];
+          return updated;
+        });
       } catch (err) {
         setMessage({ type: 'error', text: err.message || 'Error deleting shelf' });
         setDeleteConfirmation(null);
       }
     },
-    [deleteExistingShelf, setMessage, setDeleteConfirmation]
+    [deleteExistingShelf, setMessage, setDeleteConfirmation, setShelfWorks]
   );
 
   /**

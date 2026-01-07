@@ -6,7 +6,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import useAuth from "../hooks/useAuth";
-import { Skeleton } from "../components/Skeleton";
+import { Skeleton } from "../components/SkeletonBase";
 import logger from "../utils/logger";
 import { DEFAULT_AVATAR_URL } from "../config/constants";
 

@@ -28,7 +28,7 @@ export {
 
 // Components
 export { default as FilterBar } from '../components/FilterBar';
-export { WorkGridSkeleton } from '../components/Skeleton';
+export { WorkGridSkeleton, WorkListSkeleton } from '../components/SkeletonCards';
 
 // Search Results Sub-Components
 export { ResultHeader } from '../components/SearchResults/ResultHeader';
@@ -62,6 +62,3 @@ export {
   fetchSearchResults,
   getPageTitle,
 } from '../utils/searchUtils';
-
-// Styles
-import '../styles/SearchResults.css';

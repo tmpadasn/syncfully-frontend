@@ -6,7 +6,7 @@
  */
 import { useMemo } from 'react';
 import ErrorBoundary from './ErrorBoundary';
-import { WorkGridSkeleton } from './Skeleton';
+import { WorkGridSkeleton } from './SkeletonCards';
 import useHorizontalScroll from '../hooks/useHorizontalScroll';
 import { getScrollButtonHandlers } from '../utils/scrollButtonHandlers';
 import { carouselWrapper, scrollContainer, scrollButton, hideScrollbarCSS as sharedHideScrollbar } from '../utils/carouselUI';
@@ -50,14 +50,16 @@ export default function Carousel({
           {title}
         </h3>
 
-        {loading ? (
+        {loading && (
           <WorkGridSkeleton
             count={skeletonCount}
             columns="repeat(auto-fill, minmax(180px, 1fr))"
           />
-        ) : (!children || (Array.isArray(children) && children.length === 0)) ? (
+        )}
+        {!loading && (!children || (Array.isArray(children) && children.length === 0)) && (
           emptyMessage ? <p>{emptyMessage}</p> : null
-        ) : (
+        )}
+        {!loading && children && (Array.isArray(children) ? children.length > 0 : true) && (
           <CarouselBase
             children={children}
             scrollChunk={scrollChunk}

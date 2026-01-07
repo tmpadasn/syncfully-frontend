@@ -1,6 +1,6 @@
 // SearchResults - displays works/users matching search query with filtering and shelf operations
 import { useEffect, useState, useCallback, useLocation, useNavigate, addWorkToShelf,
-         removeWorkFromShelf, getOrCreateFavouritesShelf, getUserShelves, FilterBar, WorkGridSkeleton,
+         removeWorkFromShelf, getOrCreateFavouritesShelf, getUserShelves, FilterBar, WorkListSkeleton,
          ResultHeader, WorkCard, UserCard, AddToShelfBanner, SearchResultsHeader, WorksSection, UsersSection,
          SearchResultsLayout, NoResultsMessage, useNavigationWithClearFilters, useAuth, useFavourites,
          useAddToShelfWorks, logger, fetchSearchResults, getPageTitle } from '../imports/searchResultsImports';
@@ -130,18 +130,18 @@ export default function SearchResults() {
 
   return (
     <SearchResultsLayout>
-      <div className="search-results-header">
+      <div style={{ marginBottom: '20px' }}>
         <SearchResultsHeader title={pageTitle} />
       </div>
       {/* Filter Bar */}
-      <div className="search-results-filter">
+      <div style={{ marginBottom: '24px' }}>
         <FilterBar onFilterChange={loadResults} pathForNavigation="/search" queryKey="q" includeGenreFilter includeRatingFilter />
       </div>
       {/* Content Area */}
-      <div className="search-results-content">
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
         {loading && !results.works.length && !results.users.length ? (
-          <div className="search-results-loading">
-            <WorkGridSkeleton count={12} />
+          <div style={{ marginTop: '20px' }}>
+            <WorkListSkeleton count={12} />
           </div>
         ) : (
           <>
@@ -160,7 +160,7 @@ export default function SearchResults() {
       </div>
       {/* Shelf addition banner */}
       {addToShelfId && (
-        <div className="search-results-banner">
+        <div style={{ marginTop: '20px' }}>
           <AddToShelfBanner shelfName={shelfName} onClose={closeBanner} onBack={() => navigate('/shelves')} />
         </div>
       )}

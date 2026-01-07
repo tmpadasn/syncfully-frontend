@@ -139,23 +139,33 @@ export default function Recommendations() {
             { key: 'profile', title: 'BASED ON YOUR PROFILE', data: lists.profile },
             { key: 'friends', title: "BASED ON YOUR FRIEND'S FAVOURITES", data: lists.friends },
             { key: 'explore', title: 'EXPLORE MORE', data: lists.explore },
-          ].map((section) => (
-            <Carousel
-              key={section.key}
-              title={section.title}
-              loading={loading}
-              emptyMessage="No recommendations available."
-              scrollChunk={3}
-            >
-              {section.data.map((item) => (
-                <div key={item.workId} style={{ flexShrink: 0, width: '180px' }}>
-                  <Link to={`/works/${item.workId}`} style={{ textDecoration: 'none', color: 'inherit' }}>
-                    <WorkCard work={item} flat hideInfo coverStyle={{ width: '180px', height: '280px' }} />
-                  </Link>
-                </div>
-              ))}
-            </Carousel>
-          ))}
+          ].map((section) =>
+            loading ? (
+              <Carousel
+                key={section.key}
+                title={section.title}
+                loading={true}
+                emptyMessage="No recommendations available."
+                scrollChunk={3}
+              />
+            ) : (
+              <Carousel
+                key={section.key}
+                title={section.title}
+                loading={false}
+                emptyMessage="No recommendations available."
+                scrollChunk={3}
+              >
+                {section.data.map((item) => (
+                  <div key={item.workId} style={{ flexShrink: 0, width: '180px' }}>
+                    <Link to={`/works/${item.workId}`} style={{ textDecoration: 'none', color: 'inherit' }}>
+                      <WorkCard work={item} flat hideInfo coverStyle={{ width: '180px', height: '280px' }} />
+                    </Link>
+                  </div>
+                ))}
+              </Carousel>
+            )
+          )}
         </main>
       </div>
     </div>

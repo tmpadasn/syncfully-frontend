@@ -1,7 +1,6 @@
 import { FiX } from 'react-icons/fi';
 import Shelf from '../Shelves/Shelf';
-import { Skeleton } from '../Skeleton';
-import styles from '../../styles/shelvesModules.module.css';
+import { Skeleton } from '../SkeletonBase';
 
 /**
  * ShelfContent Component
@@ -20,8 +19,8 @@ export default function ShelfContent({
   // Show loading skeleton while fetching works
   if (isLoading) {
     return (
-      <div className={styles.shelfContent}>
-        <div className={styles.workGrid}>
+      <div style={{ padding: '20px', background: '#fff' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '16px' }}>
           {Array.from({ length: 4 }).map((_, i) => (
             <Skeleton key={i} width="100%" height="240px" borderRadius="8px" />
           ))}
@@ -33,14 +32,14 @@ export default function ShelfContent({
   // Show empty state if shelf has no works
   if (!works || works.length === 0) {
     return (
-      <div className={styles.shelfContent}>
-        <div className={styles.emptyShelf}>This shelf is empty</div>
+      <div style={{ padding: '20px', background: '#fff' }}>
+        <div style={{ textAlign: 'center', padding: '40px', color: '#999' }}>This shelf is empty</div>
       </div>
     );
   }
 
   return (
-    <div className={styles.shelfContent}>
+    <div style={{ padding: '20px', background: '#fff' }}>
       {/* Carousel displaying all works in the shelf */}
       <Shelf
         cards={works.map(work => {
@@ -75,8 +74,24 @@ export default function ShelfContent({
           // Remove button with two-step confirmation (click to mark, click again to confirm)
           return (
             <button
-              className={`${styles.removeButton} ${isMarkedForRemoval ? styles.removeButtonMarked : ''}`}
-              style={{ opacity: showButton ? 1 : 0, pointerEvents: showButton ? 'auto' : 'none' }}
+              style={{
+                position: 'absolute',
+                top: '12px',
+                right: '12px',
+                background: isMarkedForRemoval ? '#d4b895' : '#9a4207',
+                color: isMarkedForRemoval ? '#392c2c' : 'white',
+                border: 'none',
+                borderRadius: '6px',
+                padding: isMarkedForRemoval ? '6px 10px' : '4px 6px',
+                fontSize: '12px',
+                fontWeight: '600',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+                boxShadow: '0 2px 6px rgba(0, 0, 0, 0.2)',
+                zIndex: 20,
+                opacity: showButton ? 1 : 0,
+                pointerEvents: showButton ? 'auto' : 'none',
+              }}
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();

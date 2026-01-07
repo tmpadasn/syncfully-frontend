@@ -5,7 +5,6 @@
 
 import { useState } from 'react';
 import { FiHeart } from 'react-icons/fi';
-import '../../styles/addToShelfStyles.css';
 
 export function ShelfOptionButton({
   shelf,
@@ -27,8 +26,18 @@ export function ShelfOptionButton({
     <button
       // Ref for keyboard focus management (optional - used for first focusable)
       ref={forwardRef}
-      // Apply CSS class with optional hover class based on hover state
-      className={`shelfOption${isHovered ? ' shelfOption:hover' : ''}`}
+      style={{
+        padding: '12px',
+        border: isHovered ? '2px solid #9a4207c8' : '2px solid #ddd',
+        borderRadius: '8px',
+        cursor: 'pointer',
+        transition: 'all 0.2s ease',
+        background: isHovered ? '#f9f9f9' : 'white',
+        textAlign: 'left',
+        outline: '0',
+        appearance: 'none',
+        WebkitAppearance: 'none',
+      }}
       // Set hover state to true when mouse enters
       onMouseEnter={() => setIsHovered(true)}
       // Set hover state to false when mouse leaves
@@ -40,7 +49,16 @@ export function ShelfOptionButton({
       // Semantic role for accessibility (list item in shelf options list)
       role="listitem"
     >
-      <div className="shelfOptionName">
+      <div
+        style={{
+          fontWeight: '600',
+          color: '#392c2c',
+          marginBottom: '4px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '6px',
+        }}
+      >
         {/* Favourites icon - only show for Favourites shelf */}
         {isFavourites && (
           <FiHeart
@@ -55,7 +73,12 @@ export function ShelfOptionButton({
         {shelfName}
       </div>
       {/* Shelf work count - shows number of works in this shelf */}
-      <div className="shelfOptionDesc">
+      <div
+        style={{
+          fontSize: '12px',
+          color: '#666',
+        }}
+      >
         {workCount} work{workCount !== 1 ? 's' : ''}
       </div>
     </button>

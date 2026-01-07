@@ -6,7 +6,7 @@ export { useParams, Link, useNavigate } from 'react-router-dom';
 export { default as WorkCard } from '../components/WorkCard';
 export { default as Toast } from '../components/Toast';
 export { default as AddToShelfBtn } from '../components/AddToShelfBtn';
-export { WorkDetailsSkeleton } from '../components/Skeleton';
+export { WorkDetailsSkeleton } from '../components/SkeletonPages';
 export { default as WorkDetailsLeftSidebar } from '../components/WorkDetails/WorkDetailsLeftSidebar';
 export { default as WorkDetailsMainContent } from '../components/WorkDetails/WorkDetailsMainContent';
 export { default as WorkDetailsRatings } from '../components/WorkDetails/WorkDetailsRatings';

@@ -2,16 +2,9 @@
  * Add to Shelf Modal Content Sub-component
  * Displays shelf options, loading state, and messages
  *
- * Responsibilities:
- * - Render modal header with close button
- * - Display status messages (error/success) with aria-live regions
- * - Show loading state
- * - Render shelf options using ShelfOptionButton component
- * - Handle Favourites shelf separately for special styling
  */
 
 import { FiX } from 'react-icons/fi';
-import '../../styles/addToShelfStyles.css';
 import { ShelfOptionButton } from './ShelfOptionButton';
 
 export function AddToShelfModal({
@@ -40,19 +33,53 @@ export function AddToShelfModal({
   return (
     <div
       ref={modalRef}
-      className="modalContent"
+      style={{
+        background: 'white',
+        borderRadius: '12px',
+        padding: '30px',
+        maxWidth: '500px',
+        width: '90%',
+        boxShadow: '0 4px 20px rgba(0, 0, 0, 0.3)',
+      }}
       onClick={(e) => e.stopPropagation()}
     >
       {/* Modal Header - Title and close button */}
       {/* Semantic HTML with proper heading hierarchy */}
-      <div className="modalHeader">
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginBottom: '20px',
+          paddingBottom: '15px',
+          borderBottom: '2px solid #eee',
+        }}
+      >
         {/* Modal title using h2 with ID for aria-labelledby (accessibility) */}
-        <h2 id="modal-title" className="modalTitle">Add to Shelf</h2>
+        <h2
+          id="modal-title"
+          style={{
+            fontSize: '24px',
+            fontWeight: 'bold',
+            color: '#392c2c',
+          }}
+        >
+          Add to Shelf
+        </h2>
         {/* Close button - X icon to dismiss modal */}
         <button
           ref={closeButtonRef}
-          className="closeButton"
           onClick={onClose}
+          style={{
+            background: 'none',
+            border: 'none',
+            fontSize: '28px',
+            cursor: 'pointer',
+            color: '#999',
+            padding: '0',
+            margin: '0',
+            outline: '0',
+          }}
           aria-label="Close dialog"
         >
           <FiX size={24} aria-hidden="true" />
@@ -63,8 +90,15 @@ export function AddToShelfModal({
       {/* Only render if there's a message to display */}
       {message && (
         <div
-          // Use error or success styles based on message type
-          className={message.type === 'error' ? 'errorMessage' : 'successMessage'}
+          style={{
+            background: message.type === 'error' ? '#ffebee' : '#e8f5e9',
+            color: message.type === 'error' ? '#c62828' : '#2e7d32',
+            padding: '12px',
+            borderRadius: '8px',
+            marginBottom: '15px',
+            fontSize: '14px',
+            border: message.type === 'error' ? '1px solid #ef5350' : '1px solid #66bb6a',
+          }}
           role="alert"
           aria-live="polite"
         >
@@ -75,7 +109,15 @@ export function AddToShelfModal({
       {/* Loading Indicator */}
       {/* Shown while API call is in progress */}
       {loading && (
-        <div className="loadingMessage" role="status" aria-live="polite">
+        <div
+          style={{
+            textAlign: 'center',
+            padding: '20px',
+            color: '#666',
+          }}
+          role="status"
+          aria-live="polite"
+        >
           Loading...
         </div>
       )}
@@ -83,18 +125,29 @@ export function AddToShelfModal({
       {/* Empty State - No shelves available */}
       {/* User has no shelves created yet (but Favourites is always available) */}
       {!loading && regularShelves.length === 0 && !favouritesShelf && (
-        <div className="loadingMessage" role="status">
+        <div
+          style={{
+            textAlign: 'center',
+            padding: '20px',
+            color: '#666',
+          }}
+          role="status"
+        >
           No shelves available
         </div>
       )}
 
-      {/* Shelf Options List */}
       {/* Main content: list of shelves user can add work to */}
       {!loading && (availableShelves.length > 0 || true) && (
-        <div className="shelfOptions" role="list">
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '10px',
+          }}
+          role="list"
+        >
           {/* Favourites Button - Always rendered first for consistent keyboard navigation */}
-          {/* Favourites is always available, even if not in the user's shelves list yet */}
-          {/* If Favourites shelf exists in list, use that; otherwise create a default one */}
           <ShelfOptionButton
             shelf={favouritesShelf || { name: 'Favourites', works: [] }}
             isFavourites={true}

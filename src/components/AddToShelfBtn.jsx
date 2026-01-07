@@ -1,26 +1,14 @@
 /**
  * Add to Shelf Button Component
- * Main entry point for adding works to user's shelves
- *
+ * Provides button to open modal for adding work to shelves
  */
-
 import { useRef, useState, useContext } from 'react';
 import { FiPlus } from 'react-icons/fi';
 import { addWorkToShelf, getOrCreateFavouritesShelf } from '../api/shelves';
-import '../styles/addToShelfStyles.css';
 import { useAddToShelfState, useModalAccessibility } from '../hooks/useAddToShelfBtn';
 import { AddToShelfModal } from './AddToShelfBtn/AddToShelfModal';
 import { AuthContext } from '../context/AuthContext';
 
-/**
- * AddToShelfBtn Component
- * Provides button to open modal for adding work to shelves
- *
- * Props:
- * @param {number} workId - ID of the work to add
- * @param {Array} userShelves - List of user's shelves with { shelfId, name, description }
- * @returns {JSX.Element} Button component with modal
- */
 export default function AddToShelfBtn({ workId, userShelves = [] }) {
   /**
    * Get current user from AuthContext to access userId
@@ -37,10 +25,6 @@ export default function AddToShelfBtn({ workId, userShelves = [] }) {
   /**
    * State management using custom hook
    * Destructure all necessary state and handlers from useAddToShelfState
-   * - isModalOpen/setIsModalOpen: Control modal visibility
-   * - loading/message: Display loading and status feedback
-   * - availableShelves: List of shelves to display in modal (synced from props)
-   * - handleAddToShelf/handleAddToFavourites: Update local state on success
    */
   const {
     isModalOpen,
@@ -54,11 +38,6 @@ export default function AddToShelfBtn({ workId, userShelves = [] }) {
 
   /**
    * Accessibility hook for keyboard navigation and focus management
-   * - buttonRef: Reference to trigger button for focus restoration on close
-   * - modalRef: Reference to modal container for focus trap and escape key
-   * - closeButtonRef: First focusable element to receive focus when modal opens
-   * - firstFocusableRef: Reference for keyboard navigation starting point
-   * - handleCloseModal: Handler to properly close modal with cleanup
    */
   const buttonRef = useRef(null);
   const {
@@ -73,16 +52,11 @@ export default function AddToShelfBtn({ workId, userShelves = [] }) {
    */
   const addToShelf = async (shelfId) => {
     try {
-      // Step 1: Make API call to add work to specific shelf
       await addWorkToShelf(shelfId, workId);
-      // Step 2: Update local UI state (work count and success message)
       handleAddToShelfState(shelfId);
-      // Step 3: Auto-close modal after brief delay for smooth user experience
       setTimeout(() => setIsModalOpen(false), 800);
     } catch (error) {
-      // Log error details for debugging and monitoring
       console.error('Failed to add work to shelf:', error);
-      // Step 4: Show error message to user and keep modal open for retry
       const errorMsg = error?.message || 'Failed to add work to shelf';
       console.error('Error details:', errorMsg);
       // Keep modal open to display error to user for retry
@@ -103,24 +77,18 @@ export default function AddToShelfBtn({ workId, userShelves = [] }) {
       }
 
       const userId = user.userId || user.id;
-      // Step 1: Get or create Favourites shelf for user
       const favouritesShelf = await getOrCreateFavouritesShelf(userId, userShelves);
-      // Step 2: Verify that we have a valid shelf ID (creation succeeded)
       if (!favouritesShelf?.shelfId) {
         // Error: Shelf ID is missing
         console.error('Favourites shelf ID is missing:', favouritesShelf);
         return;
       }
-      // Step 3: Add work to the Favourites shelf
       await addWorkToShelf(favouritesShelf.shelfId, workId);
-      // Step 4: Update UI state with success message
       handleAddToFavouritesState();
       // Auto-close modal with brief delay for user feedback
       setTimeout(() => setIsModalOpen(false), 800);
     } catch (error) {
-      // Log error for debugging
       console.error('Failed to add to Favourites:', error);
-      // Show error message to user
       const errorMsg = error?.message || 'Failed to add to Favourites';
       console.error('Error details:', errorMsg);
       // Keep modal open to display error to user for retry
@@ -130,15 +98,33 @@ export default function AddToShelfBtn({ workId, userShelves = [] }) {
   return (
     <>
       {/* Add to Shelf Button - Opens modal dialog when clicked */}
-      {/* Accessible button with ARIA attributes for screen readers */}
       <button
         ref={buttonRef}
         onClick={() => setIsModalOpen(true)}
-        // Apply CSS class with optional hover class based on hover state
-        className={`addToShelfBtn${isButtonHovered ? ' addToShelfBtn:hover' : ''}`}
-        // Set hover state when mouse enters
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          padding: '10px 16px',
+          background: isButtonHovered ? '#7d3506a0' : '#9a4207c8',
+          color: 'white',
+          border: 'none',
+          outline: 0,
+          outlineOffset: 0,
+          boxShadow: 'none',
+          borderRadius: '8px',
+          cursor: 'pointer',
+          fontSize: '16px',
+          fontWeight: '600',
+          transition: 'all 0.3s ease',
+          WebkitAppearance: 'none',
+          appearance: 'none',
+          WebkitFocusRingColor: 'transparent',
+          WebkitTapHighlightColor: 'transparent',
+          transform: 'scale(1)',
+          transformOrigin: 'center',
+        }}
         onMouseEnter={() => setIsButtonHovered(true)}
-        // Clear hover state when mouse leaves
         onMouseLeave={() => setIsButtonHovered(false)}
         aria-label="Add work to shelf"
         aria-haspopup="dialog"
@@ -152,7 +138,18 @@ export default function AddToShelfBtn({ workId, userShelves = [] }) {
         <div
           // Full-screen backdrop overlay with semi-transparent background
           // Clicking on backdrop (outside modal) triggers handleCloseModal
-          className="modal"
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(0, 0, 0, 0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+          }}
           onClick={handleCloseModal}
           role="presentation"
         >

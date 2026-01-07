@@ -22,7 +22,7 @@ import { removeWorkFromShelf } from '../api/shelves';
 
 // UI components and icons
 import { FiPlus } from 'react-icons/fi';
-import { Skeleton } from '../components/Skeleton';
+import { Skeleton } from '../components/SkeletonBase';
 
 // Utilities
 import logger from '../utils/logger';
@@ -31,10 +31,6 @@ import logger from '../utils/logger';
 import ShelfHeader from '../components/Shelves/ShelfHeader.jsx';
 import ShelfContent from '../components/Shelves/ShelfContent.jsx';
 import ShelfModal from '../components/Shelves/ShelfModal.jsx';
-import DeleteConfirmation from '../components/Shelves/DeleteConfirmation.jsx';
-
-// Styles
-import styles from '../styles/shelvesModules.module.css';
 
 // Custom hooks for shelf logic
 import { useShelfState } from '../hooks/useShelfState';
@@ -73,11 +69,7 @@ export {
   ShelfHeader,
   ShelfContent,
   ShelfModal,
-  DeleteConfirmation,
 
   // Utilities
   logger,
-
-  // Styles
-  styles,
 };

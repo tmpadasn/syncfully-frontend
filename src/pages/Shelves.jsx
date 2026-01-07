@@ -7,8 +7,10 @@
 */
 import { useEffect, useRef, useCallback, useNavigate, useAuth, useShelves,
         getUserRatings, FiPlus, Skeleton, logger, ShelfHeader, ShelfContent,
-        ShelfModal, DeleteConfirmation, styles, useShelfState, useShelfHandlers,
+        ShelfModal, styles, useShelfState, useShelfHandlers,
         useLoadShelfWorks, useShelfOperations } from '../imports/shelvesImports';
+import ShelvesPageHeader from '../components/Shelves/ShelvesPageHeader';
+import { MessageAlert, DeleteConfirmation } from '../components/Shelves/ConfirmationMessages';
 
 /**
  * Shelves page component.
@@ -80,30 +82,21 @@ export default function Shelves() {
   );
 
   return (
-    <div className={styles.container}>
-      <div className={styles.header}>
-        <h1 className={styles.title}>My Shelves</h1>
-        <button className={styles.createButton} onClick={handlers.handleOpenCreateModal}>
-          <FiPlus size={20} /> New Shelf
-        </button>
-      </div>
+    <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '20px' }}>
+      <ShelvesPageHeader onCreateClick={handlers.handleOpenCreateModal} />
 
-      {state.message && (
-        <div className={state.message.type === 'error' ? styles.errorMessage : styles.successMessage}>
-          {state.message.text}
-        </div>
-      )}
+      <MessageAlert message={state.message} onClose={() => state.setMessage(null)} />
 
       {loading && (
         <div style={{ padding: '40px 0' }}>
           {Array.from({ length: 3 }).map((_, i) => (
-            <div key={i} className={styles.shelfSection} style={{ opacity: 0.6 }}>
+            <div key={i} style={{ marginBottom: '24px', background: '#fff', borderRadius: '16px', boxShadow: '0 8px 24px rgba(0, 0, 0, 0.08)', border: '1px solid #e0e0e0', overflow: 'hidden', opacity: 0.6 }}>
               <div style={{ padding: 20, background: '#fff', borderBottom: '1px solid #e0e0e0' }}>
                 <Skeleton width="180px" height="20px" style={{ marginBottom: 8 }} />
                 <Skeleton width="120px" height="14px" />
               </div>
               <div style={{ padding: 20, background: '#fff' }}>
-                <div className={styles.workGrid}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '16px' }}>
                   {Array.from({ length: 4 }).map((_, j) => (
                     <Skeleton key={j} width="100%" height="240px" borderRadius="8px" />
                   ))}
@@ -115,13 +108,33 @@ export default function Shelves() {
       )}
 
       {error && !loading && (
-        <div className={styles.errorMessage}>Error loading shelves: {error}</div>
+        <div style={{
+          padding: '15px',
+          borderRadius: '8px',
+          marginBottom: '20px',
+          background: '#ffebee',
+          color: '#c62828',
+          border: '1px solid #ef5350',
+        }}>Error loading shelves: {error}</div>
       )}
 
       {!loading && shelves.length === 0 && (
-        <div className={styles.emptyState}>
-          <p className={styles.emptyStateText}>You don't have any shelves yet</p>
-          <button className={styles.createButton} onClick={handlers.handleOpenCreateModal}>
+        <div style={{ textAlign: 'center', padding: '60px', color: '#666' }}>
+          <p style={{ fontSize: '18px', marginBottom: '20px' }}>You don't have any shelves yet</p>
+          <button style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '8px',
+            padding: '10px 20px',
+            background: '#9a4207c8',
+            color: 'white',
+            border: 'none',
+            borderRadius: '8px',
+            cursor: 'pointer',
+            fontSize: '16px',
+            fontWeight: 'bold',
+            transition: 'all 0.2s ease',
+          }} onClick={handlers.handleOpenCreateModal} onMouseEnter={(e) => { e.currentTarget.style.background = '#7a3506'; e.currentTarget.style.transform = 'translateY(-1px)'; }} onMouseLeave={(e) => { e.currentTarget.style.background = '#9a4207c8'; e.currentTarget.style.transform = 'translateY(0)'; }}>
             <FiPlus size={20} /> Create your first shelf
           </button>
         </div>
@@ -133,7 +146,14 @@ export default function Shelves() {
             const isFav = shelf.name.toLowerCase() === 'favourites';
             const isExp = state.expandedShelves[shelf.shelfId];
             return (
-              <div key={shelf.shelfId} className={isFav ? styles.favouritesShelf : styles.shelfSection}>
+              <div key={shelf.shelfId} style={{
+                marginBottom: isFav ? '32px' : '24px',
+                background: '#fff',
+                borderRadius: isFav ? '18px' : '16px',
+                boxShadow: isFav ? '0 10px 28px rgba(154, 66, 7, 0.18)' : '0 8px 24px rgba(0, 0, 0, 0.08)',
+                border: isFav ? '2px solid #9a4207c8' : '1px solid #e0e0e0',
+                overflow: 'hidden',
+              }}>
                 <ShelfHeader shelf={shelf} isExpanded={isExp} isFavourites={isFav}
                               onToggle={() => handlers.toggleShelf(shelf.shelfId, loadShelfWorks)}
                               onAdd={() => handleAddWorks(shelf.shelfId, shelf.name)} onEdit={() => handlers.handleOpenEditModal(shelf)}
@@ -153,7 +173,8 @@ export default function Shelves() {
                   onChange={handlers.handleFormChange} />
 
       <DeleteConfirmation isOpen={!!state.deleteConfirmation} shelfName={state.deleteConfirmation?.shelfName}
-                          onCancel={handlers.cancelDelete} onConfirm={() => operations.confirmDelete(state.deleteConfirmation)} />
+                          message={state.message} onCancel={handlers.cancelDelete}
+                          onConfirm={() => operations.confirmDelete(state.deleteConfirmation)} />
     </div>
   );
 }
