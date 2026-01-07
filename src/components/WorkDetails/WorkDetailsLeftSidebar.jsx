@@ -1,19 +1,29 @@
 import { WorkCard } from '../../imports/workDetailsImports';
 
-// Left sidebar component displaying work cover image and external purchase/view links
+/**
+ * Left sidebar component for work details page
+ * Displays:
+ * - Work cover image card
+ * - External purchase/view links (library, bookstore, etc.)
+ * - Link hover effects with callback
+ *
+ * Props:
+ *   work: Work object containing cover image and findAt links
+ *   onLinkHover: Callback function for link hover effects (e, isHovering)
+ */
 export default function WorkDetailsLeftSidebar({ work, onLinkHover }) {
   return (
     <aside style={{ padding: 0, display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
-      {/* Work cover image */}
+      {/* Work cover image card */}
       <div style={{ marginLeft: -10 }}>
         <WorkCard work={work} coverStyle={{ width: 180, height: 260 }} flat hideInfo />
       </div>
 
-      {/* External links to find work online */}
+      {/* External links section - where to find the work */}
       <div style={{ marginTop: 12, width: 180 }}>
         {work?.findAt?.length > 0 ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 16 }}>
-            {/* Render link for each source (library, bookstore, etc.) */}
+            {/* Render individual link for each source (library, bookstore, etc.) */}
             {work.findAt.map((f, i) => (
               <a
                 key={i}
@@ -39,6 +49,7 @@ export default function WorkDetailsLeftSidebar({ work, onLinkHover }) {
                   width: '100%',
                   boxSizing: 'border-box',
                 }}
+                // Notify parent of hover state for visual effects
                 onMouseEnter={(e) => onLinkHover(e, true)}
                 onMouseLeave={(e) => onLinkHover(e, false)}
               >
@@ -50,7 +61,7 @@ export default function WorkDetailsLeftSidebar({ work, onLinkHover }) {
             ))}
           </div>
         ) : (
-          // Fallback message when no external links available
+          // Fallback message when no purchase/view links available
           <p>Available from online stores and libraries.</p>
         )}
       </div>

@@ -3,20 +3,42 @@ import RatingBreakdown from "./RatingBreakdown";
 import TopGenres from "./TopGenres";
 import ActionButtons from "./ActionButtons";
 
-/** Profile header section - all profile details in one box */
+/**
+ * Profile header component - main profile information display
+ * Shows all user details in a structured, visual layout:
+ * - Avatar (circular profile picture)
+ * - Username and email
+ * - Works rated count
+ * - Rating breakdown by type
+ * - Top rated genres
+ * - Action buttons (Back/Follow or Edit/Delete depending on context)
+ *
+ * Used by both Profile.jsx (viewing other users) and Account.jsx (own profile)
+ *
+ * Props:
+ *   profileUser: User object with profile data
+ *   ratings: Object map of work ratings
+ *   works: Array of available works
+ *   currentUser: Currently logged-in user (null on Account page)
+ *   userId: ID of profile being viewed
+ *   isFollowing: Follow status flag
+ *   followLoading: Loading state for follow action
+ *   onBack: Back navigation callback
+ *   onFollow: Follow action callback
+ */
 export default function ProfileHeader({ profileUser, ratings, works, currentUser, userId, isFollowing, followLoading, onBack, onFollow }) {
   return (
     <>
-      {/* Avatar, username, email row */}
+      {/* Top row: Avatar + Username + Email */}
       <div style={{ display: "flex", gap: 48, alignItems: "center" }}>
-        {/* Avatar */}
+        {/* Circular profile picture */}
         <img
           src={profileUser.profilePictureUrl || DEFAULT_AVATAR_URL}
           alt="avatar"
           style={{ width: 160, height: 160, borderRadius: "50%", objectFit: "cover", border: "4px solid #e8dccf" }}
         />
 
-        {/* Username */}
+        {/* Username column */}
         <div style={{ flex: 1, textAlign: 'center' }}>
           <div
             style={{
@@ -42,7 +64,7 @@ export default function ProfileHeader({ profileUser, ratings, works, currentUser
           </div>
         </div>
 
-        {/* Email */}
+        {/* Email column */}
         <div style={{ flex: 1, textAlign: 'center' }}>
           <div
             style={{
@@ -69,7 +91,7 @@ export default function ProfileHeader({ profileUser, ratings, works, currentUser
         </div>
       </div>
 
-      {/* Works Rated */}
+      {/* Works Rated count section */}
       <div style={{ paddingTop: "24px", borderTop: "1px solid #efe5db", marginTop: "24px", textAlign: "center" }}>
         <div style={{ fontSize: 32, fontWeight: 800, color: "#9a4207", marginBottom: "8px" }}>
           {Object.keys(ratings).length}
@@ -79,17 +101,17 @@ export default function ProfileHeader({ profileUser, ratings, works, currentUser
         </div>
       </div>
 
-      {/* Rating Breakdown */}
+      {/* Rating Breakdown by Type section */}
       <div style={{ paddingTop: "24px", borderTop: "1px solid #efe5db", marginTop: "24px" }}>
         <RatingBreakdown ratings={ratings} works={works} />
       </div>
 
-      {/* Top Genres */}
+      {/* Top Genres section */}
       <div style={{ paddingTop: "24px", borderTop: "1px solid #efe5db", marginTop: "24px" }}>
         <TopGenres ratings={ratings} works={works} />
       </div>
 
-      {/* Action Buttons */}
+      {/* Action Buttons section (Back/Follow or Empty) */}
       <div style={{ paddingTop: "24px", borderTop: "1px solid #efe5db", marginTop: "24px" }}>
         <ActionButtons
           currentUser={currentUser}

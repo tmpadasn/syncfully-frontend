@@ -1,19 +1,32 @@
 import { Link } from '../../imports/workDetailsImports';
 import { WorkCard } from '../../imports/workDetailsImports';
 
-// Main content area with work details, description, and recommendations
+/**
+ * Main content component for work details page
+ * Displays:
+ * - Work title, creator, and publication year
+ * - Type and genre tags
+ * - Work description with styled background
+ * - Recommended similar works carousel
+ *
+ * Props:
+ *   work: Work object with title, creator, year, type, genres, description
+ *   recommended: Array of recommended similar works
+ */
 export default function WorkDetailsMainContent({ work, recommended }) {
   return (
     <main>
       {/* Work title */}
       <h1 style={{ marginTop: 0 }}>{work.title}</h1>
-      {/* Creator and publication year */}
+
+      {/* Creator and publication year metadata */}
       <p style={{ color: '#666' }}>
         {work.creator} • {work.year}
       </p>
 
       {/* Type and genre tags */}
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 16, marginBottom: 24 }}>
+        {/* Work type tag (e.g., Book, Manga, Light Novel) */}
         {work.type && (
           <span
             style={{
@@ -30,7 +43,7 @@ export default function WorkDetailsMainContent({ work, recommended }) {
             {String(work.type)}
           </span>
         )}
-        {/* Render genre tags */}
+        {/* Render individual genre tags */}
         {work.genres?.map((g, i) => (
           <span
             key={i}
@@ -49,7 +62,7 @@ export default function WorkDetailsMainContent({ work, recommended }) {
         ))}
       </div>
 
-      {/* Work description with gradient background */}
+      {/* Work description section with gradient background */}
       <section
         style={{
           marginTop: 28,
@@ -60,7 +73,7 @@ export default function WorkDetailsMainContent({ work, recommended }) {
           boxShadow: '0 2px 12px rgba(0, 0, 0, 0.04)',
         }}
       >
-        {/* Description title */}
+        {/* Description section title */}
         <h3
           style={{
             marginTop: 0,
@@ -74,7 +87,7 @@ export default function WorkDetailsMainContent({ work, recommended }) {
         >
           Description
         </h3>
-        {/* Work description text or fallback message */}
+        {/* Description text or fallback message if not available */}
         {work.description ? (
           <p
             style={{
@@ -103,17 +116,18 @@ export default function WorkDetailsMainContent({ work, recommended }) {
         )}
       </section>
 
-      {/* Recommended similar works carousel */}
+      {/* Recommended similar works carousel section */}
       <section style={{ marginTop: 24 }}>
         <div style={{ display: 'inline-block', width: '100%' }}>
           <h3 className="section-title">YOU MAY ALSO LIKE</h3>
         </div>
-        {/* Recommended works or fallback message */}
+        {/* Recommended works carousel or fallback message */}
         {recommended.length > 0 ? (
+          // Horizontal scrollable list of recommended works
           <div style={{ display: 'flex', gap: 12, overflowX: 'auto', paddingBottom: 8, marginTop: 12 }}>
             {recommended.map((rw) => (
               <div key={rw.workId} style={{ minWidth: 140 }}>
-                {/* Recommended work card */}
+                {/* Link to recommended work's detail page */}
                 <Link to={`/works/${rw.workId}`} style={{ textDecoration: 'none' }}>
                   <WorkCard
                     work={rw}

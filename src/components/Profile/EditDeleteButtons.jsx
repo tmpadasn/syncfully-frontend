@@ -1,12 +1,23 @@
 import { useNavigate } from "react-router-dom";
 
-/** Edit and Delete Account action buttons - Account page only */
+/**
+ * Edit and Delete account action buttons component
+ * Displays two buttons in a side-by-side grid:
+ * - Edit Account: navigates to /account/edit for profile editing
+ * - Delete Account: triggers account deletion with confirmation
+ *
+ * Only shown on Account page (Account.jsx), never on Profile pages
+ *
+ * Props:
+ *   onDelete: Callback function for account deletion (includes confirmation logic)
+ */
 export default function EditDeleteButtons({ onDelete }) {
   const navigate = useNavigate();
 
   return (
+    // Two-column grid with equal width buttons separated by gap
     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginTop: 32, paddingTop: 32, borderTop: "1px solid #efe5db" }}>
-      {/* Edit Account Button */}
+      {/* Edit Account Button - navigates to account edit form */}
       <button
         style={{
           padding: "13px 26px",
@@ -21,12 +32,14 @@ export default function EditDeleteButtons({ onDelete }) {
           transition: "transform 0.1s ease, box-shadow 0.1s ease, opacity 0.15s",
         }}
         onClick={() => navigate("/account/edit")}
+        // Lift button on hover for visual feedback
         onMouseEnter={(e) => (e.currentTarget.style.transform = "translateY(-2px)")}
         onMouseLeave={(e) => (e.currentTarget.style.transform = "none")}
       >
-        ✎ Edit Account
+        \u270e Edit Account
       </button>
-      {/* Delete Account Button */}
+
+      {/* Delete Account Button - triggers account deletion */}
       <button
         style={{
           padding: "13px 26px",
@@ -41,10 +54,11 @@ export default function EditDeleteButtons({ onDelete }) {
           transition: "transform 0.1s ease, box-shadow 0.1s ease, opacity 0.15s",
         }}
         onClick={onDelete}
+        // Lift button on hover for visual feedback
         onMouseEnter={(e) => (e.currentTarget.style.transform = "translateY(-2px)")}
         onMouseLeave={(e) => (e.currentTarget.style.transform = "none")}
       >
-        🗑 Delete Account
+        \ud83d\uddd1 Delete Account
       </button>
     </div>
   );

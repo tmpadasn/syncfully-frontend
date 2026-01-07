@@ -1,4 +1,17 @@
-/** Back to Search and Follow action buttons */
+/**
+ * Action buttons for profile navigation and follow functionality
+ * Conditionally renders:
+ * - Back to Search button (navigates to previous search or back)
+ * - Follow/Unfollow button (only shown when viewing other users' profiles)
+ *
+ * Props:
+ *   currentUser: Current authenticated user object
+ *   userId: ID of the profile being viewed
+ *   isFollowing: Boolean flag indicating follow status
+ *   followLoading: Boolean flag for follow action in progress
+ *   onBack: Callback function to navigate back
+ *   onFollow: Callback function to toggle follow status
+ */
 export default function ActionButtons({
   currentUser,
   userId,
@@ -7,9 +20,12 @@ export default function ActionButtons({
   onBack,
   onFollow
 }) {
+  // Determine which buttons should be rendered
   const hasBackButton = onBack;
+  // Only show follow button when viewing another user's profile
   const hasFollowButton = currentUser && parseInt(userId) !== currentUser.userId;
 
+  // Return null if no buttons to show to avoid rendering empty grid
   if (!hasBackButton && !hasFollowButton) {
     return null;
   }

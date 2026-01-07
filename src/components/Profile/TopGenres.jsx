@@ -1,13 +1,26 @@
 import HoverBar from "../HoverBar";
 
+/**
+ * Color palette for genre bars - cycled through for visual variety
+ * Uses warm/brown tones consistent with design theme
+ */
 const GENRE_COLORS = ["#9a4207", "#b95716", "#c86f38", "#d4885c", "#d9956f"];
 
-/** Most rated genres section with top 5 genre statistics */
+/**
+ * Top genres section - displays user's top 5 most rated genres with frequency bars
+ * Aggregates genres from all rated works and sorts by frequency (descending)
+ *
+ * Props:
+ *   ratings: Object map of work ratings { workId: { score, ratedAt } }
+ *   works: Array of work objects with genre information
+ */
 export default function TopGenres({ ratings, works }) {
-  // Compute top genres by counting genres in the user's rated works
+  // Compute genre frequencies from user's rated works
+  // Iterates through each rated work and aggregates all genres
   const genreStats = {};
   Object.keys(ratings).forEach(workId => {
     const work = works.find(w => (w.id || w.workId) === Number(workId));
+    // Count each genre in the work
     if (work && work.genres && Array.isArray(work.genres)) {
       work.genres.forEach(genre => {
         if (!genreStats[genre]) genreStats[genre] = 0;
@@ -16,11 +29,12 @@ export default function TopGenres({ ratings, works }) {
     }
   });
 
+  // Sort by frequency descending and take top 5 genres
   const sorted = Object.entries(genreStats).sort((a, b) => b[1] - a[1]).slice(0, 5);
 
   return (
-    // Most Rated Genres
     <div>
+      {/* Section header "Most Rated Genres" */}
       <div
         style={{
           fontSize: 13,
@@ -32,9 +46,10 @@ export default function TopGenres({ ratings, works }) {
           letterSpacing: 0.8,
         }}
       >
-        🎭 Most Rated Genres
+        \ud83c\udf2d Most Rated Genres
       </div>
-      {/* Genre Bars */}
+
+      {/* Genre frequency bars list */}
       <div
         style={{
           display: "flex",
@@ -42,16 +57,20 @@ export default function TopGenres({ ratings, works }) {
           gap: 10,
         }}
       >
+        {/* Empty state when no genres available */}
         {sorted.length === 0 ? (
           <div style={{ textAlign: "center", opacity: 0.6, fontSize: 13 }}>No genre data available</div>
         ) : (
+          // Render top 5 genres with count and colored bar
           sorted.map(([genre, count], idx) => (
             <div key={genre} style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              {/* Genre count display */}
               <div style={{ width: 30, textAlign: "right", fontSize: 13, fontWeight: 700, color: "#3b2e2e" }}>
                 {count}
               </div>
+              {/* Genre name and bar */}
               <div style={{ flex: 1 }}>
-                {/* Colored genre bar with hover effect */}
+                {/* Colored bar with hover effect, cycles through color palette */}
                 <HoverBar
                   style={{
                     height: 28,
