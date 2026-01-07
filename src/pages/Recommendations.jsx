@@ -6,9 +6,10 @@
 import {
   useEffect, useState, Link, useNavigate, useAuth,
   useNavigationWithClearFilters, getUserRecommendations,
-  getAllWorks, WorkGridSkeleton, HomeCarousel,
+  getAllWorks, Carousel,
   logger, extractWorksFromResponse, normalizeWorks, shuffleArray,
 } from '../imports/recommendationsImports';
+import WorkCard from '../components/WorkCard';
 
 /* ===================== RECOMMENDATIONS FUNCTION ===================== */
 
@@ -34,40 +35,6 @@ export default function Recommendations() {
 
   // Error state for failed requests
   const [error, setError] = useState(null);
-
-  /* ===================== WORK CARD COMPONENT ===================== */
-  // Individual work card that links to work details page
-  // Props: item - work object containing workId, coverUrl, title
-  const WorkCard = ({ item }) => (
-    <Link to={`/works/${item.workId}`} style={{ textDecoration: 'none', color: 'inherit' }}>
-      <div className="work-card-recommendations">
-        <div className="work-card-recommendations-inner">
-          <img src={item.coverUrl} alt={item.title} className="work-card-recommendations-img" />
-        </div>
-      </div>
-    </Link>
-  );
-
-  // Carousel component renderer with conditional states
-  // Props: items - array of works to display, loading - boolean for skeleton state
-  // Displays loading skeleton, carousel with items, or empty message
-  const RenderCarousel = ({ items = [], loading }) => (
-    <>
-      {loading ? (
-        <WorkGridSkeleton count={10} columns="repeat(auto-fill, minmax(180px, 1fr))" />
-      ) : items.length > 0 ? (
-        <HomeCarousel scrollChunk={3}>
-          {items.map((item) => (
-            <div key={item.workId} style={{ flexShrink: 0, width: '180px' }}>
-              <WorkCard item={item} />
-            </div>
-          ))}
-        </HomeCarousel>
-      ) : (
-        <p className="empty-message">No recommendations available.</p>
-      )}
-    </>
-  );
 
   /* ===================== MAIN LOGIC ===================== */
   // Fetch recommendations on component mount
@@ -142,12 +109,29 @@ export default function Recommendations() {
       <div className="page-inner">
         <main className="page-main">
           {/* Welcome message with emphasis */}
-          <p className="welcome-text">
-            We found some <span className="welcome-emphasis">amazing picks</span> for you!
+          <p style={{
+            fontSize: '24px',
+            fontWeight: '700',
+            color: '#392c2c',
+            marginTop: '40px',
+            marginBottom: '24px',
+            textAlign: 'center',
+          }}>
+            We found some <span style={{
+              color: '#9a4207',
+              fontWeight: '900',
+            }}>amazing picks</span> for you!
           </p>
 
           {/* Display error message if fetch failed */}
-          {error && <div className="error-box">{error}</div>}
+          {error && <div style={{
+            padding: '16px',
+            background: '#f8d7da',
+            border: '1px solid #f5c6cb',
+            borderRadius: '8px',
+            color: '#721c24',
+            marginBottom: '20px',
+          }}>{error}</div>}
 
           {/* Render recommendation sections dynamically */}
           {[
@@ -155,13 +139,22 @@ export default function Recommendations() {
             { key: 'profile', title: 'BASED ON YOUR PROFILE', data: lists.profile },
             { key: 'friends', title: "BASED ON YOUR FRIEND'S FAVOURITES", data: lists.friends },
             { key: 'explore', title: 'EXPLORE MORE', data: lists.explore },
-          ].map((section, idx) => (
-            <div key={section.key}>
-              {/* Section title with spacing for non-first items */}
-              <h3 className={`section-title ${idx > 0 ? 'section-spacing' : ''}`}>{section.title}</h3>
-              {/* Carousel with loading state and items */}
-              <RenderCarousel items={section.data} loading={loading} />
-            </div>
+          ].map((section) => (
+            <Carousel
+              key={section.key}
+              title={section.title}
+              loading={loading}
+              emptyMessage="No recommendations available."
+              scrollChunk={3}
+            >
+              {section.data.map((item) => (
+                <div key={item.workId} style={{ flexShrink: 0, width: '180px' }}>
+                  <Link to={`/works/${item.workId}`} style={{ textDecoration: 'none', color: 'inherit' }}>
+                    <WorkCard work={item} flat hideInfo coverStyle={{ width: '180px', height: '280px' }} />
+                  </Link>
+                </div>
+              ))}
+            </Carousel>
           ))}
         </main>
       </div>

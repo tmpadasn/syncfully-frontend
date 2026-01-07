@@ -1,12 +1,12 @@
 /**
- * WorkCardCarousel - Horizontal carousel component displaying work cards with hover effects, ratings, and links.
+ * Shelf - Horizontal carousel component displaying work cards with hover effects, ratings, and links.
  * Features: scrollable card list, dynamic rating badges, user rating display, error boundary protection.
  */
 import { useState } from 'react';
-import HorizontalCarousel from './HorizontalCarousel';
-import { carouselWrapper, scrollContainer, scrollButton } from '../utils/carouselUI';
+import Carousel from '../Carousel';
+import { carouselWrapper, scrollContainer, scrollButton } from '../../utils/carouselUI';
 import { Link } from 'react-router-dom';
-import ErrorBoundary from './ErrorBoundary';
+import ErrorBoundary from '../ErrorBoundary';
 
 // ========== DESIGN TOKENS: Centralized color, spacing, size, and animation values ==========
 const COLORS = { primary: '#9a4207', dark: '#392c2cff', accent: '#d4b895', muted: 'rgba(57, 44, 44, 0.7)', shadow: 'rgba(0,0,0,0.2)' };
@@ -90,7 +90,7 @@ const formatDate = (dateStr) => new Date(dateStr).toLocaleDateString();
 
 // ========== CAROUSEL INNER COMPONENT: Renders card grid with hover tracking and interactive elements ==========
 // Maps card data to interactive work cards within horizontal carousel with customizable extras and callbacks
-function WorkCardCarouselInner({
+function ShelfInner({
   cards = [], emptyMessage = 'No items yet.',
   renderCardExtras, scrollChunk = 3, onCardMouseLeave
 }) {
@@ -105,12 +105,11 @@ function WorkCardCarouselInner({
   }
 
   return (
-    <HorizontalCarousel
+    <Carousel
       scrollChunk={scrollChunk}
       wrapperStyle={styles.carouselWrapper}
       containerStyle={styles.scrollContainer}
       buttonStyle={styles.scrollButton}
-      deps={[cards.length]}
     >
       {cards.map((card) => {
         if (!card) return null;
@@ -156,16 +155,16 @@ function WorkCardCarouselInner({
           </div>
         );
       })}
-    </HorizontalCarousel>
+    </Carousel>
   );
 }
 
-// ========== PUBLIC CAROUSEL EXPORT: Wraps carousel with ErrorBoundary for safe failure handling ==========
+// ========== PUBLIC SHELF EXPORT: Wraps carousel with ErrorBoundary for safe failure handling ==========
 // Catches carousel rendering errors and displays fallback UI to prevent page crash
-export default function WorkCardCarousel(props) {
+export default function Shelf(props) {
   return (
-    <ErrorBoundary fallback={<div style={styles.errorFallback}><p style={styles.errorMessage}>Unable to load carousel</p><button onClick={() => window.location.reload()} style={styles.reloadButton}>Reload</button></div>}>
-      <WorkCardCarouselInner {...props} />
+    <ErrorBoundary fallback={<div style={styles.errorFallback}><p style={styles.errorMessage}>Unable to load shelf</p><button onClick={() => window.location.reload()} style={styles.reloadButton}>Reload</button></div>}>
+      <ShelfInner {...props} />
     </ErrorBoundary>
   );
 }

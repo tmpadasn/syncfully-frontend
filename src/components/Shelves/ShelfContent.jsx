@@ -1,5 +1,5 @@
 import { FiX } from 'react-icons/fi';
-import WorkCardCarousel from '../WorkCardCarousel';
+import Shelf from '../Shelves/Shelf';
 import { Skeleton } from '../Skeleton';
 import styles from '../../styles/shelvesModules.module.css';
 
@@ -42,7 +42,7 @@ export default function ShelfContent({
   return (
     <div className={styles.shelfContent}>
       {/* Carousel displaying all works in the shelf */}
-      <WorkCardCarousel
+      <Shelf
         cards={works.map(work => {
           if (!work) return null;
           const rating = userRatings[work.workId] || userRatings[String(work.workId)];

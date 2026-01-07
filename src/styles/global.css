@@ -55,7 +55,7 @@ header a{color:inherit}
 	background: #9a4207c8;
 	border-radius: 8px;
 	overflow: hidden;
-	height: 280px;
+	min-height: 300px;
 	display: flex;
 	flex-direction: column;
 	transition: transform 0.2s ease, box-shadow 0.2s ease;

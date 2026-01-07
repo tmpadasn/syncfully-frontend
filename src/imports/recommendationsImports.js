@@ -2,9 +2,6 @@
 export { useEffect, useState } from 'react';
 export { Link, useNavigate } from 'react-router-dom';
 
-// Styles
-import '../styles/recommendationModules.css';
-
 // Custom hooks
 export { default as useAuth } from '../hooks/useAuth';
 export { default as useNavigationWithClearFilters } from '../hooks/useNavigationWithClearFilters';
@@ -15,7 +12,7 @@ export { getAllWorks } from '../api/works';
 
 // Components
 export { WorkGridSkeleton } from '../components/Skeleton';
-export { default as HomeCarousel } from '../components/HomeCarousel';
+export { default as Carousel } from '../components/Carousel';
 
 // Utils
 export { default as logger } from '../utils/logger';
