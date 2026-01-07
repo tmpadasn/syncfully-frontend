@@ -2,7 +2,7 @@
 /* Synchronizes filter state into URL params to preserve navigation and shareability. */
 import { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import styles from './FilterBar.styles';
+import styles from './FilterBarStyles.jsx';
 import MenuControl from './MenuControl';
 import { getAllWorks } from '../../api/works';
 import logger from '../../utils/logger';
