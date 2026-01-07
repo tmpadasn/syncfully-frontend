@@ -27,7 +27,7 @@ export {
 } from '../api/shelves';
 
 // Components
-export { default as FilterBar } from '../components/FilterBar';
+export { default as FilterBar } from '../components/FilterBar/FilterBar';
 export { WorkGridSkeleton, WorkListSkeleton } from '../components/SkeletonCards';
 
 // Search Results Sub-Components
