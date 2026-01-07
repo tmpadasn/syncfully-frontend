@@ -97,12 +97,14 @@ export function useShelfOperations(
           delete updated[deleteConfirmation.shelfId];
           return updated;
         });
+        // Auto-clear success message after 1.5 seconds
+        setTimeout(() => setMessage(null), 1500);
       } catch (err) {
         setMessage({ type: 'error', text: err.message || 'Error deleting shelf' });
         setDeleteConfirmation(null);
       }
     },
-    [deleteExistingShelf, setMessage, setDeleteConfirmation, setShelfWorks]
+    [deleteExistingShelf, setMessage, setDeleteConfirmation, setShelfWorks, shelfWorks]
   );
 
   /**

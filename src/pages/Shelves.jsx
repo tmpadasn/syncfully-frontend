@@ -7,7 +7,7 @@
 */
 import { useEffect, useRef, useCallback, useNavigate, useAuth, useShelves,
         getUserRatings, FiPlus, Skeleton, logger, ShelfHeader, ShelfContent,
-        ShelfModal, styles, useShelfState, useShelfHandlers,
+        ShelfModal, useShelfState, useShelfHandlers,
         useLoadShelfWorks, useShelfOperations } from '../imports/shelvesImports';
 import ShelvesPageHeader from '../components/Shelves/ShelvesPageHeader';
 import { MessageAlert, DeleteConfirmation } from '../components/Shelves/ConfirmationMessages';
