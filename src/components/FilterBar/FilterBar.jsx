@@ -39,6 +39,11 @@ export default function FilterBar() {
         {!optionsLoaded ? (
           <div style={{ ...styles.container, justifyContent: 'center', ...styles.loading }}>Loading filters...</div>
         ) : (
+          // The `controls` structure is decoupled from rendering: `buildControls`
+          // maps the derived option sets into UI descriptors so the component can
+          // remain agnostic of the exact data-shape coming from the server.
+          // Layout: center aligned control row; each `FilterItem` is a
+          // focused, keyboard-accessible control that updates URL state.
           <div style={styles.container}>
             {controls.map(c => (
               <FilterItem key={c.key} control={c} wrapperStyle={styles.filterItem} disabled={!optionsLoaded} onUpdate={updateParam} />

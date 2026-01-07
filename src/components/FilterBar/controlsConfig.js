@@ -1,7 +1,16 @@
-// Configuration builder for FilterBar controls. Kept separate to make
-// the FilterBar render logic concise and easier to test.
+/*
+   Translate derived filter option sets and URL parameters
+  into a compact array of UI control descriptors consumed by
+  `FilterBar`. Keeping this mapping pure simplifies unit testing
+  and separates data-shape concerns from rendering concerns.
+
+ 
+*/
 export function buildControls(filterOptions, params) {
   return [
+    // Type control: includes a static 'USERS' option plus types derived
+    // from the catalogue; labels are presented in uppercase for visual
+    // consistency with the rest of the UI.
     {
       key: 'type',
       label: 'TYPE',
@@ -14,6 +23,8 @@ export function buildControls(filterOptions, params) {
       showIcons: false,
       paramKey: 'type'
     },
+    // Year control: presents a descending year range; labels use a
+    // `YYYY+` convention indicating "from this year onwards".
     {
       key: 'year',
       label: 'YEAR',
@@ -22,6 +33,9 @@ export function buildControls(filterOptions, params) {
       showIcons: false,
       paramKey: 'year'
     },
+    // Genre control: attaches a lightweight `type` hint to each option so
+    // the UI can visually group genres by type (books/music/movies) while
+    // preserving a flat navigation order for accessibility.
     {
       key: 'genre',
       label: 'GENRE',
@@ -30,6 +44,8 @@ export function buildControls(filterOptions, params) {
       showIcons: true,
       paramKey: 'genre'
     },
+    // Rating control: uses a human-friendly `N★+` label and keeps options
+    // ordered from highest to lowest to reflect typical user expectations.
     {
       key: 'rating',
       label: 'RATING',
