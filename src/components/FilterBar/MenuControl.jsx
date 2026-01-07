@@ -1,6 +1,6 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { FiChevronDown, FiBook, FiMusic, FiFilm } from 'react-icons/fi';
-import styles from './FilterBarStyles.jsx';
+import { styles } from './FilterBar.jsx';
 
 // MenuControl: encapsulates a keyboard-accessible, screen-reader-friendly
 // dropdown (listbox). Responsibilities:
