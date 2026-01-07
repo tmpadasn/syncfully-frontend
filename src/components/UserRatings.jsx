@@ -1,5 +1,5 @@
-import Shelf from '../Shelves/Shelf';
-import ErrorBoundary from '../ErrorBoundary';
+import Shelf from './Shelves/Shelf';
+import ErrorBoundary from './ErrorBoundary';
 
 // UserRatings: renders a user's rating history as a carousel of work cards.
 // Maps rating objects to Shelf card models and sorts by date.
