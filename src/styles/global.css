@@ -1,34 +1,61 @@
+/* ========== ROOT & GLOBAL STYLES ========== */
+/* CSS Variables for theming */
 :root{--bg:#f6f6f8;--card:#fff}
+
+/* Base body styles - typography and background */
 body{font-family:Inter,system-ui,Arial,Helvetica,sans-serif;background:var(--bg);margin:0;color:#222}
+
+/* Header link styling */
 header a{color:inherit}
+
+/* ========== WORK CARD COMPONENTS ========== */
+/* Main work card container */
 .work-card{background:var(--card);border-radius:8px;padding:8px;box-shadow:0 1px 3px rgba(0,0,0,0.06);display:flex;gap:6px}
+
+/* Work cover image container */
 .work-cover{width:72px;height:100px;object-fit:cover;background:#ddd;border-radius:4px}
+
+/* Work title styling */
 .work-info h3{margin:0 0 6px 0}
 
-/* Interactive album hover/cursor styles */
+/* Work card interactive states */
 .work-card {
 	cursor: pointer;
 	transition: transform 120ms ease, box-shadow 120ms ease;
 }
+
+/* Hover effect - lift card up and enhance shadow */
 .work-card:hover {
 	transform: translateY(-4px);
 	box-shadow: 0 6px 18px rgba(0,0,0,0.12);
 }
+
+/* Cover image cursor styling */
 .work-cover { cursor: pointer; }
 
-/* Home page layout classes */
+/* ========== PAGE LAYOUT STYLES ========== */
+/* Main container - centers content */
 .page-container{display:flex;justify-content:center}
+
+/* Content wrapper with max width and padding */
 .page-inner{width:100%;max-width:1100px;padding:0 20px;box-sizing:border-box}
+
+/* Main content area */
 .page-main{flex:1}
+
+/* Welcome/greeting text styling */
 .welcome-text{color:#392c2cff;font-size:18px;margin-top:40px}
+
+/* Section header with bottom border accent */
 .section-title{margin-top:22px;color:#392c2cff;display:block;width:100%;border-bottom:2px solid #9a420776;padding-bottom:6px}
 
-/* Home page card components */
+/* ========== HOME PAGE CARD COMPONENTS ========== */
+/* Friend activity card with semi-transparent brown background */
 .friend-card-home {
 	background: #9a4207c8;
 	border-radius: 8px;
 	overflow: hidden;
-	height: 280px;
+	min-height: 300px;
 	display: flex;
 	flex-direction: column;
 	transition: transform 0.2s ease, box-shadow 0.2s ease;
@@ -36,26 +63,49 @@ header a{color:inherit}
 	cursor: pointer;
 }
 
+/* Friend card hover effect - lift up with enhanced shadow */
 .friend-card-home:hover {
 	transform: translateY(-6px);
 	box-shadow: 0 8px 20px rgba(0,0,0,0.15);
 }
 
+/* Popular work card container */
 .popular-work-card {
 	transition: transform 0.2s ease, box-shadow 0.2s ease;
 	height: 280px;
 	cursor: pointer;
 }
 
+/* Popular card hover effect */
 .popular-work-card:hover {
 	transform: translateY(-6px);
 	box-shadow: 0 8px 20px rgba(0,0,0,0.15);
 }
 
+/* Popular card image with cover effect */
 .popular-work-card img {
 	border-radius: 8px;
 	width: 100%;
 	height: 100%;
 	object-fit: cover;
+}
+
+/* ========== LAYOUT UTILITY CLASSES ========== */
+/* Centered container for page content - reused by skeleton layouts */
+.container-centered {
+	max-width: 1200px;
+	margin: 0 auto;
+}
+
+/* Flex grid container with standard gap spacing */
+.flex-grid {
+	display: flex;
+	gap: 12px;
+}
+
+/* Flex grid for ratings and distribution - dense variant with minimal gaps */
+.flex-grid-dense {
+	display: flex;
+	gap: 4px;
 }
 

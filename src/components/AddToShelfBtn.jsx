@@ -1,367 +1,173 @@
-import { useState, useEffect, useRef } from 'react';
-import { FiHeart, FiX } from 'react-icons/fi';
-import { addWorkToShelf, getOrCreateFavouritesShelf } from '../api/shelves';
-import { modalStyles } from '../styles/modal';
-
-/* ===================== UI STYLES ===================== */
-const styles = {
-  addToShelfBtn: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 8,
-    padding: '10px 16px',
-    background: '#9a4207c8',
-    color: 'white',
-    border: 'none',
-    borderRadius: 8,
-    cursor: 'pointer',
-    fontSize: 16,
-    fontWeight: '600',
-    transition: 'all 0.3s ease'
-  },
-  addToShelfBtnHover: {
-    background: '#7d3506a0',
-    transform: 'scale(1.05)'
-  },
-  
-  closeButton: {
-    background: 'none',
-    border: 'none',
-    fontSize: 28,
-    cursor: 'pointer',
-    color: '#999'
-  },
-  shelfOptions: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: 10
-  },
-  shelfOption: {
-    padding: 12,
-    border: '2px solid #ddd',
-    borderRadius: 8,
-    cursor: 'pointer',
-    transition: 'all 0.2s ease',
-    background: 'white'
-  },
-  shelfOptionHover: {
-    borderColor: '#9a4207c8',
-    background: '#f9f9f9'
-  },
-  shelfOptionName: {
-    fontWeight: '600',
-    color: '#392c2c',
-    marginBottom: 4
-  },
-  shelfOptionDesc: {
-    fontSize: 12,
-    color: '#666'
-  },
-  loadingMessage: {
-    textAlign: 'center',
-    padding: 20,
-    color: '#666'
-  },
-  errorMessage: {
-    background: '#ffebee',
-    color: '#c62828',
-    padding: 12,
-    borderRadius: 8,
-    marginBottom: 15,
-    fontSize: 14,
-    border: '1px solid #ef5350'
-  },
-  successMessage: {
-    background: '#e8f5e9',
-    color: '#2e7d32',
-    padding: 12,
-    borderRadius: 8,
-    marginBottom: 15,
-    fontSize: 14,
-    border: '1px solid #66bb6a'
-  }
-};
-
-// reuse shared modal styles
-styles.modal = modalStyles.modal;
-styles.modalContent = modalStyles.modalContent;
-// preserve original AddToShelfBtn header thickness (was 2px in original file)
-styles.modalHeader = { ...modalStyles.modalHeader, borderBottom: '2px solid #eee' };
-styles.modalTitle = modalStyles.modalTitle;
-
 /**
- * Component to add a work to a shelf
- * Shows a modal with available shelves
+ * Add to Shelf Button Component
+ * Provides button to open modal for adding work to shelves
  */
-/* Modal focus and feedback: ensures keyboard users land on a sensible control
-  and that success/error states are shown transiently to avoid blocking flow. */
-export default function AddToShelfBtn({ workId, userId, shelves, onSuccess }) {
-  const [showModal, setShowModal] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState(null);
-  const [availableShelves, setAvailableShelves] = useState([]);
+import { useRef, useState, useContext } from 'react';
+import { FiPlus } from 'react-icons/fi';
+import { addWorkToShelf, getOrCreateFavouritesShelf } from '../api/shelves';
+import { useAddToShelfState, useModalAccessibility } from '../hooks/useAddToShelfBtn';
+import { AddToShelfModal } from './AddToShelfBtn/AddToShelfModal';
+import { AuthContext } from '../context/AuthContext';
 
-  // Refs for focus management
-  const triggerButtonRef = useRef(null);
-  const modalRef = useRef(null);
-  const closeButtonRef = useRef(null);
-  const firstFocusableRef = useRef(null);
+export default function AddToShelfBtn({ workId, userShelves = [] }) {
+  /**
+   * Get current user from AuthContext to access userId
+   * Needed for creating/getting Favourites shelf
+   */
+  const { user } = useContext(AuthContext);
 
-  useEffect(() => {
-    // When modal opens, populate options and focus a sensible control.
-    // Focusing the close button reduces visual jump and improves keyboard accessibility.
-    if (showModal && shelves) {
-      setAvailableShelves(shelves);
+  /**
+   * Track button hover state using React state (prevents DOM inconsistencies)
+   * This ensures the hover effect works reliably across all renders
+   */
+  const [isButtonHovered, setIsButtonHovered] = useState(false);
 
-      // Focus the close button when modal opens
-      setTimeout(() => {
-        closeButtonRef.current?.focus();
-      }, 0);
-    }
-  }, [showModal, shelves]);
+  /**
+   * State management using custom hook
+   * Destructure all necessary state and handlers from useAddToShelfState
+   */
+  const {
+    isModalOpen,
+    setIsModalOpen,
+    loading,
+    message,
+    availableShelves,
+    handleAddToShelf: handleAddToShelfState,
+    handleAddToFavourites: handleAddToFavouritesState,
+  } = useAddToShelfState(userShelves);
 
-  // Handle Escape key to close modal
-  useEffect(() => {
-    // Close modal with Escape key for keyboard users.
-    // This mirrors native dialog semantics to improve keyboard navigation.
-    if (!showModal) return;
+  /**
+   * Accessibility hook for keyboard navigation and focus management
+   */
+  const buttonRef = useRef(null);
+  const {
+    modalRef,
+    closeButtonRef,
+    firstFocusableRef,
+    handleCloseModal,
+  } = useModalAccessibility(isModalOpen, () => setIsModalOpen(false), buttonRef);
 
-    const handleEscape = (e) => {
-      if (e.key === 'Escape') {
-        closeModal();
-      }
-    };
-
-    document.addEventListener('keydown', handleEscape);
-    return () => document.removeEventListener('keydown', handleEscape);
-  }, [showModal]);
-
-  // Trap focus within modal
-  useEffect(() => {
-    // Trap focus inside modal while open so keyboard users do not inadvertently tab away.
-    // Keeps focus within the dialog until it is dismissed.
-    if (!showModal || !modalRef.current) return;
-
-    const handleTabKey = (e) => {
-      const focusableElements = modalRef.current.querySelectorAll(
-        'button:not([disabled]), [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-      );
-      const firstElement = focusableElements[0];
-      const lastElement = focusableElements[focusableElements.length - 1];
-
-      if (e.key === 'Tab') {
-        if (e.shiftKey && document.activeElement === firstElement) {
-          e.preventDefault();
-          lastElement?.focus();
-        } else if (!e.shiftKey && document.activeElement === lastElement) {
-          e.preventDefault();
-          firstElement?.focus();
-        }
-      }
-    };
-
-    document.addEventListener('keydown', handleTabKey);
-    return () => document.removeEventListener('keydown', handleTabKey);
-  }, [showModal]);
-
-  const closeModal = () => {
-    setShowModal(false);
-    // Return focus to trigger button
-    setTimeout(() => {
-      triggerButtonRef.current?.focus();
-    }, 0);
-  };
-
-  const handleAddToShelf = async (shelfId) => {
-    setLoading(true);
-    setMessage(null);
-
+  /**
+   * Handles adding work to a specific shelf
+   */
+  const addToShelf = async (shelfId) => {
     try {
       await addWorkToShelf(shelfId, workId);
-      setMessage({ type: 'success', text: 'Work added to shelf!' });
-
-      setTimeout(() => {
-        closeModal();
-        if (onSuccess) onSuccess();
-      }, 1500);
+      handleAddToShelfState(shelfId);
+      setTimeout(() => setIsModalOpen(false), 800);
     } catch (error) {
-      setMessage({ type: 'error', text: error.message || 'Error adding work to shelf' });
-    } finally {
-      setLoading(false);
+      console.error('Failed to add work to shelf:', error);
+      const errorMsg = error?.message || 'Failed to add work to shelf';
+      console.error('Error details:', errorMsg);
+      // Keep modal open to display error to user for retry
     }
   };
 
-  /* Add-to-shelf semantics: perform idempotent add and display transient feedback.
-     This keeps UI responsive while the backend operation is retried safely. */
-
-  const handleAddToFavourites = async () => {
-    setLoading(true);
-    setMessage(null);
-
+  /**
+   * Handles adding work to Favourites shelf
+   * Special handling: Creates Favourites shelf if user doesn't have one yet
+   * Shows error messages if API calls fail
+   */
+  const addToFavourites = async () => {
     try {
-      // Get or create Favourites shelf
-      const favourites = await getOrCreateFavouritesShelf(userId, availableShelves);
-      await addWorkToShelf(favourites.shelfId, workId);
+      // Validate user is logged in
+      if (!user?.userId && !user?.id) {
+        console.error('User not authenticated');
+        return;
+      }
 
-      setMessage({ type: 'success', text: 'Added to Favourites!' });
-
-      setTimeout(() => {
-        closeModal();
-        if (onSuccess) onSuccess();
-      }, 1500);
+      const userId = user.userId || user.id;
+      const favouritesShelf = await getOrCreateFavouritesShelf(userId, userShelves);
+      if (!favouritesShelf?.shelfId) {
+        // Error: Shelf ID is missing
+        console.error('Favourites shelf ID is missing:', favouritesShelf);
+        return;
+      }
+      await addWorkToShelf(favouritesShelf.shelfId, workId);
+      handleAddToFavouritesState();
+      // Auto-close modal with brief delay for user feedback
+      setTimeout(() => setIsModalOpen(false), 800);
     } catch (error) {
-      setMessage({ type: 'error', text: error.message || 'Error adding to Favourites' });
-    } finally {
-      setLoading(false);
+      console.error('Failed to add to Favourites:', error);
+      const errorMsg = error?.message || 'Failed to add to Favourites';
+      console.error('Error details:', errorMsg);
+      // Keep modal open to display error to user for retry
     }
   };
 
   return (
     <>
+      {/* Add to Shelf Button - Opens modal dialog when clicked */}
       <button
-        ref={triggerButtonRef}
-        style={styles.addToShelfBtn}
-        onClick={() => setShowModal(true)}
-        onMouseEnter={(e) => {
-          e.target.style.background = styles.addToShelfBtnHover.background;
-          e.target.style.transform = styles.addToShelfBtnHover.transform;
+        ref={buttonRef}
+        onClick={() => setIsModalOpen(true)}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          padding: '10px 16px',
+          background: isButtonHovered ? '#7d3506a0' : '#9a4207c8',
+          color: 'white',
+          border: 'none',
+          outline: 0,
+          outlineOffset: 0,
+          boxShadow: 'none',
+          borderRadius: '8px',
+          cursor: 'pointer',
+          fontSize: '16px',
+          fontWeight: '600',
+          transition: 'all 0.3s ease',
+          WebkitAppearance: 'none',
+          appearance: 'none',
+          WebkitFocusRingColor: 'transparent',
+          WebkitTapHighlightColor: 'transparent',
+          transform: 'scale(1)',
+          transformOrigin: 'center',
         }}
-        onMouseLeave={(e) => {
-          e.target.style.background = styles.addToShelfBtn.background;
-          e.target.style.transform = 'none';
-        }}
+        onMouseEnter={() => setIsButtonHovered(true)}
+        onMouseLeave={() => setIsButtonHovered(false)}
         aria-label="Add work to shelf"
         aria-haspopup="dialog"
+        title="Add this work to your shelves"
       >
-        <FiHeart size={20} aria-hidden="true" />
-        Add to Shelf
+        <FiPlus size={20} aria-hidden="true" />
+        <span>Add to Shelf</span>
       </button>
-
-      {showModal && (
+      {/* Modal Backdrop + Content Container */}
+      {isModalOpen && (
         <div
-          style={styles.modal}
-          onClick={closeModal}
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="modal-title"
+          // Full-screen backdrop overlay with semi-transparent background
+          // Clicking on backdrop (outside modal) triggers handleCloseModal
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(0, 0, 0, 0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+          }}
+          onClick={handleCloseModal}
+          role="presentation"
         >
-          <div
-            ref={modalRef}
-            style={styles.modalContent}
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Modal header: provides the dialog title and a programmatic close control, anchored
-              by `aria-labelledby` so assistive technologies expose the dialog context. */
-            /* Close control is focused on open to stabilise layout and give keyboard users an immediate dismiss action. */}
-            <div style={styles.modalHeader}>
-              <h2 id="modal-title" style={styles.modalTitle}>Add to Shelf</h2>
-              <button
-                ref={closeButtonRef}
-                style={styles.closeButton}
-                onClick={closeModal}
-                aria-label="Close dialog"
-              >
-                <FiX size={24} aria-hidden="true" />
-              </button>
-            </div>
-
-           { /* Render transient status and accessible shelf options; messages use role="alert" and live regions. */}
-            {/* Favourites is always first to preserve predictable focus order and keyboard navigation. */}
-            {message && (
-              <div
-                style={message.type === 'error' ? styles.errorMessage : styles.successMessage}
-                role="alert"
-                aria-live="polite"
-              >
-                {message.text}
-              </div>
-            )}
-
-            {loading && (
-              <div style={styles.loadingMessage} role="status" aria-live="polite">
-                Loading...
-              </div>
-            )}
-
-            {!loading && availableShelves.length === 0 && (
-              <div style={styles.loadingMessage} role="status">
-                No shelves available
-              </div>
-            )}
-
-            {!loading && availableShelves.length > 0 && (
-              <div style={styles.shelfOptions} role="list">
-                {/* Favourites button - always first */}
-                {(() => {
-                  // Find Favourites shelf to get work count
-                  const favouritesShelf = availableShelves.find(
-                    shelf => shelf.name?.toLowerCase() === 'favourites' || shelf.name?.toLowerCase() === 'favorite'
-                  );
-                  const favouritesCount = favouritesShelf?.works?.length || 0;
-
-                  return (
-                    <button
-                      ref={firstFocusableRef}
-                      style={styles.shelfOption}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.borderColor = styles.shelfOptionHover.borderColor;
-                        e.currentTarget.style.background = styles.shelfOptionHover.background;
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.borderColor = '#ddd';
-                        e.currentTarget.style.background = 'white';
-                      }}
-                      onClick={() => handleAddToFavourites()}
-                      aria-label={`Add to Favourites shelf, contains ${favouritesCount} work${favouritesCount !== 1 ? 's' : ''}`}
-                      role="listitem"
-                    >
-                      <div style={styles.shelfOptionName}>
-                        <FiHeart size={16} style={{ color: '#9a4207', fill: '#9a4207', verticalAlign: 'middle', marginRight: 6 }} aria-hidden="true" />
-                        Favourites
-                      </div>
-                      <div style={styles.shelfOptionDesc}>
-                        {favouritesCount} work{favouritesCount !== 1 ? 's' : ''}
-                      </div>
-                    </button>
-                  );
-                })()}
-
-                {/* Other shelves */}
-                {availableShelves.map(shelf => {
-                  // Skip the default "Favorite"/"Favourites" shelf - it's handled by "Add to Favourites" button
-                  const shelfName = shelf.name?.toLowerCase() || '';
-                  if (shelfName === 'favorite' || shelfName === 'favourites') {
-                    return null;
-                  }
-
-                  const workCount = shelf.works?.length || 0;
-
-                  return (
-                    <button
-                      key={shelf.shelfId}
-                      style={styles.shelfOption}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.borderColor = styles.shelfOptionHover.borderColor;
-                        e.currentTarget.style.background = styles.shelfOptionHover.background;
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.borderColor = '#ddd';
-                        e.currentTarget.style.background = 'white';
-                      }}
-                      onClick={() => handleAddToShelf(shelf.shelfId)}
-                      aria-label={`Add to ${shelf.name} shelf, contains ${workCount} work${workCount !== 1 ? 's' : ''}`}
-                      role="listitem"
-                    >
-                      <div style={styles.shelfOptionName}>{shelf.name}</div>
-                      <div style={styles.shelfOptionDesc}>
-                        {workCount} work{workCount !== 1 ? 's' : ''}
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-          </div>
+          {/* Modal content component displaying shelf options */}
+          <AddToShelfModal
+            // Accessibility: Refs for managing focus and keyboard navigation within modal
+            modalRef={modalRef}
+            closeButtonRef={closeButtonRef}
+            firstFocusableRef={firstFocusableRef}
+            loading={loading}
+            message={message}
+            availableShelves={availableShelves}
+            // Event handlers: called when user selects a shelf or Favourites
+            onAddToShelf={addToShelf}
+            onAddToFavourites={addToFavourites}
+            // Handler to close modal (on close button, Escape key, or backdrop click)
+            onClose={handleCloseModal}
+          />
         </div>
       )}
     </>

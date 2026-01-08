@@ -1,29 +1,17 @@
-/**
- * Centralized data normalization utilities
- * Handles data transformation and standardization across the application
- */
-
-// Usage: import normalization helpers and call before rendering data.
-
-
 import { DEFAULT_AVATAR_URL } from '../config/constants';
 
-/* ===================== WORK NORMALIZATION ===================== */
+/* ========== NORMALIZATION UTILITIES ==========
+ * Standardizes API responses into consistent object structures.
+ * Different endpoints may use different field names, these helpers ensure consistency. */
 
-/**
- * Normalize a single work object from various API response formats
- * @param {Object} work - Raw work data from API
- * @returns {Object|null} Normalized work object
- */
+// Extract ID from objects supporting multiple ID field names
+const id = (obj) => obj?.id || obj?.workId || obj?._id || obj?.entityId;
 
+// Normalize a single work object, handles various API response formats
 export const normalizeWork = (work) => {
-  if (!work) return null;
-
-  const workId = work.id || work.workId || work._id;
-  if (!workId) return null;
-
+  if (!work || !id(work)) return null;
   return {
-    workId: workId,
+    workId: id(work),
     title: work.title || work.name || 'Untitled Work',
     creator: work.creator || work.author || work.artist || 'Unknown Creator',
     coverUrl: work.coverUrl || work.cover || '/album_covers/default.jpg',
@@ -36,424 +24,144 @@ export const normalizeWork = (work) => {
   };
 };
 
-/**
- * Normalize an array of works
- * @param {Array} works - Array of raw work data
- * @returns {Array} Array of normalized works
- */
+// Batch normalize works array, filtering out invalid entries
+export const normalizeWorks = (works) =>
+  Array.isArray(works) ? works.map(normalizeWork).filter(Boolean) : [];
 
-export const normalizeWorks = (works) => {
-  if (!Array.isArray(works)) return [];
-  return works.map(normalizeWork).filter(Boolean);
-};
-
-/**
- * Normalize work data with additional metadata for display
- * @param {Object} work - Raw work data
- * @returns {Object|null} Work with formatted metadata
- */
-
+// Normalize work with flattened metadata for list/card display
 export const normalizeWorkWithMeta = (work) => {
-  const normalized = normalizeWork(work);
-  if (!normalized) return null;
-
-  const genresArray = Array.isArray(normalized.genres)
-    ? normalized.genres
-    : [];
-
-  return {
-    ...normalized,
-    genre: genresArray.join(', ') || 'Unknown Genre',
-    meta: `${normalized.year || 'Unknown Year'} • ${normalized.type || 'Unknown Type'} • ${genresArray.join(', ') || 'Unknown Genre'}`,
-    subtitle: normalized.creator,
-  };
+  const n = normalizeWork(work);
+  if (!n) return null;
+  const g = (Array.isArray(n.genres) ? n.genres : []).join(', ') || 'Unknown Genre';
+  return {...n, genre: g, meta: `${n.year || 'Unknown Year'} • ${n.type || 'Unknown Type'} • ${g}`, subtitle: n.creator};
 };
 
-/**
- * Normalize work for search results with entity structure
- * @param {Object} item - Raw work data
- * @returns {Object|null} Normalized work entity
- */
-
+// Normalize work as searchable entity with lowercase genres and rich metadata
 export const normalizeWorkEntity = (item) => {
-  if (!item) return null;
-
-  const entityId = item.entityId || item.id || item.workId || item._id;
-  if (!entityId) return null;
-
-  const genresArray = normalizeGenres(item.genres || item.genre);
-  const yearValue = item.year || item.releaseYear || item.publishedYear;
-  const workType = item.type || item.workType || item.category;
-  const ratingValue = Number(item.averageRating || item.rating || item.avgRating || item.score || 0);
-
+  if (!item || !id(item)) return null;
+  const g = normalizeGenres(item.genres || item.genre),
+    y = item.year || item.releaseYear || item.publishedYear,
+    t = item.type || item.workType || item.category,
+    r = Number(item.averageRating || item.rating || item.avgRating || item.score || 0);
   return {
-    entityId: String(entityId),
-    kind: 'work',
-    title: item.title || item.name || 'Untitled Work',
+    entityId: String(id(item)), kind: 'work', title: item.title || item.name || 'Untitled Work',
     coverUrl: item.coverUrl || item.cover || '/album_covers/default.jpg',
     subtitle: item.creator || item.author || item.artist || 'Unknown Creator',
-    meta: `${yearValue || 'Unknown Year'} • ${workType || 'Unknown Type'} • ${genresArray.length > 0 ? genresArray.join(', ') : 'Unknown Genre'}`,
-    description: item.description || '',
-    rating: Number.isNaN(ratingValue) ? 0 : ratingValue,
-    workType: workType ? String(workType).toLowerCase() : 'unknown',
-    year: yearValue ? Number(yearValue) : null,
-    genres: genresArray.map(g => g.toLowerCase()),
-    raw: item,
+    meta: `${y || 'Unknown Year'} • ${t || 'Unknown Type'} • ${g.length > 0 ? g.join(', ') : 'Unknown Genre'}`,
+    description: item.description || '', rating: Number.isNaN(r) ? 0 : r,
+    workType: t ? String(t).toLowerCase() : 'unknown', year: y ? Number(y) : null,
+    genres: g.map(x => x.toLowerCase()), raw: item
   };
 };
 
-/* ===================== GENRE NORMALIZATION ===================== */
+// Parse genres from arrays, CSV, or semicolon-delimited strings. Returns lowercase array
+export const normalizeGenres = (genres) =>
+  Array.isArray(genres) ? genres.filter(Boolean) :
+  (typeof genres === 'string' && genres.trim()) ? genres.split(/[,;]/).map(g => g.trim()).filter(Boolean) :
+  [];
 
-/**
- * Normalize genres to a consistent array format
- * @param {Array|string} genres - Genres as array or comma-separated string
- * @returns {Array} Array of genre strings
- */
-
-export const normalizeGenres = (genres) => {
-  if (Array.isArray(genres)) {
-    return genres.filter(Boolean);
-  }
-  if (typeof genres === 'string' && genres.trim()) {
-    return genres.split(/[,;]/).map(g => g.trim()).filter(Boolean);
-  }
-  return [];
+// Extract arrays from various API response structures (handles nested, direct, keyed responses)
+const extractFromResponse = (r, k) => {
+  const d = r?.data || r;
+  return Array.isArray(r) ? r : Array.isArray(d) ? d : Array.isArray(d?.[k]) ? d[k] : [];
 };
 
-/* ===================== API RESPONSE NORMALIZATION ===================== */
+// Extract specific data types from API responses, handling multiple nesting patterns
+export const extractWorksFromResponse = r => extractFromResponse(r, 'works');
+export const extractRatingsFromResponse = r => extractFromResponse(r, 'ratings');
+export const extractShelvesFromResponse = r => extractFromResponse(r, 'shelves');
 
-/**
- * Extract works array from various API response formats
- * @param {Object|Array} response - API response
- * @returns {Array} Array of raw works
- */
-
-export const extractWorksFromResponse = (response) => {
-  if (!response) return [];
-
-  // Already an array
-  if (Array.isArray(response)) return response;
-
-  // Check common nested structures
-  const data = response.data || response;
-
-  if (Array.isArray(data)) return data;
-  if (data.works && Array.isArray(data.works)) return data.works;
-  if (data.items && Array.isArray(data.items)) return data.items;
-
-  return [];
+// Extract single work from response (used in detail views)
+export const extractWorkFromResponse = (r) => {
+  const d = r?.data || r;
+  return Array.isArray(d?.works) ? d.works[0] : d?.work || (d?.workId || d?.id ? d : null);
 };
 
-/**
- * Extract ratings array from various API response formats
- * @param {Object|Array} response - API response
- * @returns {Array} Array of ratings
- */
-
-export const extractRatingsFromResponse = (response) => {
-  if (!response) return [];
-
-  if (Array.isArray(response)) return response;
-
-  const data = response.data || response;
-
-  if (Array.isArray(data)) return data;
-  if (data.ratings && Array.isArray(data.ratings)) return data.ratings;
-
-  return [];
-};
-
-/**
- * Extract shelves array from various API response formats
- * @param {Object|Array} response - API response
- * @returns {Array} Array of shelves
- */
-
-export const extractShelvesFromResponse = (response) => {
-  if (!response) return [];
-
-  if (Array.isArray(response)) return response;
-
-  const data = response.data || response;
-
-  if (Array.isArray(data)) return data;
-  if (data.shelves && Array.isArray(data.shelves)) return data.shelves;
-
-  return [];
-};
-
-/**
- * Extract a single work from various API response formats
- * @param {Object} response - API response
- * @returns {Object|null} Single work object
- */
-
-export const extractWorkFromResponse = (response) => {
-  if (!response) return null;
-
-  let data = response.data || response;
-
-  // Check for work in various nested structures
-  if (data.works && Array.isArray(data.works) && data.works[0]) {
-    return data.works[0];
-  }
-  if (data.work) {
-    return data.work;
-  }
-
-  // Check if data itself is a work object (has workId or id)
-  if (data.workId || data.id) {
-    return data;
-  }
-
-  return null;
-};
-
-/* ===================== USER NORMALIZATION ===================== */
-
-/**
- * Normalize user data from API
- * @param {Object} user - Raw user data
- * @returns {Object|null} Normalized user object
- */
-
-export const normalizeUser = (user) => {
-  if (!user) return null;
-
-  const userId = user.userId || user.id || user._id;
-  if (!userId) return null;
-
-  return {
-    userId: userId,
-    username: user.username || user.name || 'Unknown User',
-    email: user.email || '',
-    profilePictureUrl: user.profilePictureUrl || user.avatar || DEFAULT_AVATAR_URL,
-    bio: user.bio || user.description || '',
-    ratedWorks: user.ratedWorks || 0,
+// ========== USER NORMALIZATION ==========
+export const normalizeUser = (user) =>
+  !user || !id(user) ? null : {
+    userId: id(user), username: user.username || user.name || 'Unknown User',
+    email: user.email || '', profilePictureUrl: user.profilePictureUrl || user.avatar || DEFAULT_AVATAR_URL,
+    bio: user.bio || user.description || '', ratedWorks: user.ratedWorks || 0
   };
+
+// Batch normalize users array, filtering out invalid entries
+export const normalizeUsers = (users) => Array.isArray(users) ? users.map(normalizeUser).filter(Boolean) : [];
+
+// ========== RATING NORMALIZATION ==========
+// Normalize single rating/review object, supporting multiple field name conventions
+export const normalizeRating = (rating) => !rating ? null : {
+  ratingId: rating.ratingId || rating.id || rating._id,
+  userId: rating.userId || rating.user?.userId,
+  workId: rating.workId || rating.work?.workId,
+  score: Number(rating.score || rating.rating || 0),
+  comment: rating.comment || rating.review || '',
+  ratedAt: rating.ratedAt || rating.createdAt || new Date().toISOString()
 };
 
-/**
- * Normalize an array of users
- * @param {Array} users - Array of raw user data
- * @returns {Array} Array of normalized users
- */
-
-export const normalizeUsers = (users) => {
-  if (!Array.isArray(users)) return [];
-  return users.map(normalizeUser).filter(Boolean);
-};
-
-/* ===================== RATING NORMALIZATION ===================== */
-
-/**
- * Normalize a single rating object
- * @param {Object} rating - Raw rating data
- * @returns {Object|null} Normalized rating
- */
-
-export const normalizeRating = (rating) => {
-  if (!rating) return null;
-
-  return {
-    ratingId: rating.ratingId || rating.id || rating._id,
-    userId: rating.userId || rating.user?.userId,
-    workId: rating.workId || rating.work?.workId,
-    score: Number(rating.score || rating.rating || 0),
-    comment: rating.comment || rating.review || '',
-    ratedAt: rating.ratedAt || rating.createdAt || new Date().toISOString(),
-  };
-};
-
-/**
- * Normalize ratings object (key-value pairs) to array
- * @param {Object} ratingsData - Ratings object with workId as keys
- * @returns {Array} Array of normalized ratings
- */
-
-export const normalizeRatingsObject = (ratingsData) => {
-  if (!ratingsData || typeof ratingsData !== 'object') return [];
-
-  return Object.entries(ratingsData).map(([workId, rating]) => ({
-    workId: parseInt(workId),
-    score: rating.score || rating.rating || 0,
-    comment: rating.comment || rating.review || '',
-    ratedAt: rating.ratedAt ? new Date(rating.ratedAt) : new Date(),
+// Normalize bulk ratings keyed by work ID (API returns { workId: { score, comment }, ... })
+export const normalizeRatingsObject = (ratingsData) =>
+  !ratingsData || typeof ratingsData !== 'object' ? [] :
+  Object.entries(ratingsData).map(([wId, r]) => ({
+    workId: parseInt(wId), score: r.score || r.rating || 0,
+    comment: r.comment || r.review || '',
+    ratedAt: r.ratedAt ? new Date(r.ratedAt) : new Date()
   }));
-};
 
-/* ===================== SHELF NORMALIZATION ===================== */
-
-/**
- * Normalize shelf data from API
- * @param {Object} shelf - Raw shelf data
- * @returns {Object|null} Normalized shelf object
- */
-
-export const normalizeShelf = (shelf) => {
-  if (!shelf) return null;
-
-  const shelfId = shelf.shelfId || shelf.id || shelf._id;
-  if (!shelfId) return null;
-
-  return {
-    shelfId: shelfId,
-    name: shelf.name || 'Untitled Shelf',
-    description: shelf.description || '',
-    userId: shelf.userId || shelf.user?.userId,
+// ========== SHELF NORMALIZATION ==========
+export const normalizeShelf = (shelf) =>
+  !shelf || !id(shelf) ? null : {
+    shelfId: id(shelf), name: shelf.name || 'Untitled Shelf',
+    description: shelf.description || '', userId: shelf.userId || shelf.user?.userId,
     works: Array.isArray(shelf.works) ? shelf.works : [],
-    createdAt: shelf.createdAt || new Date().toISOString(),
+    createdAt: shelf.createdAt || new Date().toISOString()
   };
-};
 
-/* ===================== COLLECTION UTILITIES ===================== */
+// ========== COLLECTION UTILITIES ==========
+// Extract set of work IDs from shelf, handling multiple ID field names
+export const extractWorkIdsFromShelf = (works) => new Set(
+  !Array.isArray(works) ? [] : works.map(w =>
+    w ? (typeof w === 'string' || typeof w === 'number' ? String(w) :
+      (nw => nw ? nw.id || nw._id : w.id || w.workId || w._id || w.entityId)(typeof w.work === 'object' ? w.work : null)) :
+    null
+  ).filter(Boolean)
+);
 
-/**
- * Extract work IDs from a shelf's works array
- * Handles both populated work objects and primitive IDs
- * @param {Array} works - Array of works or IDs
- * @returns {Set} Set of work IDs as strings
- */
-
-export const extractWorkIdsFromShelf = (works) => {
-  if (!Array.isArray(works)) return new Set();
-
-  const ids = works.map(w => {
-    if (w === null || w === undefined) return null;
-
-    // Handle primitive IDs
-    if (typeof w === 'string' || typeof w === 'number') {
-      return String(w);
-    }
-
-    // Handle nested work objects
-    const nestedWork = typeof w.work === 'object' ? w.work : null;
-    const nestedWorkId = nestedWork ? (nestedWork.id || nestedWork._id) : null;
-    const id = w.id || w.workId || w._id || w.entityId || nestedWorkId;
-
-    return id ? String(id) : null;
-  }).filter(Boolean);
-
-  return new Set(ids);
-};
-
-/**
- * Merge unique works from multiple arrays
- * @param {Array} primary - Primary array of works
- * @param {Array} secondary - Secondary array of works
- * @returns {Array} Merged array with unique works
- */
-
+// Merge two work arrays without duplicates (primary array takes precedence)
 export const mergeUniqueWorks = (primary, secondary) => {
-  const seen = new Set(primary.map(work => work.entityId || work.workId || work.id));
-  const merged = [...primary];
-
-  secondary.forEach(work => {
-    const id = work.entityId || work.workId || work.id;
-    if (work && id && !seen.has(id)) {
-      seen.add(id);
-      merged.push(work);
-    }
+  const seen = new Set(primary.map(w => w.entityId || w.workId || w.id)),
+    merged = [...primary];
+  secondary.forEach(w => {
+    const wId = w?.entityId || w?.workId || w?.id;
+    if (w && wId && !seen.has(wId)) seen.add(wId), merged.push(w);
   });
-
   return merged;
 };
 
-/**
- * Shuffle array using Fisher-Yates algorithm
- * @param {Array} array - Array to shuffle
- * @returns {Array} Shuffled array
- */
-
+// Fisher-Yates shuffle for unbiased random ordering (new array, doesn't mutate)
 export const shuffleArray = (array) => {
-  const shuffled = [...array];
-  for (let i = shuffled.length - 1; i > 0; i--) {
+  const s = [...array];
+  for (let i = s.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
-    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    [s[i], s[j]] = [s[j], s[i]];
   }
-  return shuffled;
+  return s;
 };
 
-/**
- * Get random items from array
- * @param {Array} array - Source array
- * @param {number} count - Number of items to get
- * @returns {Array} Random items
- */
+// Get random sample from array without replacement (handles edge cases)
+export const getRandomItems = (array, count) =>
+  !Array.isArray(array) || array.length === 0 ? [] : shuffleArray(array).slice(0, count);
 
-export const getRandomItems = (array, count) => {
-  if (!Array.isArray(array) || array.length === 0) return [];
-  const shuffled = shuffleArray(array);
-  return shuffled.slice(0, count);
-};
-
-/* ===================== FILTER UTILITIES ===================== */
-
-/**
- * Apply client-side filters to works array
- * @param {Array} works - Array of normalized works
- * @param {Object} filters - Filter criteria
- * @returns {Array} Filtered works
- */
-
+// ========== FILTERING UTILITIES ==========
+// Apply client-side filters (type, genre, year, rating) for search refinement
 export const applyWorkFilters = (works, filters) => {
   if (!Array.isArray(works)) return [];
-
-  const { type, genre, year, rating } = filters;
-
-  const genreFilterValue = genre ? String(genre).toLowerCase() : '';
-  const ratingFilterValue = rating ? Number(rating) : null;
-  const yearFilterValue = year ? Number(year) : null;
-  const typeFilterValue = type ? String(type).toLowerCase() : '';
-
-  return works.filter(work => {
-    if (!work) return false;
-
-    // Type filter
-    if (typeFilterValue && typeFilterValue !== 'user') {
-      const workType = (work.workType || work.type || '').toLowerCase();
-      if (!workType || workType !== typeFilterValue) {
-        return false;
-      }
-    }
-
-    // Genre filter
-    if (genreFilterValue) {
-      const workGenres = Array.isArray(work.genres)
-        ? work.genres.map(g => g.toLowerCase())
-        : [];
-      if (!workGenres.some(g => g === genreFilterValue)) {
-        return false;
-      }
-    }
-
-    // Rating filter
-    if (ratingFilterValue !== null) {
-      const workRating = Number(work.rating || 0);
-      if (workRating < ratingFilterValue) {
-        return false;
-      }
-    }
-
-    // Year filter
-    if (yearFilterValue !== null) {
-      const workYear = Number(work.year || 0);
-      if (!workYear || workYear < yearFilterValue) {
-        return false;
-      }
-    }
-
-    return true;
-  });
+  const {type: t, genre: g, year: y, rating: r} = filters;
+  return works.filter(w =>
+    w && (!t || t === 'user' || (w.workType || w.type || '').toLowerCase() === String(t).toLowerCase()) &&
+    (!g || (Array.isArray(w.genres) ? w.genres.map(x => x.toLowerCase()) : []).some(x => x === String(g).toLowerCase())) &&
+    (r === undefined || Number(w.rating || 0) >= Number(r)) &&
+    (y === undefined || (Year => Year && Year >= Number(y))(Number(w.year || 0)))
+  );
 };
-
-/**
- * Log normalization debug info
- * @param {string} context - Context label
- * @param {*} input - Input data
- * @param {*} output - Output data
- */
-
-export const logNormalization = () => {
-  // Debug logging disabled for production
-};
+export const logNormalization = () => {};

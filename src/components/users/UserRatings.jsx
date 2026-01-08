@@ -1,8 +1,8 @@
-import WorkCardCarousel from '../WorkCardCarousel';
+import Shelf from '../Shelves/Shelf';
 import ErrorBoundary from '../ErrorBoundary';
 
 // UserRatings: renders a user's rating history as a carousel of work cards.
-// Maps rating objects to `WorkCardCarousel` card models and sorts by date.
+// Maps rating objects to Shelf card models and sorts by date.
 /* ===================== UI STYLES ===================== */
 const styles = {
   /* ===================== ERROR FALLBACK ===================== */
@@ -48,7 +48,7 @@ function UserRatingsInner({ ratings = {}, works = [] }) {
   }).filter(Boolean);
 
   return (
-    <WorkCardCarousel
+    <Shelf
       cards={cards}
       emptyMessage="No ratings yet. Start rating some works!"
     />
