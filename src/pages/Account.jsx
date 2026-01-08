@@ -1,17 +1,8 @@
 import { useNavigate } from "react-router-dom";
-import useAuth from "../hooks/useAuth";
-import useAccountData from "../hooks/useAccountData";
-import { Skeleton } from "../components/SkeletonBase";
+import { useAuth, useAccountData } from '../hooks';
+import { Skeleton, UserRatings, ProfileHeaderProfile, FollowersSection, FollowingSection, EditDeleteButtons } from "../components";
 import logger from "../utils/logger";
-
-import {
-  deleteUser,
-} from "../api/users";
-
-import UserRatings from "../components/UserRatings";
-import ProfileHeader from "../components/Profile/ProfileHeader";
-import { FollowersSection, FollowingSection } from "../components/Profile/FollowingSection";
-import EditDeleteButtons from "../components/Profile/EditDeleteButtons";
+import { deleteUser } from "../api";
 
 
 /* ===================== ACCOUNT PAGE FUNCTION ===================== */
@@ -99,7 +90,7 @@ export default function Account() {
             <div style={{ background: "#fff", padding: "40px 36px", borderRadius: "16px", boxShadow: "0 20px 40px rgba(0,0,0,0.08)", maxWidth: "820px", margin: "0 auto 48px" }}>
               {/* Profile Header Component */}
               <div>
-                <ProfileHeader
+                <ProfileHeaderProfile
                   profileUser={backendUser}
                   ratings={ratings}
                   works={works}

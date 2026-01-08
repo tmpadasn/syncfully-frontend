@@ -10,7 +10,7 @@
  *   - addedWorks: Set of work IDs already in the target shelf
  */
 import { useCallback, useRef, useState, useEffect } from 'react';
-import { getShelfWorks } from '../api/shelves';
+import { getShelfWorks } from '../api';
 import logger from '../utils/logger';
 
 export function useAddToShelfWorks(addToShelfId) {

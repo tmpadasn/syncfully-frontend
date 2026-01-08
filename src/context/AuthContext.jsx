@@ -1,5 +1,5 @@
 import { createContext, useState, useEffect } from 'react';
-import { login as apiLogin, signup as apiSignup } from '../api/auth';
+import { login as apiLogin, signup as apiSignup } from '../api';
 import {
   DEFAULT_PROFILE_PICTURE,
   STORAGE_KEY_AUTH_USER,
@@ -95,7 +95,7 @@ export function AuthProvider({ children }) {
         setAuthLoading(false);
       }
     };
-    
+
     restoreSession();
   }, []);
 

@@ -1,6 +1,8 @@
 import { useCallback } from 'react';
-import { removeWorkFromShelf } from '../imports/shelvesImports';
-/** * useShelfOperations Hook
+import { removeWorkFromShelf } from '../api';
+
+/**
+ * useShelfOperations Hook
  *
  * Encapsulates all shelf CRUD operations (Create, Read, Update, Delete).
  * Handles:

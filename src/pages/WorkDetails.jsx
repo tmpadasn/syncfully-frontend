@@ -1,8 +1,10 @@
-import { useEffect, useState, useCallback, useRef, useParams, useNavigate } from '../imports/workDetailsImports';
-import { Toast, WorkDetailsSkeleton, WorkDetailsLeftSidebar, WorkDetailsMainContent, WorkDetailsRatings, getWork,
-          getWorkRatings, postWorkRating, getSimilarWorks, getUserRecommendations, logger, extractWorkFromResponse,
-          extractRatingsFromResponse, normalizeWork, normalizeWorks, normalizeGenres } from '../imports/workDetailsImports';
-import { useNavigationWithClearFilters, useAuth, useShelves } from '../imports/workDetailsImports';
+import { useEffect, useState, useCallback, useRef } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { Toast, WorkDetailsLeftSidebar, WorkDetailsMainContent, WorkDetailsRatings, WorkDetailsSkeleton } from '../components';
+import { useNavigationWithClearFilters, useAuth, useShelves } from '../hooks';
+import { getWork, getWorkRatings, postWorkRating, getSimilarWorks, getUserRecommendations } from '../api';
+import logger from '../utils/logger';
+import { extractWorkFromResponse, extractRatingsFromResponse, normalizeWork, normalizeWorks, normalizeGenres } from '../utils/normalize';
 
 // Configuration constants
 const MAX_RECOMMENDATIONS = 5;

@@ -1,8 +1,7 @@
 /* AppRouter: route table composing top-level pages within a consistent header and error boundary. */
 import { Routes, Route } from 'react-router-dom';
-import Header from '../components/Header/Header';
-import ErrorBoundary from '../components/ErrorBoundary';
 import { Home, Recommendations, SearchResults, WorkDetails, Profile, Login, Account, EditAccount, Shelves } from '../pages';
+import { Header, ErrorBoundary } from '../components';
 import ProtectedRoute from './ProtectedRoute';
 import GuestRoute from './GuestRoute';
 

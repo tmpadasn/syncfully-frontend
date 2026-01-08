@@ -1,4 +1,4 @@
-import { AddToShelfBtn } from '../../imports/workDetailsImports';
+import { AddToShelfBtn } from '../index';
 
 /**
  * Right sidebar component for work ratings and shelf management

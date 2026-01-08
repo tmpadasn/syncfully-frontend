@@ -5,12 +5,16 @@
  Work details load when a shelf opens.
  Supports create, edit, and delete actions.
 */
-import { useEffect, useRef, useCallback, useNavigate, useAuth, useShelves,
-        getUserRatings, FiPlus, Skeleton, logger, ShelfHeader, ShelfContent,
-        ShelfModal, useShelfState, useShelfHandlers,
-        useLoadShelfWorks, useShelfOperations } from '../imports/shelvesImports';
-import ShelvesPageHeader from '../components/Shelves/ShelvesPageHeader';
-import { MessageAlert, DeleteConfirmation } from '../components/Shelves/ConfirmationMessages';
+// React and router hooks
+import { useEffect, useRef, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth, useShelves, useShelfState, useShelfHandlers, useLoadShelfWorks,
+         useShelfOperations } from '../hooks';
+import { getUserRatings } from '../api';
+import { ShelfHeader, ShelfContent, ShelfModal, ShelvesPageHeader, MessageAlert,
+         DeleteConfirmation, Skeleton } from '../components';
+import { FiPlus } from 'react-icons/fi';
+import logger from '../utils/logger';
 
 /**
  * Shelves page component.
@@ -61,9 +65,7 @@ export default function Shelves() {
         ratings.forEach(r => { if (r?.workId) map[r.workId] = r; });
         state.setUserRatings(map);
       })
-      .catch(err => {
-        logger.error('Error loading ratings:', err);
-        state.setUserRatings({});
+      .catch(err => { logger.error('Error loading ratings:', err); state.setUserRatings({});
       });
   }, [user?.userId]);
 
@@ -84,13 +86,13 @@ export default function Shelves() {
   return (
     <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '20px' }}>
       <ShelvesPageHeader onCreateClick={handlers.handleOpenCreateModal} />
-
       <MessageAlert message={state.message} onClose={() => state.setMessage(null)} />
 
       {loading && (
         <div style={{ padding: '40px 0' }}>
           {Array.from({ length: 3 }).map((_, i) => (
-            <div key={i} style={{ marginBottom: '24px', background: '#fff', borderRadius: '16px', boxShadow: '0 8px 24px rgba(0, 0, 0, 0.08)', border: '1px solid #e0e0e0', overflow: 'hidden', opacity: 0.6 }}>
+            <div key={i} style={{ marginBottom: '24px', background: '#fff', borderRadius: '16px',
+                                  boxShadow: '0 8px 24px rgba(0, 0, 0, 0.08)', border: '1px solid #e0e0e0', overflow: 'hidden', opacity: 0.6 }}>
               <div style={{ padding: 20, background: '#fff', borderBottom: '1px solid #e0e0e0' }}>
                 <Skeleton width="180px" height="20px" style={{ marginBottom: 8 }} />
                 <Skeleton width="120px" height="14px" />
@@ -108,14 +110,8 @@ export default function Shelves() {
       )}
 
       {error && !loading && (
-        <div style={{
-          padding: '15px',
-          borderRadius: '8px',
-          marginBottom: '20px',
-          background: '#ffebee',
-          color: '#c62828',
-          border: '1px solid #ef5350',
-        }}>Error loading shelves: {error}</div>
+        <div style={{ padding: '15px', borderRadius: '8px', marginBottom: '20px', background: '#ffebee',
+                      color: '#c62828',  border: '1px solid #ef5350' }}>Error loading shelves: {error}</div>
       )}
 
       {!loading && shelves.length === 0 && (
@@ -134,7 +130,9 @@ export default function Shelves() {
             fontSize: '16px',
             fontWeight: 'bold',
             transition: 'all 0.2s ease',
-          }} onClick={handlers.handleOpenCreateModal} onMouseEnter={(e) => { e.currentTarget.style.background = '#7a3506'; e.currentTarget.style.transform = 'translateY(-1px)'; }} onMouseLeave={(e) => { e.currentTarget.style.background = '#9a4207c8'; e.currentTarget.style.transform = 'translateY(0)'; }}>
+          }} onClick={handlers.handleOpenCreateModal}
+             onMouseEnter={(e) => { e.currentTarget.style.background = '#7a3506'; e.currentTarget.style.transform = 'translateY(-1px)'; }}
+             onMouseLeave={(e) => { e.currentTarget.style.background = '#9a4207c8'; e.currentTarget.style.transform = 'translateY(0)'; }}>
             <FiPlus size={20} /> Create your first shelf
           </button>
         </div>

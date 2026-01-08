@@ -1,5 +1,6 @@
 import { useCallback } from 'react';
-import { getWork, logger } from '../imports/shelvesImports';
+import { getWork } from '../api';
+import logger from '../utils/logger';
 
 /**
  * useLoadShelfWorks Hook

@@ -1,5 +1,4 @@
-import { getAllWorks } from '../api/works';
-import { searchItems } from '../api/search';
+import { getAllWorks, searchItems } from '../api';
 import { normalizeWorkEntity, mergeUniqueWorks, applyWorkFilters } from './normalize';
 
 // Filter Validation

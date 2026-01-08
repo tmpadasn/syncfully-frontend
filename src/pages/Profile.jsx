@@ -1,11 +1,8 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
-import { getUserById, getUserRatings, getUserFollowers, getUserFollowing, followUser, unfollowUser } from "../api/users";
-import useAuth from "../hooks/useAuth";
-import { getAllWorks } from "../api/works";
-import UserRatings from "../components/UserRatings";
-import ProfileHeader from "../components/Profile/ProfileHeader";
-import { ProfileSkeleton } from "../components/SkeletonPages";
+import { getUserById, getUserRatings, getUserFollowers, getUserFollowing, followUser, unfollowUser, getAllWorks } from "../api";
+import { useAuth } from "../hooks";
+import { UserRatings, ProfileHeaderProfile, ProfileSkeleton } from "../components";
 import logger from "../utils/logger";
 
 /* ===================== PROFILE FUNCTION ===================== */
@@ -140,7 +137,7 @@ export default function Profile() {
 
             {/* Profile Header - includes avatar, details, stats, and action buttons */}
             <div style={{ background: "#fff", padding: "40px 36px", borderRadius: "16px", boxShadow: "0 20px 40px rgba(0,0,0,0.08)", maxWidth: "820px", margin: "0 auto 48px" }}>
-              <ProfileHeader
+              <ProfileHeaderProfile
                 profileUser={profileUser}
                 ratings={ratings}
                 works={works}

@@ -14,8 +14,7 @@
  */
 
 import { useEffect, useState, useCallback, useRef } from 'react';
-import { getPopularWorks, getAllWorks } from '../api/works';
-import { getUserFollowing } from '../api/users';
+import { getPopularWorks, getAllWorks, getUserFollowing } from '../api';
 import { testConnection } from '../api/client';
 import { processPopularWorks, processFollowingData, getRandomWorks } from '../utils/homePageUtils';
 import { WORK_TYPES, HOME_CAROUSEL_LIMIT, STORAGE_KEY_JUST_LOGGED_IN } from '../config/constants';

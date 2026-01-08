@@ -7,7 +7,7 @@
 import { useMemo } from 'react';
 import ErrorBoundary from './ErrorBoundary';
 import { WorkGridSkeleton } from './SkeletonCards';
-import useHorizontalScroll from '../hooks/useHorizontalScroll';
+import { useHorizontalScroll } from '../hooks';
 import { getScrollButtonHandlers } from '../utils/scrollButtonHandlers';
 
 // ========== ERROR FALLBACK: Styled container displayed when carousel rendering fails ==========
@@ -22,9 +22,6 @@ const errorFallback = {
 };
 
 // ========== CAROUSEL: Complete carousel with scroll controls and error boundary ==========
-// Provides error boundary protection, memoized children, scroll buttons, and configurable behavior
-// Supports optional custom styles for wrapper, container, and buttons
-// Can optionally include title, loading state, and empty message rendering
 export default function Carousel({
   children,
   scrollChunk = 3,
@@ -50,10 +47,7 @@ export default function Carousel({
         </h3>
 
         {loading && (
-          <WorkGridSkeleton
-            count={skeletonCount}
-            columns="repeat(auto-fill, minmax(180px, 1fr))"
-          />
+          <WorkGridSkeleton count={skeletonCount} columns="repeat(auto-fill, minmax(180px, 1fr))" />
         )}
         {!loading && (!children || (Array.isArray(children) && children.length === 0)) && (
           emptyMessage ? <p>{emptyMessage}</p> : null
@@ -107,12 +101,7 @@ function CarouselBase({
   const rightHandlers = getScrollButtonHandlers(canScrollRight);
 
   // Default carousel styles
-  const defaultWrapperStyle = {
-    position: 'relative',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '12px',
-  };
+  const defaultWrapperStyle = { position: 'relative', display: 'flex', alignItems: 'center', gap: '12px' };
   // Default container style with horizontal scrolling
   const defaultContainerStyle = {
     display: 'flex',

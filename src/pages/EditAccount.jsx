@@ -4,8 +4,11 @@
  * success/error feedback with auto-redirect, duplicate submission prevention
  */
 
-import { useEffect, useState, useNavigate, useAuth, getUserById, updateUser,
-         FormField, ActionButton, ProfileHeader, MessageBox } from '../imports/editAccountImports';
+import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../hooks';
+import { getUserById, updateUser } from '../api';
+import { FormField, ActionButton, ProfileHeader, MessageBox } from '../components';
 
 // Style definitions for layout, typography, and spacing
 const styles = {

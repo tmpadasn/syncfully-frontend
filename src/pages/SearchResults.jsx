@@ -1,9 +1,11 @@
 // SearchResults - displays works/users matching search query with filtering and shelf operations
-import { useEffect, useState, useCallback, useLocation, useNavigate, addWorkToShelf,
-         removeWorkFromShelf, getOrCreateFavouritesShelf, getUserShelves, FilterBar, WorkListSkeleton,
-         ResultHeader, WorkCard, UserCard, AddToShelfBanner, SearchResultsHeader, WorksSection, UsersSection,
-         SearchResultsLayout, NoResultsMessage, useNavigationWithClearFilters, useAuth, useFavourites,
-         useAddToShelfWorks, logger, fetchSearchResults, getPageTitle } from '../imports/searchResultsImports';
+import { useEffect, useState, useCallback } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { addWorkToShelf, removeWorkFromShelf, getOrCreateFavouritesShelf, getUserShelves } from '../api';
+import { FilterBar, SearchResultsLayout, SearchResultsHeader, WorkListSkeleton, WorksSection, UsersSection, WorkCardSearchResults, UserCard, ResultHeader } from '../components';
+import { useNavigationWithClearFilters, useAuth, useFavourites, useAddToShelfWorks } from '../hooks';
+import logger from '../utils/logger';
+import { fetchSearchResults, getPageTitle } from '../utils/searchUtils';
 
 // Helper: Toggle work in/out of shelf
 const toggleWorkInShelf = async (workId, isInShelf, shelfId) =>
@@ -99,7 +101,7 @@ export default function SearchResults() {
 
   // Render work card with state handlers
   const renderWorkCard = (entity, idx, total) => (
-    <WorkCard
+    <WorkCardSearchResults
       key={entity.entityId}
       entity={entity}
       isInShelf={addedWorks.has(String(entity.entityId))}

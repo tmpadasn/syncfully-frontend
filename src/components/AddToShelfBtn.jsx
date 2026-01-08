@@ -4,8 +4,8 @@
  */
 import { useRef, useState, useContext } from 'react';
 import { FiPlus } from 'react-icons/fi';
-import { addWorkToShelf, getOrCreateFavouritesShelf } from '../api/shelves';
-import { useAddToShelfState, useModalAccessibility } from '../hooks/useAddToShelfBtn';
+import { addWorkToShelf, getOrCreateFavouritesShelf } from '../api';
+import { useAddToShelfState, useModalAccessibility } from '../hooks';
 import { AddToShelfModal } from './AddToShelfBtn/AddToShelfModal';
 import { AuthContext } from '../context/AuthContext';
 
