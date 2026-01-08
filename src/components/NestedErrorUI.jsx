@@ -1,6 +1,6 @@
 import React from 'react';
-import { ErrorButton } from './ErrorBoundary';
 import { IS_DEVELOPMENT } from '../config/constants';
+import { ErrorButton } from './ErrorButtonStyles';
 
 /**
  * NestedErrorUI - Compact component-level error display
@@ -12,33 +12,6 @@ import { IS_DEVELOPMENT } from '../config/constants';
  *   - onReset: Callback to reset error state
  */
 const NestedErrorUI = ({ error, errorInfo, onReset }) => {
-  // ========== BUTTON STYLES ==========
-  // Define primary button style with brown background for main action
-  const primaryButtonStyle = {
-    padding: '12px 24px',
-    border: 'none',
-    borderRadius: 8,
-    cursor: 'pointer',
-    fontSize: '15px',
-    fontWeight: '600',
-    transition: 'all 0.2s ease',
-    background: '#9a4207',
-    color: 'white',
-  };
-
-  // Define secondary button style with gray background for secondary action
-  const secondaryButtonStyle = {
-    padding: '12px 24px',
-    border: 'none',
-    borderRadius: 8,
-    cursor: 'pointer',
-    fontSize: '15px',
-    fontWeight: '600',
-    transition: 'all 0.2s ease',
-    background: '#6c757d',
-    color: 'white',
-  };
-
   return (
     // ========== OUTER CONTAINER ==========
     // Centered container with padding and max-width for responsive design
@@ -82,18 +55,18 @@ const NestedErrorUI = ({ error, errorInfo, onReset }) => {
           {/* Try Again button - resets error boundary */}
           <ErrorButton
             label="Try Again"
-            style={primaryButtonStyle}
             onClick={onReset}
             bgColor="#9a4207"
             bgColorHover="#7a3406"
+            variant="primary"
           />
           {/* Go Home button - navigates to root */}
           <ErrorButton
             label="Go Home"
-            style={secondaryButtonStyle}
             onClick={() => (window.location.href = '/')}
             bgColor="#6c757d"
             bgColorHover="#5a6268"
+            variant="secondary"
           />
         </div>
       </div>

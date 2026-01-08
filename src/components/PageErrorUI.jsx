@@ -1,6 +1,6 @@
 import React from 'react';
-import { ErrorButton } from './ErrorBoundary';
 import { IS_DEVELOPMENT } from '../config/constants';
+import { ErrorButton } from './ErrorButtonStyles';
 
 /**
  * PageErrorUI - Full-page error display
@@ -8,45 +8,6 @@ import { IS_DEVELOPMENT } from '../config/constants';
  *
  */
 const PageErrorUI = ({ error, errorInfo, onReset }) => {
-  // ========== BUTTON STYLES ==========
-  // Define primary button style with brown background for main action
-  const primaryButtonStyle = {
-    padding: '12px 24px',
-    border: 'none',
-    borderRadius: 8,
-    cursor: 'pointer',
-    fontSize: '15px',
-    fontWeight: '600',
-    transition: 'all 0.2s ease',
-    background: '#9a4207',
-    color: 'white',
-  };
-
-  // Define secondary button style with gray background for secondary action
-  const secondaryButtonStyle = {
-    padding: '12px 24px',
-    border: 'none',
-    borderRadius: 8,
-    cursor: 'pointer',
-    fontSize: '15px',
-    fontWeight: '600',
-    transition: 'all 0.2s ease',
-    background: '#6c757d',
-    color: 'white',
-  };
-
-  // Define tertiary button style with white background and border
-  const tertiaryButtonStyle = {
-    padding: '12px 24px',
-    border: '2px solid #ddd',
-    borderRadius: 8,
-    cursor: 'pointer',
-    fontSize: '15px',
-    fontWeight: '600',
-    transition: 'all 0.2s ease',
-    background: 'white',
-    color: '#333',
-  };
 
   return (
     // ========== PAGE LAYOUT ==========
@@ -102,26 +63,26 @@ const PageErrorUI = ({ error, errorInfo, onReset }) => {
               {/* Reload Page button - resets error boundary */}
               <ErrorButton
                 label="🔄 Reload Page"
-                style={primaryButtonStyle}
                 onClick={onReset}
                 bgColor="#9a4207"
                 bgColorHover="#7a3406"
+                variant="primary"
               />
               {/* Go Home button - navigates to root */}
               <ErrorButton
                 label="🏠 Go Home"
-                style={secondaryButtonStyle}
                 onClick={() => (window.location.href = '/')}
                 bgColor="#6c757d"
                 bgColorHover="#5a6268"
+                variant="secondary"
               />
               {/* Go Back button - navigates to previous page */}
               <ErrorButton
                 label="← Go Back"
-                style={tertiaryButtonStyle}
                 onClick={() => window.history.back()}
                 bgColor="white"
                 bgColorHover="#f5f5f5"
+                variant="tertiary"
               />
             </div>
             {/* ========== DEVELOPMENT ERROR DETAILS ========== */}

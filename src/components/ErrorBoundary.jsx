@@ -13,32 +13,7 @@ import React from 'react';
 import logger from '../utils/logger';
 import NestedErrorUI from './NestedErrorUI';
 import PageErrorUI from './PageErrorUI';
-
-// ========== ERROR BUTTON ==========
-// Interactive button with hover effects and color transitions
-// Used in error UI components for consistent styling and interaction patterns
-const ErrorButton = ({ label, style, onClick, bgColor, bgColorHover }) => {
-  const handleMouseEnter = (e) => {
-    e.currentTarget.style.background = bgColorHover;
-    e.currentTarget.style.transform = 'translateY(-2px)';
-  };
-
-  const handleMouseLeave = (e) => {
-    e.currentTarget.style.background = bgColor;
-    e.currentTarget.style.transform = 'translateY(0)';
-  };
-
-  return (
-    <button
-      style={style}
-      onClick={onClick}
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
-    >
-      {label}
-    </button>
-  );
-};
+import { ErrorButton } from './ErrorButtonStyles';
 
 
 
