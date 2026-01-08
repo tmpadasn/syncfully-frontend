@@ -3,9 +3,7 @@
 import { useNavigate } from 'react-router-dom';
 import { useSearchSync } from '../../hooks/useSearchSync';
 import useAuth from '../../hooks/useAuth';
-import HeaderLogo from './HeaderLogo.jsx';
-import HeaderSearch from './HeaderSearch.jsx';
-import HeaderProfile from './HeaderProfile.jsx';
+import { HeaderLogo, HeaderSearch, HeaderProfile } from './parts.jsx';
 
 /* ===================== UI STYLES ===================== */
 //  Keep component-scoped styles next to markup for fast visual iteration.
