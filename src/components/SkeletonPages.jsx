@@ -1,5 +1,6 @@
 import { Skeleton } from './SkeletonBase';
-import { ProfileHeaderSkeleton, RatingStatsSkeleton, GenreStatsSkeleton, RatingHistorySkeleton, RatingDistributionSkeleton } from './SkeletonSections';
+import { ProfileHeaderSkeleton, RatingStatsSkeleton, GenreStatsSkeleton,
+         RatingHistorySkeleton, RatingDistributionSkeleton } from './SkeletonSections';
 
 /** Work details page skeleton - 3-column layout with cover/sidebar, main content, and ratings */
 export function WorkDetailsSkeleton() {
@@ -21,7 +22,8 @@ export function WorkDetailsSkeleton() {
           </div>
           <Skeleton width="30%" height="24px" style={{ marginBottom: 12 }} />
           <Skeleton width="100%" height="64px" borderRadius={4} style={{ marginBottom: 4 }} />
-          <Skeleton width="120px" height="32px" borderRadius={4} style={{ marginLeft: 'auto', display: 'block', marginBottom: 24 }} />
+          <Skeleton width="120px" height="32px" borderRadius={4}
+                    style={{ marginLeft: 'auto', display: 'block', marginBottom: 24 }} />
           <Skeleton width="40%" height="24px" style={{ marginBottom: 12 }} />
           <div style={{ display: 'flex', gap: '12px', marginTop: '12px' }}>
             {Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} width="140px" height="200px" borderRadius={12} />)}
@@ -36,7 +38,9 @@ export function WorkDetailsSkeleton() {
   );
 }
 
-/** User profile page skeleton - header with avatar/name/buttons, rating stats, genre stats, and rating history */
+/** User profile page skeleton - header with avatar/name/buttons,
+ * rating stats, genre stats, and rating history
+ */
 export function ProfileSkeleton() {
   return (
     <div className="page-container">

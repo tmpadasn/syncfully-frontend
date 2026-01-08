@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate, useLocation, useSearchParams } from "react-router-dom";
 import { useAuth } from "../hooks";
 import { STORAGE_KEY_JUST_LOGGED_IN } from "../config/constants";
-import { LoginHeader, LoginForm, LoginModeToggle, AlertMessage } from "../components";
+import { LoginHeader, LoginForm, LoginModeToggle } from "../components";
 
 /**
  * Login Page Component
@@ -142,12 +142,6 @@ export default function Login() {
           {/* Page header with mode-specific title and description */}
           <LoginHeader isLogin={isLogin} />
 
-          {/* Redirect notification (e.g., after account deletion) */}
-          {redirectMessage && <AlertMessage type="success" message={redirectMessage} />}
-
-          {/* Error message display from form validation or API */}
-          {error && <AlertMessage type="error" message={error} />}
-
           {/* Main form with mode-specific fields and validation */}
           <LoginForm
             isLogin={isLogin}
@@ -162,6 +156,8 @@ export default function Login() {
             touched={touched}
             setTouched={setTouched}
             loading={loading}
+            error={error}
+            redirectMessage={redirectMessage}
             onSubmit={handleSubmit}
           />
 

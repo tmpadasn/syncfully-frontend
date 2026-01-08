@@ -2,7 +2,8 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { addWorkToShelf, removeWorkFromShelf, getOrCreateFavouritesShelf, getUserShelves } from '../api';
-import { FilterBar, SearchResultsLayout, SearchResultsHeader, WorkListSkeleton, WorksSection, UsersSection, WorkCardSearchResults, UserCard, ResultHeader } from '../components';
+import { FilterBar, SearchResultsLayout, SearchResultsHeader, WorkListSkeleton, WorksSection,
+         UsersSection, WorkCardSearchResults, UserCard, ResultHeader, NoResultsMessage, AddToShelfBanner } from '../components';
 import { useNavigationWithClearFilters, useAuth, useFavourites, useAddToShelfWorks } from '../hooks';
 import logger from '../utils/logger';
 import { fetchSearchResults, getPageTitle } from '../utils/searchUtils';
@@ -27,7 +28,8 @@ export default function SearchResults() {
 
   // Parse URL query and filter parameters
   const params = new URLSearchParams(search);
-  const { q: query = '', type: typeFilter = '', year: yearFilter = '', genre: genreFilter = '', rating: ratingFilter = '', addToShelf: addToShelfId = '', shelfName = '' } = Object.fromEntries(params);
+  const { q: query = '', type: typeFilter = '', year: yearFilter = '', genre: genreFilter = '',
+          rating: ratingFilter = '', addToShelf: addToShelfId = '', shelfName = '' } = Object.fromEntries(params);
 
   // Results and UI state
   const [results, setResults] = useState({ works: [], users: [] });
@@ -163,7 +165,7 @@ export default function SearchResults() {
       {/* Shelf addition banner */}
       {addToShelfId && (
         <div style={{ marginTop: '20px' }}>
-          <AddToShelfBanner shelfName={shelfName} onClose={closeBanner} onBack={() => navigate('/shelves')} />
+          <AddToShelfBanner shelfName={shelfName} onClose={closeBanner} onBackToShelves={() => navigate('/shelves')} />
         </div>
       )}
     </SearchResultsLayout>

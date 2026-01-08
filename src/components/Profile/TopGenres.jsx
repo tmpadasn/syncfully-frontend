@@ -46,7 +46,7 @@ export default function TopGenres({ ratings, works }) {
           letterSpacing: 0.8,
         }}
       >
-        \ud83c\udf2d Most Rated Genres
+        🎭 Most Rated Genres
       </div>
 
       {/* Genre frequency bars list */}
