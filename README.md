@@ -4,7 +4,7 @@
 
 A React-based web application for discovering, rating, and organizing entertainment content with personalized recommendations and social features.
 
-## 📋 Table of Contents -------
+## 📋 Table of Contents
 
 - [Features](#features)
 - [Tech Stack](#tech-stack)
@@ -26,17 +26,17 @@ A React-based web application for discovering, rating, and organizing entertainm
 
 ## 🛠 Tech Stack
 
-- **React** 18.2 - UI library
-- **React Router** 6.12 - Client-side routing
-- **Axios** 1.4 - HTTP client
-- **React Icons** 5.5 - Icon library
-- **Create React App** 5.0 - Build tooling
+- **React** 18.2.0 - UI library
+- **React Router** 6.16.0 - Client-side routing
+- **Axios** 1.6.0 - HTTP client
+- **React Icons** 4.11.0 - Icon library
+- **Create React App** 5.0.1 - Build tooling
 
 ## 🚀 Getting Started
 
 ### Prerequisites
 
-- Node.js (v16 or higher)
+- Node.js (v20 or higher)
 - npm
 - Backend server running (see backend setup below)
 
@@ -225,23 +225,6 @@ src/
 └── styles/                # Global styles
     └── global.css
 ```
-
-### Component Architecture
-
-#### Error Handling
-- **ErrorBoundary.jsx**: Class component managing error state with `getDerivedStateFromError` and `componentDidCatch`
-- **NestedErrorUI.jsx**: Compact error display for component-level errors (yellow warning style)
-- **PageErrorUI.jsx**: Full-page error display with recovery actions
-- **ErrorButtonStyles.jsx**: Reusable error button component with three variants (primary, secondary, tertiary)
-
-#### Authentication
-- **FormInput.jsx**: Reusable form input with validation, error display, and field-level error styling
-- **LoginForm.jsx**: Unified form component for login/signup with inline alert message rendering
-- **Alert Logic**: Embedded in LoginForm (no separate AlertMessage component) for cleaner architecture
-
-#### Search & Filtering
-- **FilterBar.jsx**: Dynamic filter controls synced with URL query parameters
-- **useFilterOptions.js**: Hook that loads and transforms filter options from backend
 
 #### Features
 - URL-based filter persistence for bookmarking and sharing
