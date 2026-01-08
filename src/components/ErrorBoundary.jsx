@@ -76,14 +76,18 @@ class ErrorBoundaryClass extends React.Component {
   reset = () => this.setState({ hasError: false, error: null, errorInfo: null });
 
   // ========== HELPER METHOD: Render interactive button with hover effects and smooth transitions ==========
-  // Creates styled button with dynamic background color changes on hover and vertical translate effect
-  renderButton(label, style, onClick, bgColor, bgColorHover) {
+  // Accept a single `config` object to avoid long positional parameter lists.
+  // Named properties: `label`, `style`, `onClick`, `bg`, `bgHover`.
+  renderButton({ label, style, onClick, bg, bgHover }) {
+    const baseBg = bg ?? style?.background ?? '';
+    const hoverBg = bgHover ?? baseBg;
+
     return (
       <button
         style={style}
         onClick={onClick}
-        onMouseEnter={(e) => { e.currentTarget.style.background = bgColorHover; e.currentTarget.style.transform = 'translateY(-2px)'; }}
-        onMouseLeave={(e) => { e.currentTarget.style.background = bgColor; e.currentTarget.style.transform = 'translateY(0)'; }}
+        onMouseEnter={(e) => { e.currentTarget.style.background = hoverBg; e.currentTarget.style.transform = 'translateY(-2px)'; }}
+        onMouseLeave={(e) => { e.currentTarget.style.background = baseBg; e.currentTarget.style.transform = 'translateY(0)'; }}
       >
         {label}
       </button>
@@ -102,8 +106,8 @@ class ErrorBoundaryClass extends React.Component {
           <h2 style={nestedStyles.errorHeading}>⚠️ Something went wrong</h2>
           <p style={nestedStyles.errorMessage}>We encountered an unexpected error. Don't worry, your data is safe.</p>
           <div style={nestedStyles.buttonContainer}>
-            {this.renderButton('Try Again', nestedStyles.primaryButton, this.reset, COLORS.primary, COLORS.primaryDark)}
-            {this.renderButton('Go Home', nestedStyles.secondaryButton, () => window.location.href = '/', COLORS.secondary, '#5a6268')}
+            {this.renderButton({ label: 'Try Again', style: nestedStyles.primaryButton, onClick: this.reset, bg: COLORS.primary, bgHover: COLORS.primaryDark })}
+            {this.renderButton({ label: 'Go Home', style: nestedStyles.secondaryButton, onClick: () => (window.location.href = '/'), bg: COLORS.secondary, bgHover: '#5a6268' })}
           </div>
         </div>
         {IS_DEVELOPMENT && this.state.error && (
@@ -133,9 +137,9 @@ class ErrorBoundaryClass extends React.Component {
                 Don't worry – your data is safe, and you can try one of the options below.
               </p>
               <div style={pageStyles.buttonContainer}>
-                {this.renderButton('🔄 Reload Page', pageStyles.primaryButton, this.reset, COLORS.primary, COLORS.primaryDark)}
-                {this.renderButton('🏠 Go Home', pageStyles.secondaryButton, () => window.location.href = '/', COLORS.secondary, '#5a6268')}
-                {this.renderButton('← Go Back', pageStyles.tertiaryButton, () => window.history.back(), 'white', '#f5f5f5')}
+                {this.renderButton({ label: '🔄 Reload Page', style: pageStyles.primaryButton, onClick: this.reset, bg: COLORS.primary, bgHover: COLORS.primaryDark })}
+                {this.renderButton({ label: '🏠 Go Home', style: pageStyles.secondaryButton, onClick: () => (window.location.href = '/'), bg: COLORS.secondary, bgHover: '#5a6268' })}
+                {this.renderButton({ label: '← Go Back', style: pageStyles.tertiaryButton, onClick: () => window.history.back(), bg: 'white', bgHover: '#f5f5f5' })}
               </div>
               {IS_DEVELOPMENT && this.state.error && (
                 <details style={pageStyles.detailsSection}>
