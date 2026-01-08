@@ -1,5 +1,5 @@
-import { Link } from '../../imports/workDetailsImports';
-import { WorkCard } from '../../imports/workDetailsImports';
+import { Link } from 'react-router-dom';
+import { WorkCard } from '../index';
 
 /**
  * Main content component for work details page

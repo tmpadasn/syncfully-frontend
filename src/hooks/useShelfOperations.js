@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import { removeWorkFromShelf } from '../imports/shelvesImports';
+import { removeWorkFromShelf } from '../api';
 
 /**
  * useShelfOperations Hook

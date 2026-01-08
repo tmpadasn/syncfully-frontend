@@ -3,11 +3,8 @@
  Shows popular works, recent activity, and carousels.
  Loads data on mount and keeps UI responsive.
 */
-import useNavigationWithClearFilters from '../hooks/useNavigationWithClearFilters';
-import useAuth from '../hooks/useAuth';
-import { useHomePageData } from '../hooks/useHomePageData';
-import { FriendCardsCarousel, WorkCarousel } from '../components/HomeCarousels';
-import { LoginPrompt } from '../components/LoginPrompt';
+import { useNavigationWithClearFilters, useAuth, useHomePageData } from '../hooks';
+import { FriendCardsCarousel, WorkCarousel, LoginPrompt } from '../components';
 
 // Home page component.
 // Aggregates multiple feeds (popular, friends, following) on one page.

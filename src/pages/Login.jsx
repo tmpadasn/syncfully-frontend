@@ -1,11 +1,8 @@
 import { useState } from "react";
 import { useNavigate, useLocation, useSearchParams } from "react-router-dom";
-import useAuth from "../hooks/useAuth";
+import { useAuth } from "../hooks";
 import { STORAGE_KEY_JUST_LOGGED_IN } from "../config/constants";
-import LoginHeader from "../components/Auth/LoginHeader";
-import LoginForm from "../components/Auth/LoginForm";
-import LoginModeToggle from "../components/Auth/LoginModeToggle";
-import AlertMessage from "../components/Auth/AlertMessage";
+import { LoginHeader, LoginForm, LoginModeToggle, AlertMessage } from "../components";
 
 /**
  * Login Page Component

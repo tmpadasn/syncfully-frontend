@@ -3,13 +3,13 @@
  Shows personalized picks and fallback lists.
  Uses backend recommendations when available.
 */
-import {
-  useEffect, useState, Link, useNavigate, useAuth,
-  useNavigationWithClearFilters, getUserRecommendations,
-  getAllWorks, Carousel,
-  logger, extractWorksFromResponse, normalizeWorks, shuffleArray,
-} from '../imports/recommendationsImports';
-import WorkCard from '../components/WorkCard';
+import { useEffect, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { useAuth, useNavigationWithClearFilters } from '../hooks';
+import { getUserRecommendations, getAllWorks } from '../api';
+import { WorkCard, Carousel } from '../components';
+import logger from '../utils/logger';
+import { extractWorksFromResponse, normalizeWorks, shuffleArray } from '../utils/normalize';
 
 /* ===================== RECOMMENDATIONS FUNCTION ===================== */
 

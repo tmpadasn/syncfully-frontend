@@ -1,9 +1,10 @@
 /* Header: primary navigation and search bar; presents profile affordances and global navigation. */
 /* Keeps search sync with URL and exposes accessible profile actions. */
 import { useNavigate } from 'react-router-dom';
-import { useSearchSync } from '../../hooks/useSearchSync';
-import useAuth from '../../hooks/useAuth';
-import { HeaderLogo, HeaderSearch, HeaderProfile } from './parts.jsx';
+import { useSearchSync, useAuth } from '../../hooks';
+import HeaderLogo from './HeaderLogo.jsx';
+import HeaderSearch from './HeaderSearch.jsx';
+import HeaderProfile from './HeaderProfile.jsx';
 
 /* ===================== UI STYLES ===================== */
 //  Keep component-scoped styles next to markup for fast visual iteration.
@@ -124,14 +125,14 @@ const styles = {
 // while preserving URL state so navigation and sharing remain predictable.
 export default function Header() {
   const { user, isGuest, logout } = useAuth();
-  
+
 
   const navigate = useNavigate();
   // Extract search state and debounce logic into a hook for clarity.
   const { term, handleSearchInput, doSearch, debounceTimerRef } = useSearchSync();
 
   return (
-    <header 
+    <header
       style={styles.header}
       role="banner"
     >

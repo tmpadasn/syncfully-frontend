@@ -13,7 +13,7 @@ import {
   getUserShelves,
   getOrCreateFavouritesShelf,
   getShelfWorks,
-} from '../api/shelves';
+} from '../api';
 import {
   extractShelvesFromResponse,
   extractWorksFromResponse,

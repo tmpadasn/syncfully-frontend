@@ -1,4 +1,4 @@
-import { WorkCard } from '../../imports/workDetailsImports';
+import { WorkCard } from '../index';
 
 /**
  * Left sidebar component for work details page

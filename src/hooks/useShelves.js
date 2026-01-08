@@ -8,7 +8,7 @@ import {
   addWorkToShelf,
   removeWorkFromShelf,
   getOrCreateFavouritesShelf
-} from '../api/shelves';
+} from '../api';
 
 /**
  * Custom hook for managing user shelves

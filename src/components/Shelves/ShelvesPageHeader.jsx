@@ -2,7 +2,7 @@
  * ShelvesPageHeader Component
  * Displays the "My Shelves" title and "New Shelf" button
  */
-import { FiPlus } from '../../imports/shelvesImports';
+import { FiPlus } from 'react-icons/fi';
 
 export default function ShelvesPageHeader({ onCreateClick }) {
   return (
