@@ -11,6 +11,10 @@ export default function HeaderProfile({ user, isGuest, logout, navigate, styles 
 
   return (
     <nav style={styles.nav} aria-label="Main navigation">
+      {/* Profile affordance: conditionally renders a login entrypoint for
+          unauthenticated users and an avatar+username for authenticated
+          users; uses `aria-label` and subtle hover transforms to improve
+          discoverability without altering navigation semantics. */}
       <Link
         to={profilePath}
         style={styles.profileLink(isGuest)}
