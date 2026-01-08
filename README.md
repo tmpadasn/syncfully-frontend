@@ -37,7 +37,7 @@ A React-based web application for discovering, rating, and organizing entertainm
 ### Prerequisites
 
 - Node.js (v16 or higher)
-- npm 
+- npm
 - Backend server running (see backend setup below)
 
 ### Backend Setup (Required First)
@@ -58,7 +58,7 @@ The frontend requires the backend API to be running:
    ```bash
    cp .env.example .env
    ```
-   
+
    Edit `.env`:
    ```env
    PORT=3000
@@ -95,12 +95,12 @@ The frontend requires the backend API to be running:
    ```bash
    cp .env.example .env
    ```
-   
+
    Edit `.env` if needed:
    ```env
    # API Configuration
    REACT_APP_API_URL=http://localhost:3000/api
-   
+
    # Default Profile Images
    REACT_APP_DEFAULT_PROFILE_URL=http://localhost:3000/uploads/profiles/profile_picture.jpg
    REACT_APP_DEFAULT_AVATAR_URL=https://upload.wikimedia.org/wikipedia/commons/a/ac/Default_pfp.jpg
@@ -110,7 +110,7 @@ The frontend requires the backend API to be running:
    ```bash
    npm start
    ```
-   
+
    The app will open at `http://localhost:3000` (or 3001 if port 3000 is taken by backend)
 
 ## 📁 Project Structure
@@ -126,22 +126,70 @@ src/
 │   ├── ratings.js         # Rating endpoints
 │   └── search.js          # Search functionality
 ├── components/            # Reusable UI components
-│   ├── Header.jsx         # Main navigation header
-│   ├── FilterBar.jsx      # Dynamic filtering component
-│   ├── WorkCard.jsx       # Work display card
-│   ├── WorkCardCarousel.jsx
-│   ├── HomeCarousel.jsx
-│   ├── AddToShelfBtn.jsx
-│   ├── Toast.jsx          # Notification system
-│   ├── Skeleton.jsx       # Loading skeletons
+│   ├── index.js           # Barrel exports for all components
+│   ├── Carousel.jsx
 │   ├── ErrorBoundary.jsx
-│   ├── ErrorBoundaryTester.jsx
-│   ├── PageErrorBoundary.jsx
-│   └── users/             # User-specific components
-│       ├── UserForm.jsx
-│       ├── UserRatings.jsx
-│       ├── UserDeleteButton.jsx
-│       └── UserRecommendations.jsx
+│   ├── ErrorButtonStyles.jsx
+│   ├── FeatureIcon.jsx
+│   ├── HomeCarousels.jsx
+│   ├── HoverBar.jsx
+│   ├── LoginPrompt.jsx
+│   ├── NestedErrorUI.jsx
+│   ├── PageErrorUI.jsx
+│   ├── Toast.jsx          # Notification system
+│   ├── UserRatings.jsx
+│   ├── WorkCard.jsx       # Work display card
+│   ├── SkeletonBase.jsx   # Loading skeleton base
+│   ├── SkeletonCards.jsx  # Card skeletons
+│   ├── SkeletonPages.jsx  # Page skeletons
+│   ├── SkeletonSections.jsx # Section skeletons
+│   ├── Auth/              # Authentication components
+│   │   ├── FormInput.jsx  # Reusable form input with validation
+│   │   ├── LoginForm.jsx  # Login/signup form logic
+│   │   ├── LoginHeader.jsx
+│   │   └── LoginModeToggle.jsx
+│   ├── Header/            # Main navigation header
+│   │   ├── Header.jsx     # Main navigation component
+│   │   ├── HeaderLogo.jsx
+│   │   ├── HeaderProfile.jsx
+│   │   └── HeaderSearch.jsx
+│   ├── AddToShelfBtn/     # Shelf addition modal
+│   │   ├── AddToShelfModal.jsx
+│   │   └── ShelfOptionButton.jsx
+│   ├── EditAccount/       # Account editing components
+│   │   ├── ActionButton.jsx
+│   │   ├── FormField.jsx
+│   │   ├── MessageBox.jsx
+│   │   └── ProfileHeader.jsx
+│   ├── FilterBar/         # Dynamic filtering
+│   │   ├── FilterBar.jsx
+│   │   ├── FilterItem.jsx
+│   │   ├── MenuControl.jsx
+│   │   └── controlsConfig.js
+│   ├── Profile/           # Profile components
+│   │   ├── ActionButtons.jsx
+│   │   ├── EditDeleteButtons.jsx
+│   │   ├── FollowingSection.jsx
+│   │   ├── ProfileHeader.jsx
+│   │   ├── RatingBreakdown.jsx
+│   │   └── TopGenres.jsx
+│   ├── SearchResults/     # Search results components
+│   │   ├── AddToShelfBanner.jsx
+│   │   ├── ResultHeader.jsx
+│   │   ├── SearchResultsLayout.jsx
+│   │   ├── UserCard.jsx
+│   │   └── WorkCard.jsx
+│   ├── Shelves/           # Shelf management components
+│   │   ├── ConfirmationMessages.jsx
+│   │   ├── Shelf.jsx
+│   │   ├── ShelfContent.jsx
+│   │   ├── ShelfHeader.jsx
+│   │   ├── ShelfModal.jsx
+│   │   └── ShelvesPageHeader.jsx
+│   └── WorkDetails/       # Work detail components
+│       ├── WorkDetailsLeftSidebar.jsx
+│       ├── WorkDetailsMainContent.jsx
+│       └── WorkDetailsRatings.jsx
 ├── pages/                 # Route page components
 │   ├── Home.jsx           # Landing page with popular works
 │   ├── SearchResults.jsx  # Search with filters
@@ -151,12 +199,15 @@ src/
 │   ├── Account.jsx        # Current user account
 │   ├── EditAccount.jsx    # Account editing
 │   ├── Login.jsx          # Authentication page
-│   ├── Shelves.jsx        # User shelves management
-|
+│   └── Shelves.jsx        # User shelves management
 ├── hooks/                 # Custom React hooks
+│   ├── index.js           # Barrel exports
 │   ├── useAuth.js         # Authentication state
 │   ├── useShelves.js      # Shelf management
-│   └── useNavigationWithClearFilters.js
+│   ├── useFavourites.js   # Favorites tracking
+│   ├── useAddToShelfWorks.js
+│   ├── useNavigationWithClearFilters.js
+│   └── useFilterOptions.js # Filter options loading
 ├── context/               # React context providers
 │   └── AuthContext.jsx    # Global auth state
 ├── router/                # Routing configuration
@@ -166,11 +217,37 @@ src/
 ├── utils/                 # Utility functions
 │   ├── logger.js          # Debug logging
 │   ├── normalize.js       # Data normalization
+│   ├── searchUtils.js     # Search-related utilities
+│   ├── validators.js      # Form validation helpers
+│   └── helpers.js         # General utilities
 ├── config/                # Configuration constants
 │   └── constants.js       # App-wide constants
 └── styles/                # Global styles
     └── global.css
 ```
+
+### Component Architecture
+
+#### Error Handling
+- **ErrorBoundary.jsx**: Class component managing error state with `getDerivedStateFromError` and `componentDidCatch`
+- **NestedErrorUI.jsx**: Compact error display for component-level errors (yellow warning style)
+- **PageErrorUI.jsx**: Full-page error display with recovery actions
+- **ErrorButtonStyles.jsx**: Reusable error button component with three variants (primary, secondary, tertiary)
+
+#### Authentication
+- **FormInput.jsx**: Reusable form input with validation, error display, and field-level error styling
+- **LoginForm.jsx**: Unified form component for login/signup with inline alert message rendering
+- **Alert Logic**: Embedded in LoginForm (no separate AlertMessage component) for cleaner architecture
+
+#### Search & Filtering
+- **FilterBar.jsx**: Dynamic filter controls synced with URL query parameters
+- **useFilterOptions.js**: Hook that loads and transforms filter options from backend
+
+#### Features
+- URL-based filter persistence for bookmarking and sharing
+- Dynamic filter options loaded from backend catalogue
+- Touch-based validation display in forms
+- Type-specific error and success messaging
 
 ## 🗺 Available Routes
 
