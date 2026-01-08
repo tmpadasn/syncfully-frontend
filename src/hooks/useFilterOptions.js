@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { getAllWorks } from '../../api/works';
-import logger from '../../utils/logger';
+import { getAllWorks } from '../api/works';
+import logger from '../utils/logger';
 
 /*
   useFilterOptions

@@ -2,36 +2,38 @@
  * LoginForm Component
  * Unified form component for both login and signup functionality.
  * Handles form validation, field management, and submission based on the current mode.
- *
- * Props:
- *   - isLogin (boolean): Current authentication mode (true for login, false for signup)
- *   - identifier (string): Email/username value for login mode
- *   - setIdentifier (function): Updates identifier state
- *   - username (string): Username value for signup mode
- *   - setUsername (function): Updates username state
- *   - email (string): Email value for signup mode
- *   - setEmail (function): Updates email state
- *   - password (string): Password value (both modes)
- *   - setPassword (function): Updates password state
- *   - touched (object): Tracks which fields have been interacted with (for validation display)
- *   - setTouched (function): Updates touched state
- *   - loading (boolean): Whether form is in submitting state (disables submit button)
- *   - onSubmit (function): Callback when form is submitted
- *
- * Validation Rules:
- *   - Login: identifier and password required
- *   - Signup: username, email (valid format), and password (min 4 chars) required
- *   - Password validation is continuous (validates as user types)
- *   - Other field validation shows on blur (touched state)
- *
- * Features:
- *   - Mode-specific field rendering (different fields for login vs signup)
- *   - Real-time password length validation
- *   - Touch-based error display (errors only show after field interaction)
- *   - Loading state button (disabled during submission)
- *   - Full form validation before submission
  */
 import FormInput from './FormInput';
+
+// ========== INLINE ALERT MESSAGE LOGIC ==========
+// Render alert message with type-specific styling and ARIA attributes
+function renderAlert(alertData) {
+  if (!alertData || !alertData.message) return null;
+
+  const { type: alertType = 'error', message } = alertData;
+  const alertStyles = {
+    error: { padding: "16px 18px", marginBottom: 20, borderRadius: 10, border: "1px solid #f5c6cb",
+             background: "#f8d7da", color: "#721c24" },
+    success: { padding: "16px 18px", marginBottom: 20, borderRadius: 10, border: "1px solid #81c784",
+               background: "#e8f5e9", color: "#2e7d32" },
+  };
+
+  return (
+    <div
+      style={{
+        ...alertStyles[alertType],
+        fontSize: 14,
+        fontWeight: 500,
+        lineHeight: 1.5,
+        textAlign: "center",
+      }}
+      role={alertType === 'error' ? 'alert' : 'status'}
+      aria-live={alertType === 'error' ? 'assertive' : 'polite'}
+    >
+      {message}
+    </div>
+  );
+}
 
 export default function LoginForm({
   isLogin,
@@ -46,6 +48,8 @@ export default function LoginForm({
   touched,
   setTouched,
   loading,
+  error,
+  redirectMessage,
   onSubmit,
 }) {
   // Mark field as touched when user leaves it (triggers error display)
@@ -58,6 +62,12 @@ export default function LoginForm({
   return (
     // Form with noValidate to use custom validation logic
     <form onSubmit={onSubmit} style={{ width: "100%" }} noValidate>
+      {/* Redirect notification (e.g., after account deletion) */}
+      {renderAlert(redirectMessage ? { type: 'success', message: redirectMessage } : null)}
+
+      {/* Error message display from form validation or API */}
+      {renderAlert(error ? { type: 'error', message: error } : null)}
+
       {/* SIGNUP FIELDS: Only show username and email fields in signup mode */}
       {!isLogin && (
         <>

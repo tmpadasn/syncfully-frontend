@@ -18,7 +18,14 @@ function UserListSection({ users = [], title = "Users", emoji = "👤", emptyMes
   return (
     <div>
       {/* Section title */}
-      <div style={{ fontSize: 13, fontWeight: 800, textTransform: "uppercase", color: "#8a6f5f", marginBottom: 14, opacity: 0.75, letterSpacing: 0.8 }}>
+      <div style={{
+            fontSize: 13,
+            fontWeight: 800,
+            textTransform: "uppercase",
+            color: "#8a6f5f",
+            marginBottom: 14,
+            opacity: 0.75,
+            letterSpacing: 0.8 }}>
         {emoji} {title}
       </div>
 

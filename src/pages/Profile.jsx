@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
-import { getUserById, getUserRatings, getUserFollowers, getUserFollowing, followUser, unfollowUser, getAllWorks } from "../api";
+import { getUserById, getUserRatings, getUserFollowers, getUserFollowing,
+         followUser, unfollowUser, getAllWorks } from "../api";
 import { useAuth } from "../hooks";
 import { UserRatings, ProfileHeaderProfile, ProfileSkeleton } from "../components";
 import logger from "../utils/logger";
@@ -10,7 +11,8 @@ import logger from "../utils/logger";
 // Displays another user's public profile and rating summaries. Loads profile
 // data and ratings, then derives follow relationship state to conditionally
 // render follow actions. Data loading is batched to reduce round-trips.
-// This page aggregates public profile data, ratings, and follow-state; comments document data-fetching and follow relationship logic.
+// This page aggregates public profile data, ratings, and follow-state;
+// comments document data-fetching and follow relationship logic.
 
 export default function Profile() {
   const { userId } = useParams();
@@ -136,7 +138,8 @@ export default function Profile() {
           <main className="page-main" style={{ maxWidth: 860, margin: "0 auto" }}>
 
             {/* Profile Header - includes avatar, details, stats, and action buttons */}
-            <div style={{ background: "#fff", padding: "40px 36px", borderRadius: "16px", boxShadow: "0 20px 40px rgba(0,0,0,0.08)", maxWidth: "820px", margin: "0 auto 48px" }}>
+            <div style={{ background: "#fff", padding: "40px 36px", borderRadius: "16px",
+                          boxShadow: "0 20px 40px rgba(0,0,0,0.08)", maxWidth: "820px", margin: "0 auto 48px" }}>
               <ProfileHeaderProfile
                 profileUser={profileUser}
                 ratings={ratings}

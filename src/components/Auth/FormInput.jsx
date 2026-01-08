@@ -3,27 +3,8 @@
  * Reusable, accessible input field with built-in validation, error handling, and styling.
  * Provides consistent UI across login/signup forms with visual feedback.
  *
- * Props:
- *   - id (string): Unique identifier for the input element and accessibility
- *   - label (string): Display label for the input field
- *   - type (string): Input type (text, email, password, etc.) - defaults to 'text'
- *   - value (string): Current input value
- *   - onChange (function): Callback when input value changes
- *   - onBlur (function): Callback when input loses focus
- *   - onFocus (function, optional): Callback when input gains focus
- *   - touched (boolean): Whether field has been interacted with (for validation display)
- *   - error (string|null): Error message to display if validation fails
- *   - required (boolean): Whether field is required - defaults to true
- *   - autoComplete (string): HTML autocomplete attribute value
- *   - ariaInvalid (boolean): Accessibility indicator of validation state
- *   - ariaDescribedBy (string): ID of error message element for screen readers
- *
- * Features:
- *   - Conditional error styling (border/background color change on error)
- *   - Focus ring effect for visual feedback
- *   - Full ARIA support for accessibility compliance
- *   - Responsive error display (only shown after field is touched)
  */
+
 export default function FormInput({
   id,
   label,

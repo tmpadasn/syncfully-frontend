@@ -4,7 +4,7 @@ import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import FilterItem from './FilterItem';
 import { buildControls } from './controlsConfig';
-import { useFilterOptions } from './useFilterOptions';
+import { useFilterOptions } from '../../hooks/useFilterOptions';
 
 // Component-level contract: the browser URL (query string) is the
 // authoritative representation of filter state. This component keeps

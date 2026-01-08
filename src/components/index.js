@@ -27,7 +27,6 @@ export { default as UserRatings } from './UserRatings.jsx';
 export { default as WorkCard } from './WorkCard.jsx';
 
 // ========== AUTH COMPONENTS ==========
-export { default as AlertMessage } from './Auth/AlertMessage.jsx';
 export { default as FormInput } from './Auth/FormInput.jsx';
 export { default as LoginForm } from './Auth/LoginForm.jsx';
 export { default as LoginHeader } from './Auth/LoginHeader.jsx';

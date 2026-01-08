@@ -16,7 +16,13 @@ export default function EditDeleteButtons({ onDelete }) {
 
   return (
     // Two-column grid with equal width buttons separated by gap
-    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginTop: 32, paddingTop: 32, borderTop: "1px solid #efe5db" }}>
+    <div style={{
+          display: "grid",
+          gridTemplateColumns: "1fr 1fr",
+          gap: 16,
+          marginTop: 32,
+          paddingTop: 32,
+          borderTop: "1px solid #efe5db" }}>
       {/* Edit Account Button - navigates to account edit form */}
       <button
         style={{

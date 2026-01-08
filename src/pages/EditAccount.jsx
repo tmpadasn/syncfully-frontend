@@ -12,7 +12,8 @@ import { FormField, ActionButton, ProfileHeader, MessageBox } from '../component
 
 // Style definitions for layout, typography, and spacing
 const styles = {
-  container: { minHeight: '100vh', padding: '40px 20px', background: 'var(--bg)', display: 'flex', justifyContent: 'center', alignItems: 'center' },
+  container: { minHeight: '100vh', padding: '40px 20px', background: 'var(--bg)',
+               display: 'flex', justifyContent: 'center', alignItems: 'center' },
   cardWrapper: { width: '100%', maxWidth: '600px' },
   pageTitle: { textAlign: 'center', marginBottom: 32, fontSize: 36, fontWeight: 900, color: '#392c2c', letterSpacing: '-0.5px' },
   card: { width: '100%', background: '#ffffff', padding: '36px 80px', borderRadius: 20,
