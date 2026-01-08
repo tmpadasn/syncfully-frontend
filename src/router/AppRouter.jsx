@@ -1,6 +1,6 @@
 /* AppRouter: route table composing top-level pages within a consistent header and error boundary. */
 import { Routes, Route } from 'react-router-dom';
-import Header from '../components/Header';
+import Header from '../components/Header/Header';
 import ErrorBoundary from '../components/ErrorBoundary';
 import Home from '../pages/Home';
 import Recommendations from '../pages/Recommendations';
