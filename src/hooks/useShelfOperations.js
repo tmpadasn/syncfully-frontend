@@ -1,8 +1,6 @@
 import { useCallback } from 'react';
 import { removeWorkFromShelf } from '../imports/shelvesImports';
-
-/**
- * useShelfOperations Hook
+/** * useShelfOperations Hook
  *
  * Encapsulates all shelf CRUD operations (Create, Read, Update, Delete).
  * Handles:
@@ -17,22 +15,53 @@ import { removeWorkFromShelf } from '../imports/shelvesImports';
  * - Automatic modal closure on success
  * - Optimistic state updates where applicable
  */
-export function useShelfOperations(
-  editingShelf,
-  createNewShelf,
-  updateExistingShelf,
-  deleteExistingShelf,
-  shelfWorks,
-  setShelfWorks,
-  setMessage,
-  setShowModal,
-  setFormData,
-  setEditingShelf,
-  setDeleteConfirmation,
-  setRemovingWork
-) {
-  /**
-   * Create or update a shelf based on modal mode
+export function useShelfOperations(...args) {
+  // Backwards-compatible: accept either a single config object or the original positional args.
+  let editingShelf,
+    createNewShelf,
+    updateExistingShelf,
+    deleteExistingShelf,
+    shelfWorks,
+    setShelfWorks,
+    setMessage,
+    setShowModal,
+    setFormData,
+    setEditingShelf,
+    setDeleteConfirmation,
+    setRemovingWork;
+
+  if (args.length === 1 && args[0] && typeof args[0] === 'object') {
+    ({
+      editingShelf,
+      createNewShelf,
+      updateExistingShelf,
+      deleteExistingShelf,
+      shelfWorks,
+      setShelfWorks,
+      setMessage,
+      setShowModal,
+      setFormData,
+      setEditingShelf,
+      setDeleteConfirmation,
+      setRemovingWork,
+    } = args[0]);
+  } else {
+    [
+      editingShelf,
+      createNewShelf,
+      updateExistingShelf,
+      deleteExistingShelf,
+      shelfWorks,
+      setShelfWorks,
+      setMessage,
+      setShowModal,
+      setFormData,
+      setEditingShelf,
+      setDeleteConfirmation,
+      setRemovingWork,
+    ] = args;
+  }
+  /**   * Create or update a shelf based on modal mode
    * Shows success message and closes modal on completion
    * @param {event} e - Form submission event
    * @param {string} modalMode - 'create' or 'edit'
@@ -77,8 +106,7 @@ export function useShelfOperations(
     ]
   );
 
-  /**
-   * Confirm and execute shelf deletion
+  /**   * Confirm and execute shelf deletion
    * Called after user confirms deletion in confirmation dialog
    * @param {object} deleteConfirmation - { shelfId, shelfName }
    */
@@ -107,8 +135,7 @@ export function useShelfOperations(
     [deleteExistingShelf, setMessage, setDeleteConfirmation, setShelfWorks, shelfWorks]
   );
 
-  /**
-   * Remove a work from a shelf with two-step confirmation
+  /**   * Remove a work from a shelf with two-step confirmation
    * First click marks work for removal, second click confirms
    * @param {string} shelfId - The shelf ID
    * @param {string} workId - The work ID to remove
