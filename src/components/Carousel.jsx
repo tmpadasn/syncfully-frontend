@@ -9,7 +9,6 @@ import ErrorBoundary from './ErrorBoundary';
 import { WorkGridSkeleton } from './SkeletonCards';
 import useHorizontalScroll from '../hooks/useHorizontalScroll';
 import { getScrollButtonHandlers } from '../utils/scrollButtonHandlers';
-import { carouselWrapper, scrollContainer, scrollButton, hideScrollbarCSS as sharedHideScrollbar } from '../utils/carouselUI';
 
 // ========== ERROR FALLBACK: Styled container displayed when carousel rendering fails ==========
 const errorFallback = {
@@ -107,11 +106,49 @@ function CarouselBase({
   const leftHandlers = getScrollButtonHandlers(canScrollLeft);
   const rightHandlers = getScrollButtonHandlers(canScrollRight);
 
+  // Default carousel styles
+  const defaultWrapperStyle = {
+    position: 'relative',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '12px',
+  };
+  // Default container style with horizontal scrolling
+  const defaultContainerStyle = {
+    display: 'flex',
+    gap: 16,
+    overflowX: 'auto',
+    scrollbarWidth: 'none',
+    msOverflowStyle: 'none',
+    padding: '16px 0',
+    flex: 1,
+    scrollBehavior: 'smooth',
+  };
+  // Default button style generator
+  const defaultButtonStyle = (isEnabled) => ({
+    flexShrink: 0,
+    background: isEnabled ? 'rgba(70, 40, 20, 0.9)' : 'rgba(70, 40, 20, 0.3)',
+    color: 'white',
+    border: '2px solid rgba(255, 255, 255, 0.2)',
+    borderRadius: '50%',
+    width: '48px',
+    height: '48px',
+    cursor: isEnabled ? 'pointer' : 'not-allowed',
+    fontSize: '24px',
+    fontWeight: 'bold',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    transition: 'all 0.3s ease',
+    boxShadow: isEnabled ? '0 4px 12px rgba(0, 0, 0, 0.2)' : 'none',
+    opacity: isEnabled ? 1 : 0.5,
+  });
+
   // Use custom styles if provided, otherwise use defaults
   // Merge custom styles with defaults to preserve layout
-  const finalWrapperStyle = wrapperStyle ? { ...carouselWrapper, ...wrapperStyle } : carouselWrapper;
-  const finalContainerStyle = containerStyle ? { ...scrollContainer, ...containerStyle } : scrollContainer;
-  const finalButtonStyle = buttonStyle || scrollButton;
+  const finalWrapperStyle = wrapperStyle ? { ...defaultWrapperStyle, ...wrapperStyle } : defaultWrapperStyle;
+  const finalContainerStyle = containerStyle ? { ...defaultContainerStyle, ...containerStyle } : defaultContainerStyle;
+  const finalButtonStyle = buttonStyle || defaultButtonStyle;
 
   return (
     <ErrorBoundary fallback={<div style={errorFallback}>Unable to load carousel</div>}>
@@ -129,7 +166,7 @@ function CarouselBase({
 
         {/* Scrollable container */}
         <div ref={scrollContainerRef} style={finalContainerStyle}>
-          <style>{sharedHideScrollbar}</style>
+          <style>{`div::-webkit-scrollbar { display: none; }`}</style>
           {children}
         </div>
 

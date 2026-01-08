@@ -4,7 +4,6 @@
  */
 import { useState } from 'react';
 import Carousel from '../Carousel';
-import { carouselWrapper, scrollContainer, scrollButton } from '../../utils/carouselUI';
 import { Link } from 'react-router-dom';
 import ErrorBoundary from '../ErrorBoundary';
 
@@ -16,9 +15,6 @@ const ANIMATION = { scale: 1.02, transY: 8, duration: '0.3s cubic-bezier(0.4, 0,
 
 // ========== COMPONENT STYLES: Inline style objects for carousel, cards, badges, and error states ==========
 const styles = {
-  carouselWrapper,
-  scrollButton: (isEnabled) => ({ ...scrollButton(isEnabled), width: '48px', height: '48px', fontSize: '24px' }),
-  scrollContainer,
   emptyState: { textAlign: 'center', padding: `${SPACING.xxxl}px ${SPACING.xxl}px`, color: '#666', fontSize: '16px' },
   cardWrapper: { position: 'relative', flexShrink: 0 },
   cardLink: { textDecoration: 'none', flexShrink: 0, display: 'block', position: 'relative' },
@@ -107,9 +103,6 @@ function ShelfInner({
   return (
     <Carousel
       scrollChunk={scrollChunk}
-      wrapperStyle={styles.carouselWrapper}
-      containerStyle={styles.scrollContainer}
-      buttonStyle={styles.scrollButton}
     >
       {cards.map((card) => {
         if (!card) return null;

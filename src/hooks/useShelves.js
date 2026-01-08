@@ -9,7 +9,6 @@ import {
   removeWorkFromShelf,
   getOrCreateFavouritesShelf
 } from '../api/shelves';
-import { SHELF_NAMES } from '../config/constants';
 
 /**
  * Custom hook for managing user shelves
@@ -35,7 +34,7 @@ export default function useShelves(userId) {
       setLoading(true);
       setError(null);
       const response = await getUserShelves(userId);
-      
+
       if (isMountedRef.current) {
         setShelves(response.data?.shelves || []);
       }
@@ -132,17 +131,17 @@ export default function useShelves(userId) {
     try {
       setError(null);
       const favourites = await getOrCreateFavouritesShelf(userId, shelves);
-      
+
       // Check if a Favourites shelf already exists by name (case-insensitive)
-      const existingFavourites = shelves.find(s => 
-        s.name?.toLowerCase() === SHELF_NAMES.FAVOURITES
+      const existingFavourites = shelves.find(s =>
+        s.name?.toLowerCase() === 'favourites'
       );
-      
+
       // Only add if we don't have any Favourites shelf yet
       if (!existingFavourites) {
         setShelves([...shelves, favourites]);
       }
-      
+
       return favourites;
     } catch (err) {
       setError(err.message);

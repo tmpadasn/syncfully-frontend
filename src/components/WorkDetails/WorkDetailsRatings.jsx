@@ -1,6 +1,16 @@
 import { AddToShelfBtn } from '../../imports/workDetailsImports';
 
-// Right sidebar component for user ratings, rating submission, and distribution histogram
+/**
+ * Right sidebar component for work ratings and shelf management
+ * Displays:
+ * - Add to shelf button
+ * - User rating input (5-star)
+ * - Rating success message
+ * - Rating distribution histogram
+ * - Total rating count
+ *
+ */
+
 export default function WorkDetailsRatings({
   isGuest,
   workId,
@@ -24,7 +34,7 @@ export default function WorkDetailsRatings({
         maxWidth: 380,
       }}
     >
-      {/* Add to shelf button for logged-in users */}
+      {/* Add to shelf button - only shown for logged-in users with shelves */}
       {!isGuest && shelves.length > 0 && (
         <div style={{ marginBottom: 24 }}>
           <AddToShelfBtn
@@ -33,14 +43,15 @@ export default function WorkDetailsRatings({
           />
         </div>
       )}
-      {/* Ratings section title */}
+
+      {/* Ratings section header */}
       <div style={{ display: 'inline-block', marginBottom: 16 }}>
         <h3 className="section-title">RATINGS</h3>
       </div>
 
-      {/* User rating input section */}
+      {/* User rating input and success message section */}
       <div style={{ marginBottom: 20 }}>
-        {/* Success message after rating submission */}
+        {/* Success message shown after user submits a rating */}
         {ratingSubmittedMessage && (
           <div
             style={{
@@ -58,14 +69,15 @@ export default function WorkDetailsRatings({
             ✓ Rating saved!
           </div>
         )}
-        {/* User rating input section */}
+
+        {/* "Your rating" label */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
           <h4 style={{ margin: 0, fontSize: 14, fontWeight: 600 }}>
             Your rating
           </h4>
         </div>
 
-        {/* 5-star rating buttons */}
+        {/* 5-star rating input */}
         <div
           style={{
             display: 'flex',
@@ -75,7 +87,9 @@ export default function WorkDetailsRatings({
             opacity: userRatingScore ? 1 : 0.5,
           }}
         >
+          {/* Render 5 star buttons (1-5) */}
           {[1, 2, 3, 4, 5].map((i) => {
+            // Determine if star should be filled based on current score and hover
             const filled = i <= (hoverScore || Math.round(score));
             return (
               // Star rating button
@@ -106,7 +120,7 @@ export default function WorkDetailsRatings({
               </button>
             );
           })}
-          {/* Badge showing user has rated this work */}
+          {/* "Rated" badge shown when user has already rated */}
           {userRatingScore && (
             <div
               style={{
@@ -127,16 +141,19 @@ export default function WorkDetailsRatings({
         </div>
       </div>
 
-      {/* Rating distribution histogram */}
+      {/* Rating distribution histogram section */}
       <div style={{ marginBottom: 20 }}>
         <h4 style={{ margin: '0 0 12px 0', fontSize: 14, fontWeight: 600 }}>
           Rating Distribution
         </h4>
+        {/* Empty state or distribution bars */}
         {ratings.length === 0 ? (
           <p style={{ fontSize: 13, color: '#666', margin: 0 }}>No ratings yet.</p>
         ) : (
+          // Render rating distribution histogram
           <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
             {bucketCounts.map(renderDist)}
+            {/* Total rating count */}
             <div
               style={{
                 fontSize: 11,

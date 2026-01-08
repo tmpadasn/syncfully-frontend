@@ -1,27 +1,18 @@
-/*
- Account page.
- Shows user profile, stats, followers, and rating history.
- Loads user data and related lists on mount.
-*/
-import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import useAuth from "../hooks/useAuth";
+import useAccountData from "../hooks/useAccountData";
 import { Skeleton } from "../components/SkeletonBase";
 import logger from "../utils/logger";
-import { DEFAULT_AVATAR_URL } from "../config/constants";
 
 import {
-  getUserById,
   deleteUser,
-  getUserRatings,
-  getUserFollowers,
-  getUserFollowing,
 } from "../api/users";
 
-import { getAllWorks } from "../api/works";
-import UserRatings from "../components/users/UserRatings";
-import BreakdownList from "../components/BreakdownList";
-import HoverBar from "../components/HoverBar";
+import UserRatings from "../components/UserRatings";
+import ProfileHeader from "../components/Profile/ProfileHeader";
+import { FollowersSection, FollowingSection } from "../components/Profile/FollowingSection";
+import EditDeleteButtons from "../components/Profile/EditDeleteButtons";
+
 
 /* ===================== ACCOUNT PAGE FUNCTION ===================== */
 // Account page component.
@@ -33,82 +24,11 @@ export default function Account() {
   const { user, logout, authLoading } = useAuth();
   const navigate = useNavigate();
 
-  const [backendUser, setBackendUser] = useState(null);
-  // ratings is stored as an object map { <workId>: { score, ratedAt } }
-  const [ratings, setRatings] = useState({});
-  const [works, setWorks] = useState([]);
-  const [followers, setFollowers] = useState([]);
-  const [following, setFollowing] = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  // Fetch user data on mount
-    /* Data loading strategy: batch API calls to minimize latency and avoid
-      redundant requests, then normalize results for the UI. */
-    // Rationale: Group related API calls to reduce round-trips and improve perceived speed.
-    // Rationale: Normalize responses early to simplify downstream rendering logic.
-    useEffect(() => {
-    if (authLoading || !user) return;
-    // Load user and lists in one request. This reduces wait time.
-    const load = async () => {
-      setLoading(true);
-
-      try {
-        const userId = user.userId;
-
-        const [u, ratingsResponse, allWorks, followersResponse, followingResponse] = await Promise.all([
-          getUserById(userId),
-          getUserRatings(userId),
-          getAllWorks().catch(err => {
-            logger.error("Failed to fetch works:", err);
-            return { works: [] };
-          }),
-          getUserFollowers(userId).catch(err => {
-            logger.error("Failed to fetch followers:", err);
-            return { followers: [] };
-          }),
-          getUserFollowing(userId).catch(err => {
-            logger.error("Failed to fetch following:", err);
-            return { following: [] };
-          })
-        ]);
-
-        setBackendUser(u);
-
-        // Ratings come as a map keyed by work id
-        const ratingsObject = ratingsResponse?.ratings || ratingsResponse || {};
-        // Keep only ratings for works that exist in the catalog
-        const validWorks = allWorks?.works || [];
-        const validWorkIds = new Set(validWorks.map(w => w.id || w.workId));
-        const filteredRatings = Object.keys(ratingsObject).reduce((acc, workId) => {
-          if (validWorkIds.has(Number(workId))) {
-            acc[workId] = ratingsObject[workId];
-          }
-          return acc;
-        }, {});
-
-        setRatings(filteredRatings);
-        setWorks(validWorks);
-
-        // Set followers
-        const followersList = followersResponse?.followers || [];
-        setFollowers(followersList);
-
-        // Set following
-        const followingList = followingResponse?.following || [];
-        setFollowing(followingList);
-
-      } catch (err) {
-        // Handle errors - set backendUser to the auth user if API fails
-        logger.error("Account load failed:", err);
-        setBackendUser(user);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    load();
-  }, [authLoading, user]);
-
+  // Fetch account data
+  const { backendUser, ratings, works, followers, following, loading } = useAccountData(
+    user?.userId
+  );
+  // Show loading state while authenticating
   if (authLoading) {
     return (
       <div style={{ textAlign: 'center', padding: '40px 20px', minHeight: '100vh' }}>
@@ -129,7 +49,7 @@ export default function Account() {
   if (!user) {
     return <p>Please log in to view your account</p>;
   }
-
+  // Show loading state while fetching account data
   if (loading || !backendUser) {
     return (
       <div style={{ textAlign: 'center', padding: '40px 20px', minHeight: '100vh' }}>
@@ -163,217 +83,9 @@ export default function Account() {
   // Rationale: Require explicit confirmation to prevent accidental destructive actions.
   // Rationale: Clearing client session immediately avoids lingering auth state after deletion.
 
-  /* ===================== UI STYLES ===================== */
-  const styles = {
-    // Page layout
-    pageContainer: {
-      minHeight: "100vh",
-      padding: "40px 20px",
-      background: "var(--bg)",
-    },
-
-    // Profile section
-    profileCard: {
-      background: "#fff",
-      padding: "40px 36px",
-      borderRadius: "16px",
-      boxShadow: "0 20px 40px rgba(0,0,0,0.08)",
-      maxWidth: "820px",
-      margin: "0 auto 48px",
-    },
-    avatar: {
-      width: 160,
-      height: 160,
-      borderRadius: "50%",
-      objectFit: "cover",
-      border: "4px solid #e8dccf",
-    },
-
-    // Labels and text
-    infoLabel: {
-      fontSize: 12,
-      fontWeight: 800,
-      textTransform: "uppercase",
-      color: "#8a6f5f",
-      marginBottom: 6,
-      opacity: 0.75,
-      letterSpacing: 0.8,
-    },
-    infoText: {
-      fontSize: 16,
-      fontWeight: 600,
-      color: "#3b2e2e",
-    },
-    sectionLabel: {
-      fontSize: 13,
-      fontWeight: 800,
-      textTransform: "uppercase",
-      color: "#8a6f5f",
-      marginBottom: 14,
-      opacity: 0.75,
-      letterSpacing: 0.8,
-    },
-
-    // Stats grid
-    statsGrid: {
-      display: "grid",
-      gridTemplateColumns: "1fr",
-      gap: 24,
-      marginTop: 36,
-      paddingTop: 32,
-      borderTop: "1px solid #efe5db",
-    },
-    statCard: {
-      background: "linear-gradient(135deg, #faf6f1 0%, #f5f0ea 100%)",
-      padding: "20px 16px",
-      borderRadius: 12,
-      boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
-      flex: 1,
-      textAlign: "center",
-      border: "1px solid #efe5db",
-    },
-    statValue: {
-      fontSize: 32,
-      fontWeight: 800,
-      color: "#9a4207"
-    },
-    statLabel: {
-      fontSize: 14,
-      opacity: 0.75,
-      marginTop: 8,
-      fontWeight: 600
-    },
-
-    // Breakdown cards
-    breakdownGrid: {
-      display: "grid",
-      gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))",
-      gap: 12
-    },
-    breakdownCard: {
-      background: "linear-gradient(135deg, #fff9f5 0%, #fef5f0 100%)",
-      padding: "16px",
-      borderRadius: 10,
-      border: "1.5px solid #f0e0d8",
-      textAlign: "center",
-      transition: "all 0.2s ease",
-      cursor: "pointer",
-    },
-    breakdownValue: {
-      fontSize: 24,
-      fontWeight: 800,
-      color: "#9a4207"
-    },
-    breakdownLabel: {
-      fontSize: 12,
-      marginTop: 6,
-      fontWeight: 600,
-      color: "#5d4c4c",
-      textTransform: "capitalize"
-    },
-
-    // User cards (followers/following)
-    userGrid: {
-      display: "grid",
-      gridTemplateColumns: "repeat(auto-fill, minmax(120px, 1fr))",
-      gap: 12
-    },
-    userCard: {
-      // Square card that holds the circular avatar and username
-      width: 120,
-      height: 120,
-      borderRadius: 12,
-      border: "1.5px solid #e8dccf",
-      display: "flex",
-      flexDirection: "column",
-      alignItems: "center",
-      justifyContent: "center",
-      padding: 8,
-      boxSizing: "border-box",
-      background:"linear-gradient(135deg, #fff9f5 0%, #fef5f0 100%)",
-      cursor: "pointer",
-      transition: "transform 0.12s ease, box-shadow 0.12s ease",
-      overflow: "hidden",
-    },
-    userAvatar: {
-      width: 60,
-      height: 60,
-      borderRadius: "50%",
-      objectFit: "cover",
-      border: "2px solid #e8dccf",
-      display: "block",
-    },
-    userName: {
-      fontSize: 12,
-      fontWeight: 600,
-      color: "#3b2e2e",
-      marginTop: 6
-    },
-
-    // Genre bar
-    genreRow: {
-      display: "flex",
-      alignItems: "center",
-      gap: 12,
-      marginBottom: 10
-    },
-    genreCount: {
-      width: 30,
-      textAlign: "right",
-      fontSize: 13,
-      fontWeight: 700,
-      color: "#3b2e2e"
-    },
-    genreBar: (color) => ({
-      height: 28,
-      background: `linear-gradient(90deg, ${color}, ${color}dd)`,
-      borderRadius: 6,
-      display: "flex",
-      alignItems: "center",
-      paddingLeft: 12,
-      color: "#fff",
-      fontSize: 12,
-      fontWeight: 600,
-      textTransform: "capitalize",
-      boxShadow: "0 4px 12px rgba(154, 66, 7, 0.15)",
-      transition: "all 0.2s ease",
-      flex: 1
-    }),
-
-    // Buttons
-    buttonContainer: {
-      display: "grid",
-      gridTemplateColumns: "1fr 1fr",
-      gap: 16,
-      marginTop: 32
-    },
-    button: (bg) => ({
-      padding: "13px 26px",
-      borderRadius: 8,
-      border: "none",
-      fontWeight: 700,
-      fontSize: 14,
-      cursor: "pointer",
-      color: "#fff",
-      background: bg,
-      boxShadow: "0 8px 20px rgba(0,0,0,0.15)",
-      transition: "transform 0.1s ease, box-shadow 0.1s ease, opacity 0.15s",
-    }),
-
-    // Empty state
-    emptyState: {
-      textAlign: "center",
-      opacity: 0.6,
-      fontSize: 13,
-      padding: "20px"
-    }
-  };
-
-  // RETURN ACCOUNT PAGE LAYOUT
-  // Rationale: Split profile, stats, and lists into visually distinct sections.
-  // Rationale: Keeps markup predictable for testing and screen-reader navigation.
+  /* ===================== UI RENDERING ===================== */
   return (
-    <div style={styles.pageContainer}>
+    <div style={{ minHeight: "100vh", padding: "40px 20px", background: "var(--bg)" }}>
       <div className="page-container">
         <div className="page-inner">
 
@@ -383,187 +95,35 @@ export default function Account() {
               Your Account
             </h1>
 
-            {/* Profile Section */}
-            <div style={styles.profileCard}>
-              <div style={{ display: "flex", gap: 48, alignItems: "center" }}>
-
-                {/* Column 1: Avatar */}
-                <img
-                  src={
-                    backendUser.profilePictureUrl ||
-                    DEFAULT_AVATAR_URL
-                  }
-                  alt="avatar"
-                  style={styles.avatar}
+            {/* Profile Section - Header, Stats, and Actions in One Box */}
+            <div style={{ background: "#fff", padding: "40px 36px", borderRadius: "16px", boxShadow: "0 20px 40px rgba(0,0,0,0.08)", maxWidth: "820px", margin: "0 auto 48px" }}>
+              {/* Profile Header Component */}
+              <div>
+                <ProfileHeader
+                  profileUser={backendUser}
+                  ratings={ratings}
+                  works={works}
+                  currentUser={null}
+                  userId={null}
+                  isFollowing={false}
+                  followLoading={false}
+                  onBack={null}
+                  onFollow={null}
                 />
-
-                {/* Column 2: Username */}
-                <div style={{ flex: 1, textAlign: 'center' }}>
-                  <div style={{ ...styles.infoLabel, fontSize: 14, marginBottom: 10 }}>USERNAME</div>
-                  <div style={{ ...styles.infoText, fontSize: 22, fontWeight: 600 }}>{backendUser.username}</div>
-                </div>
-
-                {/* Column 3: Email Address */}
-                <div style={{ flex: 1, textAlign: 'center' }}>
-                  <div style={{ ...styles.infoLabel, fontSize: 14, marginBottom: 10 }}>EMAIL ADDRESS</div>
-                  <div style={{ ...styles.infoText, fontSize: 18, fontWeight: 600 }}>{backendUser.email}</div>
-                </div>
               </div>
 
-              {/* User Stats Grid */}
-              <div style={styles.statsGrid}>
-                  {/* Works Rated */}
-                  <div style={styles.statCard}>
-                    <div style={styles.statValue}>{Object.keys(ratings).length}</div>
-                    <div style={styles.statLabel}>Works Rated</div>
-                  </div>
-
-                {/* Stats by Type */}
-                <div>
-                  <div style={styles.sectionLabel}>📊 Rating Breakdown by Type</div>
-                  <div style={styles.breakdownGrid}>
-                    <BreakdownList
-                      ratings={ratings}
-                      works={works}
-                      keyName="type"
-                      emptyMessage="No ratings yet"
-                      cardStyle={styles.breakdownCard}
-                      valueStyle={styles.breakdownValue}
-                      labelStyle={styles.breakdownLabel}
-                    />
-                  </div>
-                </div>
-
-                {/* Most Rated Genres */}
-                <div>
-                  <div style={styles.sectionLabel}>🎭 Most Rated Genres</div>
-                  <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                    {(() => {
-                      // Count genres from rated works. This runs in the browser.
-                      const genreStats = {};
-                      Object.keys(ratings).forEach(workId => {
-                        const work = works.find(w => (w.id || w.workId) === Number(workId));
-                        if (work && work.genres && Array.isArray(work.genres)) {
-                          work.genres.forEach(genre => {
-                            if (!genreStats[genre]) genreStats[genre] = 0;
-                            genreStats[genre]++;
-                          });
-                        }
-                      });
-
-                      const sorted = Object.entries(genreStats).sort((a, b) => b[1] - a[1]).slice(0, 5);
-
-                      if (sorted.length === 0) {
-                        return <div style={styles.emptyState}>No genre data available</div>;
-                      }
-
-                      const colors = ["#9a4207", "#b95716", "#c86f38", "#d4885c", "#d9956f"];
-
-                      return sorted.map(([genre, count], idx) => (
-                        <div key={genre} style={styles.genreRow}>
-                          <div style={styles.genreCount}>{count}</div>
-                          <div style={{ flex: 1 }}>
-                            <HoverBar style={styles.genreBar(colors[idx % colors.length])}>
-                              {genre}
-                            </HoverBar>
-                          </div>
-                        </div>
-                      ));
-                    })()}
-                  </div>
-                </div>
-
-                {/* Followers Section */}
-                <div>
-                  <div style={styles.sectionLabel}>👥 Followers</div>
-                  {followers.length === 0 ? (
-                    <div style={styles.emptyState}>No followers yet</div>
-                  ) : (
-                    <div style={styles.userGrid}>
-                      {followers.map((follower) => (
-                        <div
-                          key={follower.userId || follower.id}
-                          onClick={() => navigate(`/profile/${follower.userId || follower.id}`)}
-                          style={styles.userCard}
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.transform = "translateY(-4px)";
-                            e.currentTarget.style.boxShadow = "0 8px 16px rgba(154, 66, 7, 0.12)";
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.transform = "none";
-                            e.currentTarget.style.boxShadow = "none";
-                          }}
-                        >
-                          <img
-                            src={follower.profilePictureUrl || DEFAULT_AVATAR_URL}
-                            alt={follower.username}
-                            style={styles.userAvatar}
-                          />
-                          <div style={styles.userName}>
-                            {follower.username}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                {/* Following Section */}
-                <div>
-                  <div style={styles.sectionLabel}>👫 Following</div>
-                  {following.length === 0 ? (
-                    <div style={styles.emptyState}>Not following anyone yet</div>
-                  ) : (
-                    <div style={styles.userGrid}>
-                      {following.map((user) => (
-                        <div
-                          key={user.userId || user.id}
-                          onClick={() => navigate(`/profile/${user.userId || user.id}`)}
-                          style={styles.userCard}
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.transform = "translateY(-4px)";
-                            e.currentTarget.style.boxShadow = "0 8px 16px rgba(154, 66, 7, 0.12)";
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.transform = "none";
-                            e.currentTarget.style.boxShadow = "none";
-                          }}
-                        >
-                          <img
-                            src={user.profilePictureUrl || DEFAULT_AVATAR_URL}
-                            alt={user.username}
-                            style={styles.userAvatar}
-                          />
-                          <div style={styles.userName}>
-                            {user.username}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
+              {/* Followers Section */}
+              <div style={{ paddingTop: 32 }}>
+                <FollowersSection followers={followers} />
               </div>
 
-              {/* Action Buttons */}
-              <div style={styles.buttonContainer}>
-                <button
-                  style={styles.button("linear-gradient(135deg,#9a4207,#b95716)")}
-                  onClick={() => navigate("/account/edit")}
-                  onMouseEnter={(e) => (e.currentTarget.style.transform = "translateY(-2px)")}
-                  onMouseLeave={(e) => (e.currentTarget.style.transform = "none")}
-                >
-                  ✎ Edit Account
-                </button>
-
-                <button
-                  style={styles.button("#c0392b")}
-                  onClick={handleDelete}
-                  onMouseEnter={(e) => (e.currentTarget.style.transform = "translateY(-2px)")}
-                  onMouseLeave={(e) => (e.currentTarget.style.transform = "none")}
-                >
-                  🗑 Delete Account
-                </button>
+              {/* Following Section */}
+              <div style={{ paddingTop: 32, borderTop: "1px solid #efe5db", marginTop: 24 }}>
+                <FollowingSection following={following} />
               </div>
+
+              {/* Edit and Delete Buttons */}
+              <EditDeleteButtons onDelete={handleDelete} />
             </div>
 
             {/* Rating History */}

@@ -15,15 +15,14 @@ import { IS_DEVELOPMENT } from '../config/constants';
 // ========== DESIGN TOKENS: Color, spacing, and radius scales for consistent styling across both UI levels ==========
 const COLORS = { primary: '#9a4207', primaryDark: '#7a3406', secondary: '#6c757d', error: '#d32f2f', text: '#666', light: '#999' };
 const SPACING = { xs: 10, sm: 12, md: 16, lg: 20, xl: 30, xxl: 40, xxxl: 60 };
-const RADII = { sm: 8, md: 12 };
 
-const baseBtn = { padding: `${SPACING.sm}px ${SPACING.md * 1.5}px`, border: 'none', borderRadius: RADII.sm, cursor: 'pointer', fontSize: '15px', fontWeight: '600', transition: 'all 0.2s ease' };
+const baseBtn = { padding: `${SPACING.sm}px ${SPACING.md * 1.5}px`, border: 'none', borderRadius: 8, cursor: 'pointer', fontSize: '15px', fontWeight: '600', transition: 'all 0.2s ease' };
 
 // ========== NESTED ERROR STYLES: Compact component-level error UI for caught exceptions ==========
 // Minimal layout suitable for errors within larger components - shows brief message and recovery actions
 const nestedStyles = {
   errorContainer: { padding: `${SPACING.xxl}px ${SPACING.md}px`, maxWidth: '600px', margin: '0 auto', textAlign: 'center' },
-  errorBox: { background: '#fff3cd', border: '1px solid #ffc107', borderRadius: RADII.sm, padding: SPACING.xxl, marginBottom: SPACING.md },
+  errorBox: { background: '#fff3cd', border: '1px solid #ffc107', borderRadius: 8, padding: SPACING.xxl, marginBottom: SPACING.md },
   errorHeading: { color: '#856404', marginBottom: SPACING.md },
   errorMessage: { color: '#856404', marginBottom: SPACING.lg },
   buttonContainer: { display: 'flex', gap: SPACING.sm, justifyContent: 'center', flexWrap: 'wrap' },
@@ -35,7 +34,7 @@ const nestedStyles = {
 // Rich layout for page-level crashes - includes emoji, full description, multiple action buttons, dev details
 const pageStyles = {
   errorWrapper: { padding: `${SPACING.xxxl}px ${SPACING.md}px`, textAlign: 'center', maxWidth: '700px', margin: '0 auto' },
-  errorBox: { background: 'linear-gradient(135deg, #fff5f5 0%, #ffe8e8 100%)', border: `2px solid ${COLORS.error}`, borderRadius: RADII.md, padding: SPACING.xxl, boxShadow: '0 4px 12px rgba(0,0,0,0.1)' },
+  errorBox: { background: 'linear-gradient(135deg, #fff5f5 0%, #ffe8e8 100%)', border: `2px solid ${COLORS.error}`, borderRadius: 12, padding: SPACING.xxl, boxShadow: '0 4px 12px rgba(0,0,0,0.1)' },
   errorEmoji: { fontSize: '48px', marginBottom: SPACING.md },
   errorHeading: { color: COLORS.error, marginBottom: SPACING.md, fontSize: '28px' },
   errorDescription: { color: COLORS.text, marginBottom: SPACING.xl, fontSize: '16px', lineHeight: '1.6' },
@@ -45,7 +44,7 @@ const pageStyles = {
   tertiaryButton: { ...baseBtn, background: 'white', color: '#333', border: '2px solid #ddd' },
   detailsSection: { marginTop: SPACING.xl, textAlign: 'left' },
   detailsSummary: { cursor: 'pointer', fontWeight: 'bold', color: COLORS.error, marginBottom: SPACING.sm, fontSize: '14px' },
-  stackTrace: { background: '#2d2d2d', color: '#f8f8f2', padding: SPACING.md, borderRadius: RADII.sm, overflow: 'auto', fontSize: '12px', lineHeight: '1.5' },
+  stackTrace: { background: '#2d2d2d', color: '#f8f8f2', padding: SPACING.md, borderRadius: 8, overflow: 'auto', fontSize: '12px', lineHeight: '1.5' },
   stackLabel: { color: '#ff6b6b' },
   footerText: { marginTop: SPACING.xl, color: COLORS.light, fontSize: '14px' },
 };
@@ -109,7 +108,7 @@ class ErrorBoundaryClass extends React.Component {
         {IS_DEVELOPMENT && this.state.error && (
           <details style={{ marginTop: SPACING.md, textAlign: 'left' }}>
             <summary style={{ cursor: 'pointer', fontWeight: 'bold', marginBottom: SPACING.sm }}>Error Details (Dev)</summary>
-            <pre style={{ background: '#f5f5f5', padding: SPACING.md, borderRadius: RADII.sm, overflow: 'auto', fontSize: '12px' }}>
+            <pre style={{ background: '#f5f5f5', padding: SPACING.md, borderRadius: 8, overflow: 'auto', fontSize: '12px' }}>
               {this.state.error.toString()}{'\n\n'}{this.state.errorInfo?.componentStack}
             </pre>
           </details>
