@@ -43,11 +43,7 @@ export const WORK_TYPES = {
   MUSIC: 'music',
   BOOK: 'book',
   GAME: 'game',
-};
-
-// Shelf Names
-export const SHELF_NAMES = {
-  FAVOURITES: 'favourites',
+  GRAPHIC_NOVEL: 'graphic_novel',
 };
 
 // Display Limits

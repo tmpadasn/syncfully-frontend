@@ -36,7 +36,7 @@ export default function EditDeleteButtons({ onDelete }) {
         onMouseEnter={(e) => (e.currentTarget.style.transform = "translateY(-2px)")}
         onMouseLeave={(e) => (e.currentTarget.style.transform = "none")}
       >
-        \u270e Edit Account
+        ✏️ Edit Account
       </button>
 
       {/* Delete Account Button - triggers account deletion */}
@@ -58,7 +58,7 @@ export default function EditDeleteButtons({ onDelete }) {
         onMouseEnter={(e) => (e.currentTarget.style.transform = "translateY(-2px)")}
         onMouseLeave={(e) => (e.currentTarget.style.transform = "none")}
       >
-        \ud83d\uddd1 Delete Account
+        🗑️ Delete Account
       </button>
     </div>
   );

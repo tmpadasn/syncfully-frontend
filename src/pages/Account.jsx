@@ -10,8 +10,7 @@ import {
 
 import UserRatings from "../components/UserRatings";
 import ProfileHeader from "../components/Profile/ProfileHeader";
-import FollowersSection from "../components/Profile/FollowersSection";
-import FollowingSection from "../components/Profile/FollowingSection";
+import { FollowersSection, FollowingSection } from "../components/Profile/FollowingSection";
 import EditDeleteButtons from "../components/Profile/EditDeleteButtons";
 
 
