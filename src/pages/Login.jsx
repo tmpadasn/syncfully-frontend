@@ -1,172 +1,26 @@
 import { useState } from "react";
 import { useNavigate, useLocation, useSearchParams } from "react-router-dom";
-import useAuth from "../hooks/useAuth";
+import { useAuth } from "../hooks";
 import { STORAGE_KEY_JUST_LOGGED_IN } from "../config/constants";
+import { LoginHeader, LoginForm, LoginModeToggle } from "../components";
 
-/* ===================== UI STYLES ===================== */
-const styles = {
-  // Page layout
-  pageContainer: {
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "flex-start",
-    minHeight: "100vh",
-    paddingTop: "80px",
-    paddingBottom: "40px",
-    paddingLeft: "20px",
-    paddingRight: "20px",
-    background: "linear-gradient(135deg, #faf8f5 0%, #f5f0ea 100%)",
-  },
-  cardWrapper: {
-    width: "100%",
-    maxWidth: "500px",
-  },
-  card: {
-    width: "100%",
-    padding: "50px 80px",
-    borderRadius: 16,
-    background: "#ffffff",
-    boxShadow: "0 20px 50px rgba(0, 0, 0, 0.1)",
-    border: "1px solid rgba(0,0,0,0.03)",
-    boxSizing: "border-box",
-  },
-
-  // Headings
-  title: {
-    fontSize: 32,
-    fontWeight: 800,
-    marginBottom: 12,
-    marginTop: 0,
-    color: "#241818",
-    textAlign: "center",
-  },
-  subtitle: {
-    fontSize: 15,
-    color: "#5d4c4c",
-    marginBottom: 32,
-    marginTop: 0,
-    lineHeight: 1.6,
-    textAlign: "center",
-  },
-
-  // Form elements
-  form: {
-    width: "100%",
-  },
-  field: {
-    marginBottom: 20,
-  },
-  label: {
-    display: "block",
-    fontSize: 12,
-    color: "#4a3f3f",
-    fontWeight: 800,
-    marginBottom: 8,
-    textTransform: "uppercase",
-    letterSpacing: 1,
-    opacity: 0.75,
-  },
-  input: {
-    width: "100%",
-    padding: "13px 16px",
-    borderRadius: 9,
-    border: "1.5px solid #e0d5cc",
-    fontSize: 15,
-    outline: "none",
-    background: "#fdfbf8",
-    transition: "border-color 0.2s ease, box-shadow 0.2s ease",
-    boxSizing: "border-box",
-  },
-  inputError: {
-    borderColor: "#e5534b",
-    background: "#fff5f5",
-  },
-  inputFocus: {
-    boxShadow: "0 0 0 3px rgba(154, 66, 7, 0.1)",
-  },
-  errorMessage: {
-    fontSize: 12,
-    color: "#a43939",
-    marginTop: 6,
-  },
-
-  // Alert boxes
-  errorBox: {
-    padding: "16px 18px",
-    marginBottom: 20,
-    borderRadius: 10,
-    border: "1px solid #f5c6cb",
-    background: "#f8d7da",
-    color: "#721c24",
-    fontSize: 14,
-    fontWeight: 500,
-    lineHeight: 1.5,
-    textAlign: "center",
-  },
-  infoBox: {
-    padding: "16px 18px",
-    marginBottom: 20,
-    borderRadius: 10,
-    border: "1px solid #81c784",
-    background: "#e8f5e9",
-    color: "#2e7d32",
-    fontSize: 14,
-    fontWeight: 500,
-    lineHeight: 1.5,
-    textAlign: "center",
-  },
-
-  // Buttons
-  button: {
-    marginTop: 12,
-    width: "100%",
-    background: "linear-gradient(135deg, #9a4207, #b95716)",
-    color: "#fff",
-    padding: "14px 20px",
-    border: "none",
-    borderRadius: 9,
-    fontWeight: 700,
-    fontSize: 15,
-    cursor: "pointer",
-    boxShadow: "0 8px 20px rgba(154,66,7,0.25)",
-    transition: "transform 0.1s ease, box-shadow 0.1s ease, opacity 0.15s",
-    boxSizing: "border-box",
-  },
-  buttonDisabled: {
-    cursor: "default",
-    opacity: 0.7,
-    boxShadow: "none",
-    transform: "none",
-  },
-
-  // Toggle/Links
-  toggleWrapper: {
-    marginTop: 20,
-    fontSize: 14,
-    textAlign: "center",
-    color: "#5d4c4c",
-  },
-  toggleLink: {
-    marginLeft: 4,
-    fontWeight: 600,
-    color: "#9a4207c8",
-    cursor: "pointer",
-    textDecoration: "underline",
-    textDecorationThickness: 1,
-  },
-};
-
-/* ===================== LOGIN FUNCTION ===================== */
-
+/**
+ * Login Page Component
+ */
 export default function Login() {
+  // ========== HOOKS & INITIALIZATION ==========
   const { login, signup } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
+  // Extract redirect message from location state (e.g., after account deletion)
   const redirectMessage = location.state?.message || null;
+  // Detect initial mode from URL parameter or default to login
   const initialMode = searchParams.get('mode') === 'signup' ? 'signup' : 'login';
 
+  // ========== STATE MANAGEMENT ==========
+  // Authentication mode toggle
   const [mode, setMode] = useState(initialMode);
   const [identifier, setIdentifier] = useState("");
   const [username, setUsername] = useState("");
@@ -176,8 +30,11 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
+  // Derived state - determines which fields to show based on mode
   const isLogin = mode === "login";
 
+  // ========== HELPER FUNCTIONS ==========
+  // Reset all form fields and validation state
   const resetForm = () => {
     setIdentifier("");
     setUsername("");
@@ -186,12 +43,13 @@ export default function Login() {
     setTouched({});
     setError(null);
   };
-
+  // Toggle between login and signup modes
   const switchMode = () => {
     setMode((prev) => (prev === "login" ? "signup" : "login"));
     resetForm();
   };
 
+  // ========== FORM SUBMISSION HANDLER ==========
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError(null);
@@ -199,7 +57,7 @@ export default function Login() {
 
     try {
       if (isLogin) {
-        // Validate login inputs
+        // ========== LOGIN VALIDATION ==========
         if (!identifier.trim()) {
           setError("Please enter your email or username.");
           setLoading(false);
@@ -210,10 +68,10 @@ export default function Login() {
           setLoading(false);
           return;
         }
-
+        // Attempt login with identifier and password
         await login(identifier, password);
       } else {
-        // Validate signup inputs
+        // ========== SIGNUP VALIDATION ==========
         if (!username.trim()) {
           setError("Please enter a username.");
           setLoading(false);
@@ -224,247 +82,87 @@ export default function Login() {
           setLoading(false);
           return;
         }
-        // Email format validation
+        // Validate email format with regex
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(email.trim())) {
           setError("Please enter a valid email address.");
           setLoading(false);
           return;
         }
+        // Validate password minimum length
         if (!password.trim() || password.length < 4) {
           setError("Password must be at least 4 characters.");
           setLoading(false);
           return;
         }
 
+        // Attempt signup with user data
         await signup({ username, email, password });
       }
 
-      // Set flag for fresh login
+      // ========== SUCCESS HANDLING ==========
       sessionStorage.setItem(STORAGE_KEY_JUST_LOGGED_IN, 'true');
       navigate("/");
     } catch (err) {
-      // Handle specific error messages from AuthContext
+      // ========== ERROR HANDLING ==========
       const errMsg = err?.message || "";
       setError(errMsg || "Something went wrong. Try again.");
-      // User stays on login page (no navigate)
     } finally {
       setLoading(false);
     }
   };
 
-  const handleBlur = (field) =>
-    setTouched((prev) => ({ ...prev, [field]: true }));
-
-  const passwordTooShort = password && password.length < 4;
-
-  // RETURN LOGIN PAGE LAYOUT
+  // ========== RENDER ==========
   return (
-    <div style={styles.pageContainer}>
-      <div style={styles.cardWrapper}>
-        <div style={styles.card}>
-          <h1 style={styles.title}>
-            {isLogin ? "Welcome back" : "Create your account"}
-          </h1>
+    // Main container: centered flex layout, full viewport height, styled background
+    <div style={{
+      display: "flex",
+      justifyContent: "center",
+      alignItems: "flex-start",
+      minHeight: "100vh",
+      paddingTop: "80px",
+      paddingBottom: "40px",
+      paddingLeft: "20px",
+      paddingRight: "20px",
+      background: "var(--bg)" }}>
 
-          <p style={styles.subtitle}>
-            {isLogin
-              ? "Log in to rate works, save favorites and get recommendations."
-              : "Sign up and start rating, saving and discovering."}
-          </p>
+      {/* Width constraint wrapper */}
+      <div style={{ width: "100%", maxWidth: "500px" }}>
 
-          {redirectMessage && (
-            <div style={styles.infoBox} role="status" aria-live="polite">
-              {redirectMessage}
-            </div>
-          )}
+        {/* Form card container with shadow and border */}
+        <div style={{
+          width: "100%",
+          padding: "50px 80px",
+          borderRadius: 16,
+          background: "#ffffff",
+          boxShadow: "0 20px 50px rgba(0, 0, 0, 0.1)",
+          border: "1px solid rgba(0,0,0,0.03)",
+          boxSizing: "border-box" }}>
 
-          {error && (
-            <div style={styles.errorBox} role="alert" aria-live="assertive">
-              {error}
-            </div>
-          )}
+          {/* Page header with mode-specific title and description */}
+          <LoginHeader isLogin={isLogin} />
 
-          <form onSubmit={handleSubmit} style={styles.form} noValidate>
-            {!isLogin && (
-              <>
-                {/* Username Field (Signup only) */}
-                <div style={styles.field}>
-                  <label htmlFor="username-input" style={styles.label}>
-                    Username
-                  </label>
-                  <input
-                    id="username-input"
-                    type="text"
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
-                    onBlur={(e) => {
-                      handleBlur("username");
-                      e.target.style.boxShadow = "none";
-                    }}
-                    style={{
-                      ...styles.input,
-                      ...(touched.username && !username ? styles.inputError : {}),
-                    }}
-                    onFocus={(e) => Object.assign(e.target.style, styles.inputFocus)}
-                    required
-                    autoComplete="username"
-                    aria-required="true"
-                    aria-invalid={touched.username && !username}
-                    aria-describedby={touched.username && !username ? "username-error" : undefined}
-                  />
-                  {touched.username && !username && (
-                    <div id="username-error" style={styles.errorMessage} role="alert">
-                      Username is required
-                    </div>
-                  )}
-                </div>
+          {/* Main form with mode-specific fields and validation */}
+          <LoginForm
+            isLogin={isLogin}
+            identifier={identifier}
+            setIdentifier={setIdentifier}
+            username={username}
+            setUsername={setUsername}
+            email={email}
+            setEmail={setEmail}
+            password={password}
+            setPassword={setPassword}
+            touched={touched}
+            setTouched={setTouched}
+            loading={loading}
+            error={error}
+            redirectMessage={redirectMessage}
+            onSubmit={handleSubmit}
+          />
 
-                {/* Email Field (Signup only) */}
-                <div style={styles.field}>
-                  <label htmlFor="email-input" style={styles.label}>
-                    Email Address
-                  </label>
-                  <input
-                    id="email-input"
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    onBlur={(e) => {
-                      handleBlur("email");
-                      e.target.style.boxShadow = "none";
-                    }}
-                    style={{
-                      ...styles.input,
-                      ...(touched.email && !email ? styles.inputError : {}),
-                    }}
-                    onFocus={(e) => Object.assign(e.target.style, styles.inputFocus)}
-                    required
-                    autoComplete="email"
-                    aria-required="true"
-                    aria-invalid={touched.email && !email}
-                    aria-describedby={touched.email && !email ? "email-error" : undefined}
-                  />
-                  {touched.email && !email && (
-                    <div id="email-error" style={styles.errorMessage} role="alert">
-                      Email is required
-                    </div>
-                  )}
-                </div>
-              </>
-            )}
-
-            {isLogin && (
-              <>
-                {/* Identifier Field (Login only) */}
-                <div style={styles.field}>
-                  <label htmlFor="identifier-input" style={styles.label}>
-                    Email or Username
-                  </label>
-                  <input
-                    id="identifier-input"
-                    type="text"
-                    value={identifier}
-                    onChange={(e) => setIdentifier(e.target.value)}
-                    onBlur={(e) => {
-                      handleBlur("identifier");
-                      e.target.style.boxShadow = "none";
-                    }}
-                    style={{
-                      ...styles.input,
-                      ...(touched.identifier && !identifier ? styles.inputError : {}),
-                    }}
-                    onFocus={(e) => Object.assign(e.target.style, styles.inputFocus)}
-                    required
-                    autoComplete="username email"
-                    aria-required="true"
-                    aria-invalid={touched.identifier && !identifier}
-                    aria-describedby={touched.identifier && !identifier ? "identifier-error" : undefined}
-                  />
-                  {touched.identifier && !identifier && (
-                    <div id="identifier-error" style={styles.errorMessage} role="alert">
-                      Email or username is required
-                    </div>
-                  )}
-                </div>
-              </>
-            )}
-
-            {/* Password Field */}
-            <div style={styles.field}>
-              <label htmlFor="password-input" style={styles.label}>
-                Password
-              </label>
-              <input
-                id="password-input"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                onBlur={(e) => {
-                  handleBlur("password");
-                  e.target.style.boxShadow = "none";
-                }}
-                style={{
-                  ...styles.input,
-                  ...(touched.password && (passwordTooShort || !password)
-                    ? styles.inputError
-                    : {}),
-                }}
-                onFocus={(e) => Object.assign(e.target.style, styles.inputFocus)}
-                required
-                autoComplete={isLogin ? "current-password" : "new-password"}
-                aria-required="true"
-                aria-invalid={touched.password && (passwordTooShort || !password)}
-                aria-describedby={touched.password && passwordTooShort ? "password-error" : undefined}
-              />
-              {touched.password && passwordTooShort && (
-                <div id="password-error" style={styles.errorMessage} role="alert">
-                  Password too short (min 4 chars)
-                </div>
-              )}
-            </div>
-
-            {/* Submit Button */}
-            <button
-              type="submit"
-              disabled={loading}
-              style={{
-                ...styles.button,
-                ...(loading ? styles.buttonDisabled : {}),
-              }}
-              onMouseEnter={(e) => !loading && (e.currentTarget.style.transform = "translateY(-2px)")}
-              onMouseLeave={(e) => (e.currentTarget.style.transform = "none")}
-              aria-busy={loading}
-            >
-              {loading
-                ? isLogin
-                  ? "Logging you in…"
-                  : "Creating account…"
-                : isLogin
-                ? "Log in"
-                : "Sign up"}
-            </button>
-          </form>
-
-          {/* Toggle Between Login and Signup */}
-          <div style={styles.toggleWrapper}>
-            {isLogin ? "New here?" : "Already have an account?"}
-            <span 
-              onClick={switchMode} 
-              style={styles.toggleLink}
-              role="button"
-              tabIndex={0}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  e.preventDefault();
-                  switchMode();
-                }
-              }}
-              aria-label={isLogin ? "Switch to sign up" : "Switch to login"}
-            >
-              {isLogin ? "Create an account" : "Log in instead"}
-            </span>
-          </div>
+          {/* Mode toggle button: allows switching between login and signup */}
+          <LoginModeToggle isLogin={isLogin} onToggle={switchMode} />
         </div>
       </div>
     </div>

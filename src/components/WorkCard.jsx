@@ -1,3 +1,9 @@
+/*
+  WorkCard Component
+  Used to display a work's cover image (and optionally info) in various parts of the app.
+  Renders a card displaying work information such as cover image, title, creator, year, and rating.
+  Supports optional flat styling and hiding of info section.
+*/
 import { Link } from 'react-router-dom';
 import ErrorBoundary from './ErrorBoundary';
 
@@ -46,3 +52,6 @@ export default function WorkCard(props) {
     </ErrorBoundary>
   );
 }
+
+// The component is wrapped with an ErrorBoundary to contain rendering failures
+// to a single card; this prevents a single failure from affecting the parent view.

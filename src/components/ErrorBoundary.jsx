@@ -1,186 +1,96 @@
+/**
+ * ErrorBoundary - Unified error handling component for nested and page-level errors.
+ * Catches all unhandled errors in child components and displays appropriate recovery UI.
+ * Features: Configurable UI levels, custom fallback support, development error details,
+ * and smart recovery actions.
+ *
+ * Props:
+ *   - children: Component(s) to wrap
+ *   - fallback: Custom fallback UI for nested errors (overrides UI level config)
+ *   - level: 'page' (full-page UI) or 'nested' (compact UI). Defaults to 'nested'
+ */
 import React from 'react';
 import logger from '../utils/logger';
-import { IS_DEVELOPMENT } from '../config/constants';
+import NestedErrorUI from './NestedErrorUI';
+import PageErrorUI from './PageErrorUI';
+import { ErrorButton } from './ErrorButtonStyles';
 
-/* ===================== UI STYLES ===================== */
-const styles = {
-  /* ===================== ERROR CONTAINER ===================== */
-  errorContainer: {
-    padding: '40px 20px',
-    maxWidth: '600px',
-    margin: '0 auto',
-    textAlign: 'center',
-  },
 
-  /* ===================== ERROR BOX ===================== */
-  errorBox: {
-    background: '#fff3cd',
-    border: '1px solid #ffc107',
-    borderRadius: '8px',
-    padding: '30px',
-    marginBottom: '20px',
-  },
 
-  /* ===================== ERROR HEADING ===================== */
-  errorHeading: {
-    color: '#856404',
-    marginBottom: '16px',
-  },
-
-  /* ===================== ERROR MESSAGE ===================== */
-  errorMessage: {
-    color: '#856404',
-    marginBottom: '20px',
-  },
-
-  /* ===================== BUTTON CONTAINER ===================== */
-  buttonContainer: {
-    display: 'flex',
-    gap: '12px',
-    justifyContent: 'center',
-    flexWrap: 'wrap',
-  },
-
-  /* ===================== PRIMARY BUTTON ===================== */
-  primaryButton: {
-    padding: '10px 20px',
-    background: '#9a4207',
-    color: 'white',
-    border: 'none',
-    borderRadius: '6px',
-    cursor: 'pointer',
-    fontSize: '14px',
-    fontWeight: '600',
-  },
-
-  /* ===================== SECONDARY BUTTON ===================== */
-  secondaryButton: {
-    padding: '10px 20px',
-    background: '#6c757d',
-    color: 'white',
-    border: 'none',
-    borderRadius: '6px',
-    cursor: 'pointer',
-    fontSize: '14px',
-    fontWeight: '600',
-  },
-
-  /* ===================== ERROR DETAILS SECTION ===================== */
-  detailsSection: {
-    textAlign: 'left',
-    marginTop: '20px',
-  },
-
-  /* ===================== ERROR DETAILS SUMMARY ===================== */
-  detailsSummary: {
-    cursor: 'pointer',
-    fontWeight: 'bold',
-    marginBottom: '10px',
-  },
-
-  /* ===================== ERROR STACK TRACE ===================== */
-  stackTrace: {
-    background: '#f5f5f5',
-    padding: '15px',
-    borderRadius: '6px',
-    overflow: 'auto',
-    fontSize: '12px',
-  },
-};
-class ErrorBoundary extends React.Component {
+// ========== ERROR BOUNDARY CLASS ==========
+// React.Component lifecycle methods for error catching and state management
+// Implements getDerivedStateFromError and componentDidCatch to catch all errors
+// in child component tree
+class ErrorBoundaryClass extends React.Component {
+  // Initialize state: track error flag, error object, and component stack
+  // for debugging
   constructor(props) {
     super(props);
-    this.state = {
-      hasError: false,
-      error: null,
-      errorInfo: null
-    };
+    this.state = { hasError: false, error: null, errorInfo: null };
   }
 
-  static getDerivedStateFromError(error) {
-    // Update state so the next render will show the fallback UI
+  // ========== LIFECYCLE METHODS ==========
+  // React error boundary hooks for catching and handling errors
+  // Update state to display error UI when child component throws
+  static getDerivedStateFromError() {
     return { hasError: true };
   }
 
+  // Log error details for monitoring and save error info to state
+  // for debugging display
   componentDidCatch(error, errorInfo) {
-    // Log error details for debugging
     logger.error('ErrorBoundary caught an error:', error, errorInfo);
-    
-    this.setState({
-      error,
-      errorInfo
-    });
-
-    // You can also log to an error reporting service here
-    // e.g., Sentry, LogRocket, etc.
+    this.setState({ error, errorInfo });
   }
 
-  handleReset = () => {
-    this.setState({
-      hasError: false,
-      error: null,
-      errorInfo: null
-    });
-  };
+  // ========== STATE RESET ==========
+  // Clear error state to allow user to retry or navigate
+  // Reset error boundary to attempt re-rendering children
+  // (user triggered via "Try Again" button)
+  reset = () => this.setState({ hasError: false, error: null, errorInfo: null });
 
+  // ========== RENDER NESTED ERROR ==========
+  // Compact component-level error UI with inline details for dev mode
+  // Displays warning message, recovery buttons (Try Again, Go Home),
+  // and expandable error stack in development
+  renderNestedError() {
+    // For custom fallback, return as-is
+    if (this.props.fallback) return this.props.fallback;
+
+    return (
+      <NestedErrorUI
+        error={this.state.error}
+        errorInfo={this.state.errorInfo}
+        onReset={this.reset}
+      />
+    );
+  }
+
+  // ========== RENDER PAGE ERROR ==========
+  // Full-page error UI with emoji, detailed message, and comprehensive options
+  // Displays sympathetic error message, three action buttons (Reload, Home, Back),
+  // and expandable dev error details
+  renderPageError() {
+    return (
+      <PageErrorUI
+        error={this.state.error}
+        errorInfo={this.state.errorInfo}
+        onReset={this.reset}
+      />
+    );
+  }
+
+  // ========== MAIN RENDER ==========
+  // Choose UI level and return error or children based on error state
+  // Routes to page or nested error UI based on level prop,
+  // or returns children if no error
   render() {
     if (this.state.hasError) {
-      // Custom fallback UI can be passed as a prop
-      if (this.props.fallback) {
-        return this.props.fallback;
-      }
-
-      // Default fallback UI
-      return (
-        <div style={styles.errorContainer}>
-          <div style={styles.errorBox}>
-            <h2 style={styles.errorHeading}>
-              ⚠️ Something went wrong
-            </h2>
-            <p style={styles.errorMessage}>
-              We encountered an unexpected error. Don't worry, your data is safe.
-            </p>
-            
-            <div style={styles.buttonContainer}>
-              <button
-                onClick={this.handleReset}
-                style={styles.primaryButton}
-                onMouseEnter={(e) => (e.currentTarget.style.background = '#7a3406')}
-                onMouseLeave={(e) => (e.currentTarget.style.background = '#9a4207')}
-              >
-                Try Again
-              </button>
-              
-              <button
-                onClick={() => window.location.href = '/'}
-                style={styles.secondaryButton}
-                onMouseEnter={(e) => (e.currentTarget.style.background = '#5a6268')}
-                onMouseLeave={(e) => (e.currentTarget.style.background = '#6c757d')}
-              >
-                Go to Home
-              </button>
-            </div>
-          </div>
-
-          {/* Show error details in development mode */}
-          {IS_DEVELOPMENT && this.state.error && (
-            <details style={styles.detailsSection}>
-              <summary style={styles.detailsSummary}>
-                Error Details (Development Only)
-              </summary>
-              <pre style={styles.stackTrace}>
-                {this.state.error.toString()}
-                {'\n\n'}
-                {this.state.errorInfo?.componentStack}
-              </pre>
-            </details>
-          )}
-        </div>
-      );
+      return this.props.level === 'page' ? this.renderPageError() : this.renderNestedError();
     }
-
     return this.props.children;
   }
 }
 
-export default ErrorBoundary;
+export default ErrorBoundaryClass;
+export { ErrorButton };
